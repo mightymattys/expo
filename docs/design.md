@@ -259,6 +259,21 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   underneath (unlike Codex's `workspace-write`), so it is for trusted repos or a
   branch/worktree only.
 
+## Why fire picks a GPT-5.6 tier by task shape
+
+- GPT-5.6 ships three tiers (sol/terra/luna) at 3.4x price spread. The head chef
+  already classifies every task by shape to decide *whether* to delegate; the same
+  classification picks the tier, so tier selection is free judgment already being
+  spent - a mechanical rename doesn't need sol's ceiling, an architectural change
+  shouldn't get luna's. The default is shape-driven with an explicit `--tier` escape;
+  the tier rides the invocation as `-c model=... -c model_reasoning_effort=...` (CLI
+  beats the profile) rather than living in `~/.codex/config.toml`, so it can vary
+  per-fire without the user editing config between tasks.
+- taste stays on `sol` regardless of the fire's tier - a reviewer's misses are more
+  expensive than a reviewer's tokens. ultra mode is never enabled on a background run:
+  it is a token multiplier, and the [#54143](https://github.com/anthropics/claude-code/issues/54143)
+  quota-incident shape is exactly a multiplier running with nobody watching.
+
 ## Why refire inherits the worker instead of re-choosing it
 
 - `serve` promises `--with <worker>` "applies to the whole line: fire and refire run

@@ -27,12 +27,13 @@ Refire runs on the same worker as the fire it corrects - see fire's `--with` tab
 Two ways the worker is set:
 
 - **Inside a serve:** the worker is already chosen; serve records it on state.md's
-  `worker:` line. Read it, don't re-parse the task text - serve's contract is that
-  fire and refire run on the same worker (taste stays Codex). No `worker:` line means
-  the default Codex route.
-- **Standalone `/expo:refire --with <worker>`:** strip `--with <worker>` from the
-  args first, same convention as fire (`sonnet` = the Sonnet route). Absent means the
-  default Codex route.
+  `worker:` line (and the Codex tier on the `tier:` line). Read them, don't re-parse
+  the task text - serve's contract is that fire and refire run on the same worker and
+  tier (taste stays Codex/sol). No `worker:` line means the default Codex route.
+- **Standalone `/expo:refire --with <worker>` / `--tier <tier>`:** strip both flags
+  from the args first, same convention as fire (`sonnet` = the Sonnet route; `sol`/
+  `terra`/`luna` = the Codex tier). Absent means the default Codex route at its
+  config-default tier.
 
 The findings handoff, the tree anchor, and plating are worker-agnostic: they read the
 working tree via git, blind to which worker produced the fix.

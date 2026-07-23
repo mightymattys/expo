@@ -24,6 +24,8 @@ started: <UTC ISO-8601 of stage 1's fire>
 budget: 5
 runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
+worker: <codex | sonnet>
+tier: <sol | terra | luna, Codex route only>
 baseline: <abs path to stage 1's pre-fire.patch>
 findings: <abs path to taste's findings.md>
 job: <abs path to the job dir currently cooking, if any>
@@ -36,12 +38,17 @@ before firing anything. (A `/clear` or session death mints a new scratchpad - se
 is a single-session promise and does not survive that; the working tree and job
 dirs still hold the work.)
 
-## Choosing the worker
+## Choosing the worker and tier
 
 If the arguments begin with `--with <worker>` (see fire's worker table), the
 choice applies to the whole line: fire and refire run on that worker; taste
 stays on Codex read-only when available, which makes the review cross-model
 when the worker is not Codex. Record the worker in `state.md` (`worker: sonnet`).
+
+On the Codex route, fire also picks a GPT-5.6 tier by task shape (see fire's tier
+table), or honors an explicit `--tier sol|terra|luna`. Record it in `state.md`
+(`tier: terra`) so the refire stage fires on the same tier; taste stays on `sol`
+(reviewer strength beats reviewer cost).
 
 Whenever implementer and reviewer share a lineage, say so in the final report.
 The default all-Codex line always does: Codex reviews its own diff (fresh

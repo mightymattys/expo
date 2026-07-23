@@ -67,6 +67,26 @@ ticket, job dir, and plating are identical for every worker; only the invocation
 changes. Preflight differs per worker: step 2's Codex-profile stop applies to the
 Codex route only - the Sonnet route's preflight is just `command -v claude`.
 
+## Choosing the model tier (Codex route)
+
+The Codex route runs GPT-5.6, which ships in three tiers. You already classify every
+task by shape to decide *whether* to fire - the same classification picks the tier,
+for free. Default: pick by task shape and name the tier in the announcement. This
+applies to the Codex route only; the Sonnet route has no tiers.
+
+| Tier | Effort | Task shape |
+|---|---|---|
+| `gpt-5.6-sol` | high (`max` only for the very hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
+| `gpt-5.6-terra` | high | the daily driver - standard spec-able features, bugfixes, test writing; the default when unsure |
+| `gpt-5.6-luna` | medium | mechanical bulk - renames, boilerplate, docs, formatting sweeps |
+
+Override: `--tier sol|terra|luna` in the arguments (strip it like `--with`); an
+explicit tier wins over the shape heuristic. Never enable 5.6's `ultra` mode on a
+delegated background run - it multiplies token spend by design, with nobody watching.
+The chosen tier and effort ride the invocation as `-c` flags (CLI beats the profile
+and `~/.codex/config.toml`); if you deliberately want the config default instead,
+pass no `-c model` flag.
+
 ## Firing
 
 Run from the repo root (workspace-write scopes writes to the working directory), in the background - never in the foreground, where the Bash timeout ceiling kills long runs. Tool-level backgrounding is the only backgrounding: the command itself must NOT contain `&`, `nohup`, or `disown`, or Claude Code will track a wrapper that exits immediately, fire a false completion notification, and leave the real worker orphaned.
@@ -74,16 +94,17 @@ Run from the repo root (workspace-write scopes writes to the working directory),
 ```
 Bash (run_in_background: true), cwd = repo root:
 env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN codex exec --profile expo \
+  -c model=gpt-5.6-<tier> -c model_reasoning_effort=<effort> \
   --output-last-message "$JOB/result.md" \
   - < "$JOB/ticket.md" > "$JOB/job.log" 2>&1
 ```
 
 Notes on the invocation:
-- `--profile expo` loads `~/.codex/expo.config.toml` (workspace-write sandbox, approvals never - it never pauses for input that will never arrive). Model and reasoning effort deliberately fall through to the user's `~/.codex/config.toml` defaults.
+- `--profile expo` loads `~/.codex/expo.config.toml` (workspace-write sandbox, approvals never - it never pauses for input that will never arrive). The `-c model=... -c model_reasoning_effort=...` flags pin the tier chosen above (CLI beats the profile and `~/.codex/config.toml`); drop them to fall through to the user's config defaults.
 - `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN` pins the run to the user's `codex login` (ChatGPT subscription) auth - those two are the only env vars that override it in `codex exec`, and if either is set the run silently bills per-token instead. (`OPENAI_API_KEY` is NOT read for auth by current Codex, and unsetting it would break custom providers that use it as their `env_key`.)
 - Prompt goes via stdin (`- <`) to avoid shell-quoting damage to the ticket.
 
-**Then tell the user, in one or two lines:** what was delegated and to which model (read `model` from `~/.codex/config.toml` - don't assert a model you didn't check), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
+**Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-5.6-terra`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
 To route the ticket to Claude Sonnet 5 on the user's own subscription (no extra key - the natural fallback when Codex hits its usage limit mid-serve), see [references/worker-routes.md](references/worker-routes.md) - same ticket, different worker invocation.
 
