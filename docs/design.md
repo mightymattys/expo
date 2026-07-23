@@ -251,10 +251,8 @@ doc, or a measured comparison - collected via a multi-source research sweep on
 
 - Two workers earn their place: Codex (default, sandboxed, subscription-billed) and a
   Claude Sonnet 5 fallback on the user's own Anthropic plan for when Codex hits its
-  usage limit mid-serve - no extra key, no provider config. A GLM-5.2 route shipped in
-  the upstream project (sous-chef) but is dropped here: it needs a separate Z.ai or
-  OpenRouter key, and the two-subscription Codex+Claude setup already covers the
-  quota-exhaustion case the fallback exists for. If a keyless GLM path appears, revisit.
+  usage limit mid-serve - no extra key, no provider config, keyless like the rest of
+  the two-subscription setup.
 - **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
   `--dangerously-skip-permissions`: it inherits the user's subscription auth from the
   default config dir with zero setup. The honest caveat is that it has no OS sandbox
