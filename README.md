@@ -2,22 +2,18 @@
 
 ![MIT](https://img.shields.io/badge/license-MIT-blue) ![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-d97757) ![Codex CLI ≥ 0.134](https://img.shields.io/badge/Codex_CLI-%E2%89%A50.134-black)
 
-**Fable 5 orchestrates and reviews; Sonnet 5, GPT-5.6, or GLM 5.2 implements. Your head chef doesn't chop onions.**
+**Fable 5 orchestrates and reviews; GPT-5.6 or Sonnet 5 implements. Your head chef doesn't chop onions.**
 
 > expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr (MIT), the expediter who calls the orders and checks every plate at the pass. Same two-model kitchen; this line is actively developed here.
 
 A Claude Code plugin that splits coding between two frontier models the way a kitchen
 splits work. Fable plans, writes the ticket, reviews every diff line by line, and
-re-runs the checks itself. Sonnet, Codex, or GLM does the implementation, with no say
+re-runs the checks itself. Codex (or Sonnet) does the implementation, with no say
 over what ships. The split is economic:
 Fable is the most expensive model on the line, so its tokens go to judgment and
 worker tokens go to bulk. In the measured setup this pattern is built on,
 [Codex did ~20x the implementation work](https://madewithlove.com/blog/claude-up-front-codex-in-the-back/)
 per orchestration round trip, and two mid-tier subscriptions often beat one top-tier one.
-
-## What it looks like
-
-![One /expo:serve command in: Fable 5 plans, delegates to Codex or GLM, reviews the diff, validates findings, re-runs the checks itself, and plates a verified result. The worker never grades its own homework.](docs/expo-flow.png)
 
 Codex saying "tests pass" is a sentence; `pnpm test` output is a fact - Claude
 re-runs everything itself.
@@ -95,8 +91,8 @@ and refire itself by task shape, announcing in one line before every delegation;
 simmer stays explicit-ask; choose the mode in `/mise`, and switch by re-running it.
 The boundary that IS hard: delegated Codex runs execute in a
 `workspace-write` sandbox with approvals off, and Codex reviews run `read-only`. (The
-optional Claude-worker routes - GLM Route A and Sonnet Route C - have no OS sandbox
-underneath; their docs say to treat them accordingly: trusted repos or a
+optional Claude Sonnet worker route has no OS sandbox
+underneath; its docs say to treat it accordingly: trusted repos or a
 branch/worktree only.)
 
 **One source of truth for standards.** Repo conventions live in `AGENTS.md`, which
@@ -150,8 +146,8 @@ stay with Claude.
 
 **How do I see what I'm saving?** Codex-route runs report the worker's token
 count from the job log and append one JSON line to `~/.expo/ledger.jsonl`
-(the Claude-worker routes - GLM Route A, Sonnet Route C - emit no token summary,
-so they leave no ledger line). `/mise` prints the running tab (jobs to date,
+(the Sonnet route emits no token summary, so it leaves no ledger line).
+`/mise` prints the running tab (jobs to date,
 tokens kept off Claude), or sum it yourself:
 `jq -s '{jobs: length, tokens: (map(.tokens) | add)}' ~/.expo/ledger.jsonl`.
 Serves and simmers also drop a per-run receipt in `.expo/receipts/` -
@@ -185,12 +181,8 @@ pins only sandbox and approval policy. Recommended: `gpt-5.6-sol` with
 `model_reasoning_effort = "high"` (`max` for the hardest tickets); `gpt-5.6-terra`
 delivers 5.5-class output at half the price for standard work. Leave 5.6's ultra
 mode off for delegated background runs - it multiplies token spend by design, with
-nobody watching. GLM-5.2 ships as an opt-in second implementer
-("fire with GLM"): it slightly out-benchmarks GPT-5.5 on SWE-bench Pro at a fraction
-of the per-token price, though ~3.3x more token-hungry. Two routes as templates
-(GLM Coding Plan via a headless Claude worker, or OpenRouter through Codex); `/mise`
-sets up whichever key you have. A third route needs no key at all: fire the
-ticket to Claude Sonnet 5 headless on your own Anthropic subscription - the
+nobody watching. One alternate worker needs no extra key: `fire --with sonnet` sends
+the ticket to Claude Sonnet 5 headless on your own Anthropic subscription - the
 built-in fallback when Codex hits its usage limit mid-serve. On the Claude side
 it's model-agnostic; built for and dogfooded with Fable 5.
 
@@ -206,13 +198,13 @@ but this is dogfooded on macOS.
 ```text
 skills/serve/         the autonomous pipeline: fire, taste, refire, verify, report
 skills/simmer/        the loop: Codex works, Claude judges, until the goal passes
-skills/fire/          delegation skill + ticket template + GLM routes
+skills/fire/          delegation skill + ticket template + Sonnet worker route
 skills/taste/         cross-review skill + review prompt template
 skills/refire/        fix skill: confirmed findings become a scoped fix run
 skills/mise/          setup skill
 skills/receipts/      the check: per-run cost receipts + savings table
-codex/                Codex profiles → ~/.codex/ (expo default, expo-glm)
-templates/            AGENTS.md scaffold, CLAUDE.md routing blocks (manual + autonomous), GLM worker config
+codex/                Codex delegation profile → ~/.codex/expo.config.toml
+templates/            AGENTS.md scaffold, CLAUDE.md routing blocks (manual + autonomous)
 docs/design.md        the receipts: sources for every design decision
 ```
 
@@ -222,9 +214,8 @@ docs/design.md        the receipts: sources for every design decision
 `/plugin marketplace remove expo` the registration). Using the plugin may also
 have created (remove by hand if you're done with them):
 
-- `~/.codex/expo.config.toml` and `~/.codex/expo-glm.config.toml`
-- `~/.expo/glm-claude/` (isolated GLM worker config) and
-  `~/.expo/ledger.jsonl` (the running tab)
+- `~/.codex/expo.config.toml` (the delegation profile)
+- `~/.expo/ledger.jsonl` (the running tab)
 - a "Division of labor (expo, ...)" routing block (manual or autonomous variant)
   appended to `~/.claude/CLAUDE.md`
 - an `AGENTS.md` scaffold and/or `@AGENTS.md` import line in repos you set up (these

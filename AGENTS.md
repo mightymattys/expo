@@ -1,14 +1,14 @@
 # expo
 
-A Claude Code plugin: Claude (Fable 5) orchestrates and reviews; Sonnet 5, GPT-5.6
-(Codex CLI), or GLM-5.2 implements. This repo is the plugin itself - there is no
-build step and no code to compile; everything is markdown, JSON, and TOML.
+A Claude Code plugin: Claude (Fable 5) orchestrates and reviews; GPT-5.6 (Codex CLI)
+or Claude Sonnet 5 implements. This repo is the plugin itself - there is no build
+step and no code to compile; everything is markdown, JSON, and TOML.
 
 ## Map
 
 - `.claude-plugin/` - plugin + marketplace manifests
 - `skills/serve|fire|taste|refire|simmer|mise|receipts/` - the seven skills (each `SKILL.md` + optional `references/`)
-- `codex/` - Codex-side profiles shipped to `~/.codex/` (default + GLM-via-OpenRouter)
+- `codex/` - Codex-side delegation profile shipped to `~/.codex/`
 - `templates/` - files `/mise` scaffolds into user repos and `~/.expo/`
 - `docs/design.md` - research receipts behind every design decision
 

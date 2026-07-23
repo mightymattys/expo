@@ -1,6 +1,6 @@
 ---
 name: fire
-description: Delegates a well-specified implementation task to Codex CLI (or, via --with, Claude Sonnet 5 or opt-in GLM-5.2) in the background. Use when the user asks to hand work to Codex, or for substantial spec-able work - features, refactors, migrations, boilerplate; offer first unless the routing policy is autonomous. Not for small fixes or ambiguous design; never fire silently.
+description: Delegates a well-specified implementation task to Codex CLI (or, via --with sonnet, Claude Sonnet 5 on the user's own subscription) in the background. Use when the user asks to hand work to Codex, or for substantial spec-able work - features, refactors, migrations, boilerplate; offer first unless the routing policy is autonomous. Not for small fixes or ambiguous design; never fire silently.
 ---
 
 # Fire - hand the ticket to the expo
@@ -59,15 +59,13 @@ rest as the task description. Workers:
 | `--with` | Worker | Route |
 |---|---|---|
 | *(absent)* / `codex` | Codex CLI (model per `~/.codex/config.toml`, e.g. GPT-5.6) | the default invocation below |
-| `sonnet` | Claude Sonnet 5, user's own subscription | `references/glm-routes.md` Route C |
-| `glm` | GLM-5.2 | `references/glm-routes.md` Route A or B, whichever is installed |
+| `sonnet` | Claude Sonnet 5, user's own subscription | `references/worker-routes.md` |
 
-Loose phrases ("fire with sonnet", "use GLM for this") mean the same thing -
-`--with` is just the unambiguous spelling, immune to task text that happens
-to mention a model name. The ticket, job dir, and plating are identical for
-every worker; only the invocation changes. Preflight differs per worker:
-step 2's Codex-profile stop applies to the Codex route only - Route C's
-preflight is just `command -v claude`.
+Loose phrases ("fire with sonnet") mean the same thing - `--with` is just the
+unambiguous spelling, immune to task text that happens to mention a model name. The
+ticket, job dir, and plating are identical for every worker; only the invocation
+changes. Preflight differs per worker: step 2's Codex-profile stop applies to the
+Codex route only - the Sonnet route's preflight is just `command -v claude`.
 
 ## Firing
 
@@ -87,7 +85,7 @@ Notes on the invocation:
 
 **Then tell the user, in one or two lines:** what was delegated and to which model (read `model` from `~/.codex/config.toml` - don't assert a model you didn't check), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
-To route the ticket to GLM-5.2 (user opt-in) or to Claude Sonnet 5 on the user's own subscription (no extra key - the natural fallback when Codex hits its usage limit mid-serve), see [references/glm-routes.md](references/glm-routes.md) - same ticket, different worker invocation.
+To route the ticket to Claude Sonnet 5 on the user's own subscription (no extra key - the natural fallback when Codex hits its usage limit mid-serve), see [references/worker-routes.md](references/worker-routes.md) - same ticket, different worker invocation.
 
 ## While it cooks
 

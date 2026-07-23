@@ -80,26 +80,12 @@ Codex rebuilds its instruction chain from `AGENTS.md` on every run, including no
 - Bridge it for Claude: the repo's `CLAUDE.md` should contain the line `@AGENTS.md` so both models read the same standards. Add the line (or create a minimal CLAUDE.md containing it) with the user's OK. A symlink `CLAUDE.md -> AGENTS.md` also works if there's no Claude-specific content.
 - Note: fire needs a git repo with at least one commit - if this directory isn't one, say so now.
 
-## 5. Alternate workers (optional second implementer)
+## 5. Alternate worker (optional)
 
 **Claude Sonnet 5 route (no setup):** nothing to install - `claude -p --model
 claude-sonnet-5` on the user's own subscription is always available as a
-fallback worker (see fire's `references/glm-routes.md`, Route C). Mention it
+fallback worker (see fire's `references/worker-routes.md`). Mention it
 only if the user asks, or when Codex auth/quota is the reason mise was re-run.
-
-**GLM-5.2:** skip silently unless `ZAI_API_KEY` or `OPENROUTER_API_KEY` is set in the
-environment, or the user asked about GLM. When it applies:
-
-- **`ZAI_API_KEY` set** → route A, Claude-headless worker: if
-  `~/.expo/glm-claude/settings.json` does not exist,
-  `mkdir -p ~/.expo/glm-claude && cp "${CLAUDE_PLUGIN_ROOT}/templates/glm-claude-settings.json" ~/.expo/glm-claude/settings.json`;
-  if it exists, leave it and say so.
-- **`OPENROUTER_API_KEY` set** → route B, Codex profile: if
-  `~/.codex/expo-glm.config.toml` does not exist, copy it from
-  `${CLAUDE_PLUGIN_ROOT}/codex/` - the file is self-contained (it carries its own
-  `[model_providers.openrouter]` block); if it exists, leave it and say so.
-
-Details and invocations: `${CLAUDE_PLUGIN_ROOT}/skills/fire/references/glm-routes.md`.
 
 ## 6. Routing policy (pick a mode, once per machine)
 

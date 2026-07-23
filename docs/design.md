@@ -247,39 +247,19 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   the user explicitly ordered, under a hard run budget - what this project rejects is
   review firing on every stop, unbounded, not review inside an ordered pipeline.)
 
-## Why GLM-5.2 ships as two templates (and not through the coding plan in Codex)
+## Why the only alternate worker is Claude Sonnet 5
 
-- GLM-5.2 (released 2026-06-16, MIT weights): reported to beat GPT-5.5 on SWE-bench
-  Pro (62.1 vs 58.6), Terminal-Bench 2.1 (81.0 vs 78.2) and FrontierSWE (74.4 vs 72.6)
-  per a third-party comparison of the published scorecards; independent agentic tests
-  found it statistically indistinguishable from Opus 4.8 on terminal tasks at ~46% of
-  the cost with caching - but ~3.3x less token-efficient. API: $1.40/$4.40 per M vs
-  GPT-5.5's $5/$30.
-  ([docs.z.ai](https://docs.z.ai/guides/llm/glm-5.2),
-  [comparison](https://lushbinary.com/blog/glm-5-2-vs-claude-opus-4-8-vs-gpt-5-5-coding-comparison/))
-- **Hard blocker for Codex + coding plan**: Codex removed `wire_api = "chat"` in
-  Feb 2026 (Responses API only); Z.ai serves only Chat-Completions/Anthropic
-  protocols → error 1214, closed as not planned
-  ([openai/codex#9612](https://github.com/openai/codex/issues/9612)).
-- **Route A (Claude-headless worker)**: Claude Code is the first officially supported
-  tool on the GLM Coding Plan (`ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic`,
-  model `glm-5.2[1m]`; per Z.ai's latest-model devpack page, Claude effort levels map
-  to GLM's high/max thinking, xhigh → max).
-  ([tool/claude](https://docs.z.ai/devpack/tool/claude),
-  [latest-model](https://docs.z.ai/devpack/latest-model)) Headless `claude -p`
-  with an isolated `CLAUDE_CONFIG_DIR` gives stdin/JSON/exit codes for free.
-- **Route B (OpenRouter via Codex)**: OpenRouter natively speaks the Responses API and
-  lists `z-ai/glm-5.2` with the 1M window - the only reliable way to keep Codex as the
-  single worker runtime. ([guide](https://ai.sulat.com/run-glm-5-2-in-codex-cli-with-openrouter-79d6058d3457))
-  Provider blocks are ignored in project-level `.codex/config.toml` but work in any
-  user-level file, including profile files (verified by live test on Codex 0.139) -
-  which is why the shipped GLM profile is self-contained.
-- **ZCode (Z.ai's own harness) is not a route**: desktop Electron app, no documented
-  CLI; the hidden bundled CLI was broken as of v3.1.6
-  ([zai-org feedback #51](https://github.com/zai-org/feedback/issues/51)) and
-  third-party harnesses are blocked on the missing programmatic surface
-  ([paseo#1670](https://github.com/getpaseo/paseo/issues/1670)). Revisit when a real
-  CLI ships.
+- Two workers earn their place: Codex (default, sandboxed, subscription-billed) and a
+  Claude Sonnet 5 fallback on the user's own Anthropic plan for when Codex hits its
+  usage limit mid-serve - no extra key, no provider config. A GLM-5.2 route shipped in
+  the upstream project (sous-chef) but is dropped here: it needs a separate Z.ai or
+  OpenRouter key, and the two-subscription Codex+Claude setup already covers the
+  quota-exhaustion case the fallback exists for. If a keyless GLM path appears, revisit.
+- **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
+  `--dangerously-skip-permissions`: it inherits the user's subscription auth from the
+  default config dir with zero setup. The honest caveat is that it has no OS sandbox
+  underneath (unlike Codex's `workspace-write`), so it is for trusted repos or a
+  branch/worktree only.
 
 ## Why refire inherits the worker instead of re-choosing it
 

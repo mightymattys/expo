@@ -36,8 +36,8 @@ The quoted block is the shareable summary, and only a verified run gets one - a
 halted or budget-spent receipt keeps its numbers and skips the brag. Keep it
 under 280 characters and paste-ready. Its dollar figure is this run's
 measurement; its multiple is the published, receipted benchmark - never compute
-a per-run multiple (the same-token method yields ~1.7x for gpt-5.5 and ~16x for
-GLM-5.2, and the measured counterfactual wasn't run for either). The
+a per-run multiple (the same-token method yields ~1.7x for gpt-5.5, and the measured
+counterfactual wasn't run). The
 "Benchmarked 10-20x" sentence ships only when the worker is a benchmarked one
 (per prices.md - the issue-#2 benchmark was measured on gpt-5.5); for an
 unbenchmarked worker (the GPT-5.6 tiers, the Sonnet route) drop that sentence
