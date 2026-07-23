@@ -130,9 +130,13 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      usage is unavailable) - quota spend is otherwise invisible to the user. Then add the job
      to the running tab: append one line to `~/.expo/ledger.jsonl`
      (`mkdir -p ~/.expo` first) of the form
-     `{"ts":"<UTC ISO-8601>","repo":"<repo basename>","skill":"fire","model":"<model from the log banner>","tokens":<total from the closing summary>}`.
-     If the log carries no token summary, skip the ledger line - never invent a
-     number.
+     `{"ts":"<UTC ISO-8601>","repo":"<repo basename>","skill":"fire","model":"<model from the log banner>","tokens":<total from the closing summary>,"claude_tokens":<measured orchestration tokens>}`.
+     `claude_tokens` is the head chef's own spend for this round trip, **measured**
+     from the session transcript per
+     [../receipts/references/orchestration-tokens.md](../receipts/references/orchestration-tokens.md)
+     (not the old estimate) - omit the field if the transcript can't be read. If the
+     log carries no worker token summary, skip the ledger line entirely - never invent
+     either number.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.
 
 Cap follow-ups at two rounds. If it's still not right after two deltas, take over and finish it yourself - further debate has diminishing returns.

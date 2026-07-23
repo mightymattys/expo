@@ -274,6 +274,23 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   it is a token multiplier, and the [#54143](https://github.com/anthropics/claude-code/issues/54143)
   quota-incident shape is exactly a multiplier running with nobody watching.
 
+## Why orchestration cost is measured, not estimated
+
+- The worker's tokens were always measured (job.log); the head chef's own tokens were
+  an estimate ("~5-7k per run"). A `claude_tokens` estimate was proposed upstream and
+  rejected as guess-as-data ([sous-chef#5](https://github.com/tomascupr/sous-chef/issues/5)) -
+  correctly. The measured version anchors on the live session transcript, which Claude
+  Code names for `$CLAUDE_CODE_SESSION_ID` and writes one JSON line per message with a
+  `usage` block; summing uncached input + output since the run's `started:` timestamp
+  is the real orchestration spend, on the same basis worker tokens use.
+- Anchoring on the session id (not a cwd slug or newest-mtime file) locates the exact
+  transcript even when the skill runs outside the session's launch directory and when
+  another session is active. Unset id or no transcript → drop the line, never guess.
+- This makes the run's cost fully measured on both sides - a real API-list dollar split
+  (worker tokens x worker blend vs orchestration tokens x Fable blend) - rather than a
+  worker figure next to a cited counterfactual. The vs-Claude-only "10-20x" claim stays
+  a citation, because that counterfactual genuinely isn't run per-fire.
+
 ## Why refire inherits the worker instead of re-choosing it
 
 - `serve` promises `--with <worker>` "applies to the whole line: fire and refire run

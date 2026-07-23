@@ -9,7 +9,9 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
 - Every number is measured or carries its method. Worker tokens come from each
   job.log closing "tokens used" summary (uncached input + output, no split) -
   sum across the run's jobs, failed runs included; a log with no token summary
-  contributes nothing. Dollar figures come from the [prices.md](prices.md)
+  contributes nothing. Orchestration (Claude-side) tokens are measured from the
+  session transcript per [orchestration-tokens.md](orchestration-tokens.md) - not
+  the old 5-7k estimate. Dollar figures come from the [prices.md](prices.md)
   blends and get a `~`. A number you don't have is a line you drop - never a
   guess.
 
@@ -19,11 +21,13 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
 - when: <UTC ISO-8601> · wallclock <Xm> (now minus state.md's `started:`)
 - worker: <model from the log banners>, <N> runs, <total>k tokens
 - cost: ~$<X> API-list terms (blend per prices.md; subscription quota = $0 marginal)
+- orchestration: <M>k Claude tokens, ~$<O> API-list (measured from the session
+  transcript since started:; drop this line if the transcript couldn't be read)
+- this run's split: ~$<X> worker + ~$<O> orchestration = ~$<X+O> API-list, all
+  measured (no counterfactual)
 - same tokens at Claude Fable 5 list: ~$<Y> → saved ~$<Z> (conservative -
   measured Fable-only runs spent 0.78-4.3M tokens where the worker spent
   140-361k, per the benchmark in issue #2)
-- orchestration overhead: ~<N>×5-7k Claude tokens (~5-7k per delegated run -
-  benchmark estimate, not measured)
 - diff: <files> files, +<ins>/-<del> (vs the run's baseline)
 - verdict: verified | findings unresolved - <which> | halted - <why>
 
