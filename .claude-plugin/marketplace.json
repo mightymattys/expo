@@ -1,0 +1,14 @@
+{
+  "name": "expo",
+  "description": "Claude orchestrates and reviews; Sonnet, Codex, or GLM implements. Your head chef doesn't chop onions.",
+  "owner": {
+    "name": "Matěj Štipčák"
+  },
+  "plugins": [
+    {
+      "name": "expo",
+      "source": "./",
+      "description": "Claude orchestrates and reviews; Sonnet, Codex, or GLM implements. Your head chef doesn't chop onions."
+    }
+  ]
+}

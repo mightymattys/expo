@@ -1,0 +1,26 @@
+# expo delegation profile
+# Install as: ~/.codex/expo.config.toml   (Codex >= 0.134 file-per-profile format;
+# [profiles.*] tables inside config.toml are ignored by modern Codex)
+#
+# Used as: codex exec --profile expo ...
+#
+# Deliberately minimal: only execution safety lives here. Model and reasoning effort
+# fall through to your ~/.codex/config.toml defaults (recommended: model = "gpt-5.6-sol",
+# model_reasoning_effort = "high"; gpt-5.6-terra for 5.5-class output at half the
+# price). Per-repo pins belong in a trusted project's .codex/config.toml.
+
+# Never pause for approval - a delegated run has no human to answer prompts.
+approval_policy = "never"
+
+# Uncomment to keep delegated runs on the standard tier when your config.toml enables
+# fast mode (fast burns credits at 2.5x on GPT-5.5 for a 1.5x speedup, and it flows
+# into background exec runs). /expo:mise offers this choice during setup.
+# service_tier = "default"
+
+# Write access confined to the workspace. Reviews override this per-call with
+# `--sandbox read-only` (CLI flags beat profile settings).
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+# Flip to true if delegated tasks need to install dependencies.
+network_access = false

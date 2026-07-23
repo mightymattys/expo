@@ -1,0 +1,20 @@
+{
+  "name": "expo",
+  "description": "Claude plans, delegates, and tastes every plate. Sonnet, Codex, or GLM does the knife work. A Claude Code plugin for the orchestrator/implementer split: /serve runs the whole line autonomously (implement, cross-review, fix, verify), /fire hands specced implementation to the worker, /taste runs cross-model review, /refire fixes what the review found, /simmer loops the worker under Claude's judgment, /mise sets up the kitchen, /receipts prints the check.",
+  "version": "0.6.0",
+  "author": {
+    "name": "Matěj Štipčák"
+  },
+  "homepage": "https://github.com/mightymattys/expo",
+  "repository": "https://github.com/mightymattys/expo",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "delegation",
+    "orchestration",
+    "cross-model-review",
+    "gpt-5.6",
+    "claude-code",
+    "multi-agent"
+  ]
+}
