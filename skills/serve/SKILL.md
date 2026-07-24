@@ -78,7 +78,7 @@ check; outside-list paths are named, warned, and excluded from the stage delta.
 
 ## Autonomy contract
 
-- Announce ONCE before stage 1: the task, the model, and that this is a full serve
+- Announce ONCE before stage 1: the task, the model and tier, and that this is a full serve
   (typically 2-3 Codex runs, expect 15-45 minutes at high reasoning effort). Then run
   the pipeline without asking anything between stages; a one-line tick as each stage
   completes ("fire plated, checks green - tasting now") keeps a long serve legible.

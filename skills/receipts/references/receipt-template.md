@@ -19,10 +19,18 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
 # serve: <task one-liner>
 
 - when: <UTC ISO-8601> · wallclock <Xm> (now minus state.md's `started:`)
-- worker: <model from the log banners>, <N> runs, <total>k tokens
-- cost: ~$<X> API-list terms (blend per prices.md; subscription quota = $0 marginal)
+- worker: <model(s) from the log banners>, <N> runs, <total>k tokens
+  (a run that mixed tiers/models - e.g. a terra fire and a sol taste - prices each
+  job at its own banner model's blend before summing, and lists per-model subtotals:
+  `terra <a>k ~$<b> · sol <c>k ~$<d>` - one blend applied to combined tokens would
+  misprice both)
+- cost: ~$<X> API-list terms (per-model blends per prices.md; subscription quota =
+  $0 marginal; a banner model missing from prices.md prices as unknown - warn
+  loudly and drop its dollar figure rather than guessing a blend)
 - orchestration: <M>k Claude tokens, ~$<O> API-list (measured from the session
-  transcript since started:; drop this line if the transcript couldn't be read)
+  transcript since the RUN's `started:` per orchestration-tokens.md - the run-level
+  window, not a sum of the per-job ledger windows; drop this line if the snippet
+  printed nothing)
 - this run's split: ~$<X> worker + ~$<O> orchestration = ~$<X+O> API-list, all
   measured (no counterfactual)
 - same tokens at Claude Fable 5 list: ~$<Y> → saved ~$<Z> (conservative -

@@ -281,11 +281,18 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   rejected as guess-as-data ([sous-chef#5](https://github.com/tomascupr/sous-chef/issues/5)) -
   correctly. The measured version anchors on the live session transcript, which Claude
   Code names for `$CLAUDE_CODE_SESSION_ID` and writes one JSON line per message with a
-  `usage` block; summing uncached input + output since the run's `started:` timestamp
-  is the real orchestration spend, on the same basis worker tokens use.
+  `usage` block; summing uncached input + output over a bounded window is the real
+  orchestration spend, on the same basis worker tokens use.
+- Two windows, deliberately: ledger lines measure per job (`$JOB/started` → now, so
+  successive stages have non-overlapping windows and the running tab can sum them
+  without double-counting), while the run receipt measures once from the run's
+  `started:` - a whole-run figure that is NOT the sum of the job windows. Cross-model
+  review of the first draft caught exactly this: one shared anchor made every later
+  ledger line contain its predecessors, inflating the tab 2-3x per serve.
 - Anchoring on the session id (not a cwd slug or newest-mtime file) locates the exact
   transcript even when the skill runs outside the session's launch directory and when
-  another session is active. Unset id or no transcript → drop the line, never guess.
+  another session is active. Unset id, no transcript, or an empty window → drop the
+  line, never guess.
 - This makes the run's cost fully measured on both sides - a real API-list dollar split
   (worker tokens x worker blend vs orchestration tokens x Fable blend) - rather than a
   worker figure next to a cited counterfactual. The vs-Claude-only "10-20x" claim stays

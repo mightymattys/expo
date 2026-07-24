@@ -48,7 +48,8 @@ Same as fire, and for the same reasons:
    Codex silently ignores a missing profile); the Sonnet route (`sonnet`) needs only
    `command -v claude` (`references/worker-routes.md`). The Codex-profile stop applies
    to the Codex route only.
-3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-XXXXXX")`
+3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-XXXXXX")`, then stamp
+   its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`
    (`$SCRATCHPAD` is your session scratchpad directory; substitute its absolute path).
 4. Snapshot the tree: save `git diff` and `git status --short` into `$JOB` as the
    baseline. The tree is usually dirty here (it holds the diff that was just tasted);

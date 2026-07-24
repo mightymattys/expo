@@ -46,6 +46,24 @@ must_contain skills/simmer/SKILL.md 'started:'  "the receipt template reads loop
 must_contain skills/serve/SKILL.md  'findings:' "refire (via serve) reads state.md's findings: line"
 must_contain skills/serve/SKILL.md  'baseline:' "taste's post-fire scope reads state.md's baseline: line"
 must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findings.md's tree: anchor"
+must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
+must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
+must_contain skills/simmer/SKILL.md 'tier:'     "every lap's invocation reads loop.md's tier: line"
+
+# The tier names are one vocabulary, spelled identically wherever tiers are chosen.
+for t in sol terra luna; do
+  for f in skills/fire/SKILL.md skills/refire/SKILL.md; do
+    grep -q "$t" "$f" || err "$f must name tier '$t' - fire's tier table and refire's override share one vocabulary"
+  done
+done
+
+# Ledger claude_tokens windows are per-job: every job-dir mint stamps $JOB/started.
+for f in skills/fire/SKILL.md skills/taste/SKILL.md skills/refire/SKILL.md skills/simmer/SKILL.md; do
+  grep -qF '$JOB/started' "$f" || err "$f mints a job dir but never stamps \$JOB/started - its claude_tokens window has no anchor"
+done
+
+# taste's reviewer pin is real, not a hope about the user's config.
+must_contain skills/taste/SKILL.md '-c model=gpt-5.6-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
 
 # The taste/refire tree anchor is one recipe, spelled identically on both sides.
 ANCHOR='$(git rev-parse --short HEAD)+$(idx=$(mktemp -u); GIT_INDEX_FILE=$idx git add -A && GIT_INDEX_FILE=$idx git write-tree | cut -c1-12)'
@@ -72,19 +90,40 @@ for p in $(grep -rho 'CLAUDE_PLUGIN_ROOT}/[A-Za-z0-9._/-]*' skills/ templates/ |
   [ -e "$p" ] || err "\${CLAUDE_PLUGIN_ROOT}/$p is referenced but does not exist"
 done
 
-# Every relative markdown link inside skills/ resolves.
-for f in $(find skills -name '*.md'); do
+# Every relative markdown link resolves - skills/, README, and docs alike.
+for f in $(find skills docs -name '*.md') README.md AGENTS.md; do
   for l in $(grep -o ']([^)]*)' "$f" | sed 's/^](//; s/)$//'); do
-    case $l in http*|'#'*) continue ;; esac
+    case $l in http*|'#'*|../../issues/*) continue ;; esac
     [ -e "$(dirname "$f")/${l%%#*}" ] || err "$f links $l which does not exist"
   done
 done
 section_ok "cross-file invariants"
 
+# 3b. Pricing freshness ---------------------------------------------------------
+# prices.md is manual data; these checks make its staleness loud instead of silent.
+PRICES=skills/receipts/references/prices.md
+asof=$(sed -n 's/.*checked \([0-9-]*\).*/\1/p' "$PRICES" | head -1)
+if [ -n "$asof" ]; then
+  age=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$asof')).days)" 2>/dev/null)
+  if [ -n "$age" ] && [ "$age" -gt 45 ]; then
+    err "prices.md as-of date ($asof) is $age days old - re-verify list prices and bump the date"
+  elif [ -n "$age" ] && [ "$age" -gt 30 ]; then
+    warn "prices.md as-of date ($asof) is $age days old - consider re-verifying"
+  fi
+else
+  err "prices.md carries no parseable 'checked YYYY-MM-DD' as-of date"
+fi
+# Date-bound notes ("through YYYY-MM-DD") must not silently outlive their window.
+for d in $(grep -oE 'through [0-9]{4}-[0-9]{2}-[0-9]{2}' "$PRICES" | grep -oE '[0-9-]+$'); do
+  expired=$(python3 -c "from datetime import date; print(1 if date.today() > date.fromisoformat('$d') else 0)" 2>/dev/null)
+  [ "$expired" = 1 ] && err "prices.md has a 'through $d' note that has expired - the row it qualifies is now wrong"
+done
+section_ok "pricing freshness"
+
 # 4. Link sweep ---------------------------------------------------------------
 # Every receipt cites a URL; dead links rot the receipts. Hard 404/410 fails.
 if [ "${SKIP_LINKS:-}" != 1 ]; then
-  for u in $(grep -rhoE 'https?://[^) >"`]+' README.md docs/design.md | sed 's/[.,;]$//' | sort -u); do
+  for u in $(grep -rhoE 'https?://[^) >"`]+' README.md docs/design.md skills/receipts/references/prices.md | sed 's/[.,;]$//' | sort -u); do
     code=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 10 \
       -A 'Mozilla/5.0 (expo link check)' "$u" 2>/dev/null)
     case $code in

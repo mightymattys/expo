@@ -29,14 +29,19 @@ git diff --shortstat && git diff --shortstat --cached
 
 ## 2. Run the review - read-only, in the background
 
-Mint a job dir (`JOB=$(mktemp -d "$SCRATCHPAD/taste-XXXXXX")`, where `$SCRATCHPAD` is your session scratchpad directory - substitute its absolute path). Build the review prompt from [references/review-prompt.md](references/review-prompt.md), filling in the diff scope and any focus the user gave, then:
+Mint a job dir (`JOB=$(mktemp -d "$SCRATCHPAD/taste-XXXXXX")`, where `$SCRATCHPAD` is your session scratchpad directory - substitute its absolute path) and stamp its start (`date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` - the ledger's `claude_tokens` window). Build the review prompt from [references/review-prompt.md](references/review-prompt.md), filling in the diff scope and any focus the user gave, then:
 
 ```
 Bash (run_in_background: true), cwd = repo root:
 env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN codex exec --profile expo --sandbox read-only \
+  -c model=gpt-5.6-sol -c model_reasoning_effort=high \
   --output-last-message "$JOB/result.md" \
   - < "$JOB/review-prompt.md" > "$JOB/job.log" 2>&1
 ```
+
+The `-c model` pin is what makes "taste stays on sol" true - reviewer strength beats
+reviewer cost, regardless of which tier the fire ran on or what the user's config
+defaults to. Never assert a reviewer model you didn't pin.
 
 Same backgrounding rule as fire: do not put `&`, `nohup`, or `disown` inside the command, or the harness can report false completion while Codex is still running.
 

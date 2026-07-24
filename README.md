@@ -141,15 +141,18 @@ ChatGPT plan for Codex - `codex login`, no API key needed. Subscription auth is 
 first-class path for headless runs: `codex exec` reuses the saved login, tokens
 auto-refresh even mid-run, and fire unsets the two env vars (`CODEX_API_KEY`,
 `CODEX_ACCESS_TOKEN`) that could silently switch a run to per-token billing.
-Delegation overhead is ~5-7k Claude tokens per round trip, which is why small tasks
-stay with Claude.
+Delegation overhead on the Claude side is measured per run, not estimated - see the
+receipts below - and is small enough that only one-file surgical fixes stay cheaper
+done directly.
 
 **How do I see what I'm saving?** Codex-route runs report the worker's token
-count from the job log and append one JSON line to `~/.expo/ledger.jsonl`
-(the Sonnet route emits no token summary, so it leaves no ledger line).
-`/mise` prints the running tab (jobs to date,
-tokens kept off Claude), or sum it yourself:
-`jq -s '{jobs: length, tokens: (map(.tokens) | add)}' ~/.expo/ledger.jsonl`.
+count from the job log and append one JSON line to `~/.expo/ledger.jsonl`,
+alongside a measured `claude_tokens` figure for the head chef's own spend on that
+round trip, read from the session transcript (the Sonnet route emits no worker
+token summary, so it leaves no ledger line).
+`/mise` prints the running tab (jobs to date, worker vs orchestration tokens, and
+the observed work-split ratio), or sum it yourself:
+`jq -s '{jobs: length, worker_tokens: ((map(.tokens) | add) // 0), orchestration_tokens: ((map(.claude_tokens // 0) | add) // 0)}' ~/.expo/ledger.jsonl`.
 Serves and simmers also drop a per-run receipt in `.expo/receipts/` -
 measured tokens, an API-list cost estimate, the diff, the verdict, and a
 paste-ready summary. `/expo:receipts` prints the last ten with a savings
@@ -176,15 +179,18 @@ Claude kills the job and shows you any partial changes to keep or revert.
 design-ambiguous stay with Claude - the routing rules themselves say so. Delegation
 is announced, never silent - in both routing modes.
 
-**Which models?** Whatever your `~/.codex/config.toml` says - the shipped profile
-pins only sandbox and approval policy. Recommended: `gpt-5.6-sol` with
-`model_reasoning_effort = "high"` (`max` for the hardest tickets); `gpt-5.6-terra`
-delivers 5.5-class output at half the price for standard work. Leave 5.6's ultra
-mode off for delegated background runs - it multiplies token spend by design, with
-nobody watching. One alternate worker needs no extra key: `fire --with sonnet` sends
-the ticket to Claude Sonnet 5 headless on your own Anthropic subscription - the
-built-in fallback when Codex hits its usage limit mid-serve. On the Claude side
-it's model-agnostic; built for and dogfooded with Fable 5.
+**Which models?** Fire picks a GPT-5.6 tier per task, by shape: `sol` for
+architectural/multi-file/security work, `terra` for standard features, bugfixes,
+and tests (the default when unsure), `luna` for mechanical bulk - override with
+`--tier sol|terra|luna`. The tier rides the invocation as `-c` flags, so it varies
+per fire; your `~/.codex/config.toml` model applies only when those flags are
+deliberately omitted. Reviews (`taste`) always pin `sol` - reviewer strength beats
+reviewer cost. Leave 5.6's ultra mode off for delegated background runs - it
+multiplies token spend by design, with nobody watching. One alternate worker needs
+no extra key: `fire --with sonnet` sends the ticket to Claude Sonnet 5 headless on
+your own Anthropic subscription - the built-in fallback when Codex hits its usage
+limit mid-serve. On the Claude side it's model-agnostic; built for and dogfooded
+with Fable 5.
 
 **Why not MCP?** Plain `codex exec` over Bash gives you the sandbox flag, the exit
 code, stdin for prompts, and background execution with no extra moving parts. That is

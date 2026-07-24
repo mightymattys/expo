@@ -1,6 +1,6 @@
 ---
 name: fire
-description: Delegates a well-specified implementation task to Codex CLI (or, via --with sonnet, Claude Sonnet 5 on the user's own subscription) in the background. Use when the user asks to hand work to Codex, or for substantial spec-able work - features, refactors, migrations, boilerplate; offer first unless the routing policy is autonomous. Not for small fixes or ambiguous design; never fire silently.
+description: Delegates a well-specified implementation task to Codex CLI in the background, picking a GPT-5.6 tier by task shape (--tier overrides; --with sonnet routes to Claude Sonnet 5 instead). Use when the user asks to hand work to Codex, or for substantial spec-able work - features, refactors, migrations, boilerplate; offer first unless the routing policy is autonomous. Not for small fixes or ambiguous design; never fire silently.
 ---
 
 # Fire - hand the ticket to the expo
@@ -32,7 +32,7 @@ the one-line announcement then replaces the proposal: announce and fire.
 
 1. **Git repo with at least one commit** - `git rev-parse HEAD` succeeds. Codex refuses non-repos by default, and diff review needs a baseline. If not: tell the user to `git init` / make an initial commit first.
 2. **Profile exists** - `test -f ~/.codex/expo.config.toml`. This check is load-bearing: Codex **silently ignores a missing profile** (exit 0, runs under the user's own defaults - possibly no sandbox at all). If missing: stop and offer `/expo:mise`.
-3. **Job directory** - mint one per fire: `JOB=$(mktemp -d "$SCRATCHPAD/fire-XXXXXX")` (`$SCRATCHPAD` = your session scratchpad directory; substitute its absolute path). Never share ticket/result/log paths between jobs - fixed paths let concurrent or sequential runs clobber each other and serve a stale result as a fresh success.
+3. **Job directory** - mint one per fire: `JOB=$(mktemp -d "$SCRATCHPAD/fire-XXXXXX")` (`$SCRATCHPAD` = your session scratchpad directory; substitute its absolute path), then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` - the ledger's `claude_tokens` window opens here. Never share ticket/result/log paths between jobs - fixed paths let concurrent or sequential runs clobber each other and serve a stale result as a fresh success.
 4. **Snapshot the tree** - if `git status --porcelain` is non-empty, warn the user their uncommitted changes will share the tree with Codex's edits (suggest committing/stashing first), and either way save the baseline: `git diff > "$JOB/pre-fire.patch"; git status --short > "$JOB/pre-fire.status"`. At plating you review Codex's delta against this baseline, not the raw diff.
 
 ## Writing the ticket
@@ -58,7 +58,7 @@ rest as the task description. Workers:
 
 | `--with` | Worker | Route |
 |---|---|---|
-| *(absent)* / `codex` | Codex CLI (model per `~/.codex/config.toml`, e.g. GPT-5.6) | the default invocation below |
+| *(absent)* / `codex` | Codex CLI, GPT-5.6 tier picked per task (next section) | the default invocation below |
 | `sonnet` | Claude Sonnet 5, user's own subscription | `references/worker-routes.md` |
 
 Loose phrases ("fire with sonnet") mean the same thing - `--with` is just the
@@ -118,7 +118,7 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
 
 ## Plating - when the job exits
 
-1. **Check the outcome before trusting the plate.** If the job exited non-zero, or `$JOB/result.md` is missing or empty, the run failed - read the tail of `$JOB/job.log`, show the user the error verbatim, and offer one rerun or taking over yourself. Two errors worth naming for the user: "You've hit your usage limit" means wait for the plan's 5-hour window to reset (or escalate plans) - or offer to continue now with `--with sonnet` (Route C); a persistent `401` means their `codex login` needs redoing. Never present a missing result as a clean outcome. (MCP transport errors near the top of the log are usually harmless noise from the user's Codex-side MCP servers - the real signal is the last lines.)
+1. **Check the outcome before trusting the plate.** If the job exited non-zero, or `$JOB/result.md` is missing or empty, the run failed - read the tail of `$JOB/job.log`, show the user the error verbatim, and offer one rerun or taking over yourself. Two errors worth naming for the user: "You've hit your usage limit" means wait for the plan's 5-hour window to reset (or escalate plans) - or offer to continue now with `--with sonnet`; a persistent `401` means their `codex login` needs redoing. Never present a missing result as a clean outcome. (MCP transport errors near the top of the log are usually harmless noise from the user's Codex-side MCP servers - the real signal is the last lines.)
 2. Glance at the log's opening banner: its `sandbox:` line is ground truth for what actually ran. If it isn't `workspace-write`, say so.
 3. Read `$JOB/result.md`, then compare the post-baseline changed file set (`git status`/`git diff` minus `$JOB/pre-fire.*`) to the ticket's `<files>` Touch list. Outside-list paths are unresolved until classified: paths confirmed as another session's concurrent edits must be named with the warning `concurrent edit detected - these changes are NOT part of this run's review` and excluded from the worker-attributed delta, while paths that are the worker's own out-of-scope changes must be reverted or explicitly flagged to the user before the run can be accepted. This is a path-level check: it cannot catch a concurrent session editing a file that *is* on the Touch list - those edits merge into the same file's diff and only the line-by-line read in step 4 will separate them, so treat a Touch-listed file that changed more than the ticket asked as suspect too. Then review Codex's actual delta against `$JOB/pre-fire.patch` - don't attribute the user's own WIP to Codex.
 4. Review the diff carefully, line by line. Codex is a competent implementer that makes wrong assumptions without checking - that is exactly the failure mode you're here to catch.
@@ -132,10 +132,11 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      (`mkdir -p ~/.expo` first) of the form
      `{"ts":"<UTC ISO-8601>","repo":"<repo basename>","skill":"fire","model":"<model from the log banner>","tokens":<total from the closing summary>,"claude_tokens":<measured orchestration tokens>}`.
      `claude_tokens` is the head chef's own spend for this round trip, **measured**
-     from the session transcript per
+     from the session transcript over THIS job's window (`$JOB/started` → now) per
      [../receipts/references/orchestration-tokens.md](../receipts/references/orchestration-tokens.md)
-     (not the old estimate) - omit the field if the transcript can't be read. If the
-     log carries no worker token summary, skip the ledger line entirely - never invent
+     - per-job windows are what let the running tab sum ledger lines without
+     double-counting. Omit the field if the snippet prints nothing. If the log
+     carries no worker token summary, skip the ledger line entirely - never invent
      either number.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.
 

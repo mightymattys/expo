@@ -56,13 +56,14 @@ cp "${CLAUDE_PLUGIN_ROOT}/codex/expo.config.toml" ~/.codex/expo.config.toml
 If it exists, diff it against the plugin's copy: identical → say so and move on;
 different → show the diff and ask whether to keep theirs or refresh (this is also the
 update path when the plugin ships profile changes). The profile intentionally sets
-only execution-safety settings (approval policy, sandbox mode, network access) -
-model and reasoning effort fall through to the user's `~/.codex/config.toml`, which
-is where they should live. If the user has no model configured there, suggest
-`model = "gpt-5.6-sol"` and `model_reasoning_effort = "high"` for implementation-grade
-delegation (`gpt-5.6-terra` for 5.5-class output at half the API-list price). If
-their config enables 5.6's ultra mode, warn that it multiplies token spend by design
-and should stay off for delegated background runs.
+only execution-safety settings (approval policy, sandbox mode, network access).
+Model and effort are normally pinned per fire by the tier flags (fire's tier table);
+the user's `~/.codex/config.toml` governs only runs where those flags are
+deliberately omitted, plus their interactive Codex sessions. If they have no model
+configured there, suggest `model = "gpt-5.6-sol"` and
+`model_reasoning_effort = "high"` as a sane default. If their config enables 5.6's
+ultra mode, warn that it multiplies token spend by design and should stay off for
+delegated background runs.
 
 Also check `~/.codex/config.toml` for `service_tier = "fast"`. Fast mode flows into
 delegated background runs and burns credits at 2.5x (GPT-5.5) for a 1.5x speedup -
@@ -144,4 +145,4 @@ config enables tools like `web_search`); `--skip-git-repo-check` keeps the test
 working outside a git repo. On failure, show the log tail and the likely cause
 (auth, profile syntax, version).
 
-Finish with a one-screen summary: what passed, what was installed, which model and effort delegated runs will use (the banner's `model:` line is ground truth for the model; effort falls through to `~/.codex/config.toml` - the smoke test pins its own to low), and what the user still needs to do. If `~/.expo/ledger.jsonl` exists, close with the running tab - `jq -s '{jobs: length, worker_tokens: (map(.tokens) | add), orchestration_tokens: (map(.claude_tokens // 0) | add)} as $t | $t + (if $t.orchestration_tokens > 0 then {work_split: (($t.worker_tokens / $t.orchestration_tokens) | .*10 | round / 10 | tostring + "x worker:orchestrator")} else {} end)' ~/.expo/ledger.jsonl` - delegated jobs to date, worker vs measured orchestration tokens, and the observed work-split ratio (raw token volume, not a cost multiple).
+Finish with a one-screen summary: what passed, what was installed, which model and effort delegated runs will use (the banner's `model:` line is ground truth for the model; effort falls through to `~/.codex/config.toml` - the smoke test pins its own to low), and what the user still needs to do. If `~/.expo/ledger.jsonl` exists, close with the running tab - `jq -s '{jobs: length, worker_tokens: ((map(.tokens) | add) // 0), orchestration_tokens: ((map(.claude_tokens // 0) | add) // 0)} as $t | $t + (if $t.orchestration_tokens > 0 then {work_split: (($t.worker_tokens / $t.orchestration_tokens) | .*10 | round / 10 | tostring + "x worker:orchestrator")} else {} end)' ~/.expo/ledger.jsonl` - delegated jobs to date, worker vs measured orchestration tokens, and the observed work-split ratio (raw token volume, not a cost multiple).

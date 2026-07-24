@@ -33,12 +33,17 @@ before lap 1 (simmer creates a branch and makes commits - say so):
   an incident. If the repo or user config has commit hooks/gates (pre-commit reviews,
   staged-tree checks), resolve how per-lap checkpoints interact with them BEFORE
   lap 1 - ask the user rather than fighting the gate lap after lap.
+- **Tier** - pick the GPT-5.6 tier once for the whole loop, by the goal's shape
+  (fire's tier table; `--tier sol|terra|luna` overrides), and name it in the
+  contract confirmation. Every lap fires on the same tier - a loop that silently
+  changed models mid-run would make its lap history incomparable.
 
 ## 2. Loop state - in the repo, out of git
 
 Add `.expo/` to `$(git rev-parse --git-path info/exclude)` if it isn't there
 yet, then write the contract (goal, check commands, budget, branch with its base
-commit, and the UTC start time as a `started:` line - the receipt reads it back for
+commit, the tier as a `tier:` line - every lap's invocation reads it - and the UTC
+start time as a `started:` line - the receipt reads it back for
 wallclock, same field name as serve's state.md) to
 `.expo/loop.md` and create `.expo/progress.md`. The state survives session
 restarts because it lives in the repo; the ignore keeps it out of diffs, checkpoint
@@ -68,8 +73,11 @@ For each iteration, until the goal passes or the budget is spent:
 
 1. **Fire the worker** - a fresh backgrounded `codex exec` (same invocation pattern as
    `/expo:fire`, including its backgrounding rule - no `&`, `nohup`, or `disown`
-   inside the command - `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN`, `--profile expo`, and a
-   fresh per-lap job dir - never reuse result/log paths between laps). The prompt is
+   inside the command - `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN`, `--profile expo`, the
+   loop's tier flags (`-c model=gpt-5.6-<tier> -c model_reasoning_effort=<effort>`
+   per loop.md's `tier:` line), and a fresh per-lap job dir stamped with its start
+   (`date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`) - never reuse result/log paths
+   between laps). The prompt is
    the full contents of `.expo/loop.md` (contract plus lap history) plus: lap
    number, the verbatim failing output from last lap, and the instruction to do ONE
    coherent unit of work, update `.expo/progress.md` (never `loop.md` - that
