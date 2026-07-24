@@ -11,12 +11,13 @@ the as-of date is part of the receipt's honesty.
 | gpt-5.6-sol | 5.00 | 30.00 | 17.50 | https://developers.openai.com/api/docs/pricing |
 | gpt-5.6-terra | 2.50 | 15.00 | 8.75 | https://developers.openai.com/api/docs/pricing |
 | gpt-5.6-luna | 1.00 | 6.00 | 3.50 | https://developers.openai.com/api/docs/pricing |
-| gpt-5.5 | 5.00 | 30.00 | 17.50 | https://developers.openai.com/api/docs/pricing |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 | claude-sonnet-5 | 3.00 | 15.00 | 9.00 | https://platform.claude.com/docs/en/about-claude/pricing - intro 2.00/10.00 through 2026-08-31 |
 
+Only models the kitchen actually runs belong in this table (GPT-5.6 tiers as
+workers, Sonnet 5 as the alternate worker, Fable 5 for pricing orchestration
+tokens) - a retired generation is a stale row waiting to misprice something.
 Subscription workers (ChatGPT plan, Claude plan) have $0 marginal cost - receipts
-therefore always say "API-list terms", never "you paid". The receipt's quoted "Benchmarked 10-20x" line only fires for
-benchmarked workers; workers without a published benchmark comparison (e.g.
-the Sonnet 5 route, the GPT-5.6 tiers) omit it - the issue-#2 benchmark was
-measured on gpt-5.5.
+therefore always say "API-list terms", never "you paid". Receipts carry only
+measured numbers from the run itself; cross-model savings multiples are not
+computed per run and not quoted from benchmarks.

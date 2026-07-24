@@ -33,27 +33,22 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   printed nothing)
 - this run's split: ~$<X> worker + ~$<O> orchestration = ~$<X+O> API-list, all
   measured (no counterfactual)
-- same tokens at Claude Fable 5 list: ~$<Y> → saved ~$<Z> (conservative -
-  measured Fable-only runs spent 0.78-4.3M tokens where the worker spent
-  140-361k, per the benchmark in issue #2)
+- same tokens at Claude Fable 5 list: ~$<Y> (what the run's combined token volume
+  would cost at the orchestrator's blend - a price comparison at equal volume, not
+  a claim about what a Claude-only run would have spent)
 - diff: <files> files, +<ins>/-<del> (vs the run's baseline)
 - verdict: verified | findings unresolved - <which> | halted - <why>
 
-> expo shipped <task> for ~$<X> of <model> (API-list terms). Benchmarked
-> 10-20x cheaper than Claude-only - receipts:
-> github.com/tomascupr/sous-chef/issues/2
+> expo shipped <task> for ~$<X+O> all-in (API-list terms, measured both sides:
+> worker + orchestration). github.com/mightymattys/expo
 ```
 
 The quoted block is the shareable summary, and only a verified run gets one - a
 halted or budget-spent receipt keeps its numbers and skips the brag. Keep it
-under 280 characters and paste-ready. Its dollar figure is this run's
-measurement; its multiple is the published, receipted benchmark - never compute
-a per-run multiple (the same-token method yields ~1.7x for gpt-5.5, and the measured
-counterfactual wasn't run). The
-"Benchmarked 10-20x" sentence ships only when the worker is a benchmarked one
-(per prices.md - the issue-#2 benchmark was measured on gpt-5.5); for an
-unbenchmarked worker (the GPT-5.6 tiers, the Sonnet route) drop that sentence
-and keep the first. The task line
+under 280 characters and paste-ready. Every figure in it is this run's own
+measurement - never compute or quote a cross-model savings multiple (the measured
+counterfactual isn't run, and a same-token comparison is a price ratio, not a
+savings claim). The task line
 ships verbatim inside it - client names and private context go with it - so
 surface the post for the user to paste; never post anything yourself.
 

@@ -38,8 +38,8 @@ codex login status
 - Logged in with ChatGPT (the normal, recommended setup - no API key needed): all
   good; delegated runs bill the subscription and tokens auto-refresh, even mid-run.
 - Logged in with an API key instead: warn that usage bills at per-token API rates and
-  some models available on ChatGPT plans (GPT-5.5 included) may not be available at
-  all under API-key auth.
+  some models available on ChatGPT plans may not be available at all under API-key
+  auth.
 - Check `[ -n "$CODEX_API_KEY" ] || [ -n "$CODEX_ACCESS_TOKEN" ]`: these two env vars
   override the login in `codex exec`, which is why expo invocations unset them -
   mention it if either is set. (`OPENAI_API_KEY` is harmless; current Codex doesn't
@@ -66,7 +66,8 @@ ultra mode, warn that it multiplies token spend by design and should stay off fo
 delegated background runs.
 
 Also check `~/.codex/config.toml` for `service_tier = "fast"`. Fast mode flows into
-delegated background runs and burns credits at 2.5x (GPT-5.5) for a 1.5x speedup -
+delegated background runs and burns credits at a documented multiple (2.5x at the
+time it was measured) for a ~1.5x speedup -
 paying double on a shared quota for latency a background run mostly doesn't need.
 If set, say so and offer to add `service_tier = "default"` to the expo profile
 (there's a commented line ready in the file); their interactive sessions stay fast
