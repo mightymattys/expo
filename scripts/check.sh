@@ -142,6 +142,81 @@ for d in $(grep -oE 'through [0-9]{4}-[0-9]{2}-[0-9]{2}' "$PRICES" | grep -oE '[
 done
 section_ok "pricing freshness"
 
+# 3c. Measurement scripts -----------------------------------------------------
+if [ -x scripts/orch-tokens.py ]; then
+  ok "scripts/orch-tokens.py is executable"
+else
+  err "scripts/orch-tokens.py must exist and be executable"
+fi
+if python3 -c 'import ast; ast.parse(open("scripts/orch-tokens.py").read())'; then
+  ok "scripts/orch-tokens.py parses"
+else
+  err "scripts/orch-tokens.py does not parse"
+fi
+if [ -x scripts/tab.sh ]; then
+  ok "scripts/tab.sh is executable"
+else
+  err "scripts/tab.sh must exist and be executable"
+fi
+if bash -n scripts/tab.sh; then
+  ok "scripts/tab.sh parses"
+else
+  err "scripts/tab.sh does not parse"
+fi
+
+FIXHOME=$(mktemp -d)
+mkdir -p "$FIXHOME/projects/-fixture"
+printf '%s\n' \
+  '{"type":"user","timestamp":"2026-01-01T00:00:00Z"}' \
+  '{"type":"assistant","timestamp":"2026-01-01T00:00:00Z","message":{"usage":{"input_tokens":5,"output_tokens":5}}}' \
+  '{"type":"assistant","timestamp":"2026-01-02T00:00:00Z","message":{"usage":{"input_tokens":2,"output_tokens":2}}}' \
+  '{"type":"assistant","timestamp":"2026-01-02T00:00:00.500Z","message":{"usage":{"input_tokens":100,"output_tokens":40}}}' \
+  '{"type":"assistant","timestamp":"2026-01-03T00:00:00Z","message":{"usage":{"input_tokens":10,"output_tokens":1}}}' \
+  > "$FIXHOME/projects/-fixture/aaaa-bbbb.jsonl"
+
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py aaaa-bbbb 2026-01-02T00:00:00Z)
+rc=$?
+[ "$rc" -eq 0 ] && [ "$out" = 155 ] && ok "orch-tokens.py sums fixture window inclusively" || err "orch-tokens.py fixture window expected rc 0 and 155, got rc $rc and '$out'"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py aaaa-bbbb 2027-01-01T00:00:00Z)
+rc=$?
+[ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops empty fixture window" || err "orch-tokens.py empty fixture window expected rc 0 and no output, got rc $rc and '$out'"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py aaaa-bbbb 2026-01-02T00:00:00Z 2026-01-03T00:00:00Z)
+rc=$?
+[ "$rc" -eq 0 ] && [ "$out" = 144 ] && ok "orch-tokens.py honors fixture upper bound" || err "orch-tokens.py bounded fixture window expected rc 0 and 144, got rc $rc and '$out'"
+
+printf '%s\n' \
+  '{"type":"assistant","timestamp":"2026-01-02T00:00:00Z","message":{"usage":null}}' \
+  > "$FIXHOME/projects/-fixture/usage-null.jsonl"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py usage-null 2026-01-02T00:00:00Z)
+rc=$?
+[ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops invalid usage" || err "orch-tokens.py invalid usage expected rc 0 and no output, got rc $rc and '$out'"
+
+mkdir -p "$FIXHOME/projects/-fixture-duplicate"
+printf '%s\n' '{"type":"assistant","timestamp":"2026-01-02T00:00:00Z","message":{"usage":{"input_tokens":1,"output_tokens":1}}}' \
+  > "$FIXHOME/projects/-fixture/two-match.jsonl"
+cp "$FIXHOME/projects/-fixture/two-match.jsonl" "$FIXHOME/projects/-fixture-duplicate/two-match.jsonl"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py two-match 2026-01-02T00:00:00Z)
+rc=$?
+[ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops ambiguous transcript matches" || err "orch-tokens.py ambiguous matches expected rc 0 and no output, got rc $rc and '$out'"
+
+TAB_LEDGER=$(mktemp)
+printf '%s\n' \
+  '{"tokens":20,"claude_tokens":10}' \
+  '{"tokens":30}' \
+  > "$TAB_LEDGER"
+tab=$(bash scripts/tab.sh "$TAB_LEDGER")
+rc=$?
+if [ "$rc" -eq 0 ] && printf '%s' "$tab" | jq -e '.jobs == 2 and .worker_tokens == 50 and .orchestration_tokens == 10 and .work_split == "5x worker:orchestrator"' >/dev/null; then
+  ok "tab.sh reports fixture totals and work split"
+else
+  err "tab.sh fixture totals or work split are wrong (rc $rc): $tab"
+fi
+tab=$(bash scripts/tab.sh "$FIXHOME/missing-ledger.jsonl")
+rc=$?
+[ "$rc" -eq 0 ] && [ "$tab" = '{"jobs": 0}' ] && ok "tab.sh drops missing ledger" || err "tab.sh missing ledger expected rc 0 and '{\"jobs\": 0}', got rc $rc and '$tab'"
+rm -rf "$FIXHOME" "$TAB_LEDGER"
+section_ok "measurement scripts"
+
 # 4. Link sweep ---------------------------------------------------------------
 # Every receipt cites a URL; dead links rot the receipts. Hard 404/410 fails.
 if [ "${SKIP_LINKS:-}" != 1 ]; then

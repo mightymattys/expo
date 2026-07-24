@@ -28,37 +28,19 @@ Substitute `<since>` with the window's start timestamp (per-job `$JOB/started` f
 ledger line; the run's `started:` for a receipt):
 
 ```bash
-python3 - "$CLAUDE_CODE_SESSION_ID" "<since>" <<'PY'
-import json, sys, glob, os
-from datetime import datetime
-sid, since = sys.argv[1], sys.argv[2]
-def ts(s):
-    try: return datetime.fromisoformat(s.replace('Z', '+00:00'))
-    except Exception: return None
-start = ts(since)
-matches = glob.glob(os.path.expanduser(f'~/.claude/projects/*/{sid}.jsonl'))
-if not matches or start is None:
-    sys.exit(0)                     # no transcript / bad anchor - print nothing
-total, hits = 0, 0
-for line in open(matches[0]):
-    try: d = json.loads(line)
-    except Exception: continue
-    if d.get('type') != 'assistant': continue
-    t = ts(d.get('timestamp', ''))
-    if t is None or t < start: continue
-    u = d.get('message', {}).get('usage', {})
-    total += u.get('input_tokens', 0) + u.get('output_tokens', 0)
-    hits += 1
-if hits:
-    print(total)                    # orchestration tokens, uncached input + output
-PY
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/orch-tokens.py" "$CLAUDE_CODE_SESSION_ID" "<since>" [<until>]
 ```
 
-Timestamps are parsed as datetimes (not compared lexically), so fractional-second
-transcript stamps compare correctly against a whole-second anchor. **No output means
-drop the line** - that covers all of: `$CLAUDE_CODE_SESSION_ID` unset, no transcript
-found, unparseable anchor, and zero assistant messages in the window. Never print a
-guessed number and never fall back to a cwd-slug or newest-mtime file.
+The script is the single implementation and prints nothing when the window is
+unmeasurable. Timestamps are parsed as datetimes (not compared lexically), so
+fractional-second transcript stamps compare correctly against a whole-second anchor.
+**No output means drop the line** - that covers all of: `$CLAUDE_CODE_SESSION_ID`
+unset, no transcript found, more than one transcript matching the session id, an
+unparseable anchor, an unreadable or corrupt transcript, invalid in-window usage
+records, and zero assistant messages in the window. A diagnostic may appear on stderr,
+but stdout stays empty and the script exits 0. Never print a guessed number and never
+fall back to a cwd-slug or newest-mtime file. `EXPO_CLAUDE_HOME` overrides the default
+`~/.claude` only as a fixture-test hook, not as a user knob.
 
 Honesty rules, same as everywhere else:
 

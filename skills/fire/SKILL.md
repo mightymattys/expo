@@ -135,7 +135,9 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      from the session transcript over THIS job's window (`$JOB/started` → now) per
      [../receipts/references/orchestration-tokens.md](../receipts/references/orchestration-tokens.md)
      - per-job windows are what let the running tab sum ledger lines without
-     double-counting. Omit the field if the snippet prints nothing. If the log
+     double-counting. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/orch-tokens.py"
+     "$CLAUDE_CODE_SESSION_ID" "$(cat "$JOB/started")"`; omit the field if the
+     script prints nothing. If the log
      carries no worker token summary, skip the ledger line entirely - never invent
      either number.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.
