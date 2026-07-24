@@ -33,22 +33,23 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   printed nothing)
 - this run's split: ~$<X> worker + ~$<O> orchestration = ~$<X+O> API-list, all
   measured (no counterfactual)
-- same tokens at Claude Fable 5 list: ~$<Y> (what the run's combined token volume
-  would cost at the orchestrator's blend - a price comparison at equal volume, not
-  a claim about what a Claude-only run would have spent)
+- vs same volume at Fable list: ~$<Y>, delta ~$<Z> in this run's favor
+  (conservative floor indication, not a measured saving - Claude-only runs
+  historically consume 5-20x more volume, per
+  https://github.com/tomascupr/sous-chef/issues/2)
 - diff: <files> files, +<ins>/-<del> (vs the run's baseline)
 - verdict: verified | findings unresolved - <which> | halted - <why>
 
 > expo shipped <task> for ~$<X+O> all-in (API-list terms, measured both sides:
-> worker + orchestration). github.com/mightymattys/expo
+> worker + orchestration), equal-volume delta ~$<Z> (floor). github.com/mightymattys/expo
 ```
 
 The quoted block is the shareable summary, and only a verified run gets one - a
 halted or budget-spent receipt keeps its numbers and skips the brag. Keep it
 under 280 characters and paste-ready. Every figure in it is this run's own
-measurement - never compute or quote a cross-model savings multiple (the measured
-counterfactual isn't run, and a same-token comparison is a price ratio, not a
-savings claim). The task line
+measurement. The only derived figure a receipt may carry is the measured
+equal-volume delta (floor), dollars only, never presented as a bound on actual savings
+and never as a multiple. The task line
 ships verbatim inside it - client names and private context go with it - so
 surface the post for the user to paste; never post anything yourself.
 

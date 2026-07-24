@@ -66,7 +66,8 @@ Honesty rules, same as everywhere else:
   tokens are different models with different tokenizers and $/token, so the honest
   derived figure is the API-list **dollar** split (worker tokens × worker blend vs
   orchestration tokens × Fable blend, both from prices.md), not a raw token ratio
-  dressed up as savings.
+  dressed up as savings (the only permitted derived figure is the equal-volume delta, floor,
+  per receipt-template.md).
 - **A compacted session still works**: the transcript is append-only and the
   timestamp filter keeps earlier work out. If the session was compacted mid-window
   the count is a floor, not exact - say so if it matters.

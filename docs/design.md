@@ -298,6 +298,18 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   worker figure next to a cited counterfactual. The vs-Claude-only "10-20x" claim stays
   a citation, because that counterfactual genuinely isn't run per-fire.
 
+## Why the receipt shows an equal-volume delta, not savings
+
+- The Claude-only counterfactual is not run, so a receipt cannot honestly report what it
+  saved against that unseen run. It can price this run's measured combined token volume
+  at Fable's list blend and subtract the measured all-in cost; that equal-volume delta is
+  computable purely from measured numbers.
+- Equal volume deliberately biases down: upstream's benchmark found Claude-only runs
+  consumed 5-20x more tokens than delegated runs, so the historical finding makes the
+  delta a floor indication ([sous-chef#2](https://github.com/tomascupr/sous-chef/issues/2)).
+  Calling it a guaranteed saving would present an extrapolation as a bound, which this
+  repo forbids.
+
 ## Why refire inherits the worker instead of re-choosing it
 
 - `serve` promises `--with <worker>` "applies to the whole line: fire and refire run

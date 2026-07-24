@@ -25,6 +25,19 @@ else
 fi
 mark=$fail
 
+# 1b. Release script ----------------------------------------------------------
+if [ -x scripts/release.sh ]; then
+  ok "scripts/release.sh is executable"
+else
+  err "scripts/release.sh must exist and be executable"
+fi
+if bash -n scripts/release.sh; then
+  ok "scripts/release.sh parses"
+else
+  err "scripts/release.sh does not parse"
+fi
+mark=$fail
+
 # 2. Skill frontmatter --------------------------------------------------------
 # CLAUDE.md rule: no ": " inside a description - YAML plain scalars break on it.
 for f in skills/*/SKILL.md; do
@@ -49,6 +62,15 @@ must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findin
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
 must_contain skills/simmer/SKILL.md 'tier:'     "every lap's invocation reads loop.md's tier: line"
+
+# A receipt's only savings claim is explicitly qualified with a floor or bound.
+while IFS= read -r line; do
+  lower=$(printf '%s' "$line" | tr '[:upper:]' '[:lower:]')
+  case $lower in
+    *floor*|*'>='*|*'≥'*) ;;
+    *) err "unqualified savings claim: $line" ;;
+  esac
+done < <(grep -rinE -- 'sav(e|ed|ings?)\b' skills/receipts/ || true)
 
 # The tier names are one vocabulary, spelled identically wherever tiers are chosen.
 for t in sol terra luna; do

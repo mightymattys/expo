@@ -18,6 +18,7 @@ Only models the kitchen actually runs belong in this table (GPT-5.6 tiers as
 workers, Sonnet 5 as the alternate worker, Fable 5 for pricing orchestration
 tokens) - a retired generation is a stale row waiting to misprice something.
 Subscription workers (ChatGPT plan, Claude plan) have $0 marginal cost - receipts
-therefore always say "API-list terms", never "you paid". Receipts carry only
-measured numbers from the run itself; cross-model savings multiples are not
-computed per run and not quoted from benchmarks.
+therefore always say "API-list terms", never "you paid". The only derived figure
+a receipt may carry is the measured equal-volume delta, labeled "(floor)", dollars
+only, computed purely from measured tokens and this table's blends - never a
+cross-model multiple or a claim presented as a bound.

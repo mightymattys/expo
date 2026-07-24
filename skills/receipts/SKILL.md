@@ -1,6 +1,6 @@
 ---
 name: receipts
-description: Prints the check - reads .expo/receipts/ and renders the last 10 run receipts as a table with a savings total, and can reprint any receipt's shareable summary. Use when the user asks for receipts, costs, or savings, or invokes /expo:receipts. Receipts are written automatically at the end of every serve and simmer.
+description: Prints the check - reads .expo/receipts/ and renders the last 10 run receipts as a table with a savings-floor total, and can reprint any receipt's shareable summary. Use when the user asks for receipts, costs, or savings, or invokes /expo:receipts. Receipts are written automatically at the end of every serve and simmer.
 ---
 
 # Receipts - print the check
@@ -15,11 +15,11 @@ stays the cross-repo running tab; receipts are the per-run, per-repo story.
 
 Read the last 10 receipts by filename (newest last) and render one table:
 
-| when | task | worker | tokens | ~cost | ~saved vs Fable list | verdict |
+| when | task | worker | tokens | ~cost | delta vs Fable (floor) | verdict |
 
-Close with one line - "last N runs: ~$X of worker spend, ~$Y saved vs same-token
-Fable list." Sum only lines that exist; a receipt missing a number contributes
-nothing to that column - say so rather than papering over it.
+Close with one line - "last N runs: ~$X all-in (measured), equal-volume delta
+~$Y vs Fable list (floor)." Sum only lines that exist; a receipt missing a number
+contributes nothing to that column - say so rather than papering over it.
 
 If the user wants to share one, print that receipt's quoted summary verbatim -
 it is written to be pasted unedited.
