@@ -57,5 +57,7 @@ For a simmer, swap the header (`# simmer:`), count laps as runs, and let the
 verdict carry the loop outcome (passed lap N of M | budget spent | no progress).
 Simmer's lap verdict lines drop job paths, so take worker tokens from this run's
 per-lap ledger lines (`~/.expo/ledger.jsonl`, the `"skill":"simmer"`
-entries for this repo's laps), the diff from `git diff <loop.md base>..HEAD`
-plus the working tree, and wallclock from loop.md's `started:`.
+entries for this repo filtered by `"branch":"<branch>"` recorded in
+`.expo/loop-<branch-slug>.md`; Sonnet laps contribute none), the checkpoint-commit
+diff from `git diff <base recorded in .expo/loop-<branch-slug>.md>..HEAD`, and
+wallclock from `.expo/loop-<branch-slug>.md`'s `started:`.

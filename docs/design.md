@@ -357,6 +357,20 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   the documented gap: a delegated implementer inside the loop with an independent judge
   outside it.
 
+## Why simmer assumes a shared worktree
+
+- Simmer's first real dogfood ran while a second Claude session had live WIP in the
+  same working tree. Creating the loop branch carried that uncommitted work onto the
+  new branch, checkpoint staging had to stay goal-scoped to avoid swallowing it, and
+  the judge had to classify foreign paths that appeared during lap 1.
+  Source: first-party dogfood, 2026-07-24.
+- A linked worktree is therefore the recommended isolation boundary for a dirty tree:
+  the loop gets its own branch, checkpoints, checks, and branch-scoped `.expo/` state.
+  If the user keeps the shared tree, the contract records that choice, every lap
+  snapshots and classifies paths against its authorized scope, and checkpoints stage
+  explicit paths only.
+  Source: first-party dogfood, 2026-07-24.
+
 ## Why orchestration state lives on disk (serve's state.md, taste's findings.md, simmer's loop files)
 
 - The worker had this discipline from day one - fresh context per run, state in files
@@ -372,7 +386,7 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   lives in the session scratchpad (survives compaction, not session death - accepted);
   simmer may outlive the session (the same-machine `/loop` composition - a cloud
   `/schedule` clone never sees local state, so simmer doesn't claim it), so
-  `loop.md`/`progress.md` live in the repo - ignored, not committed, via
+  branch-scoped loop/progress files live in the repo - ignored, not committed, via
   `.git/info/exclude`, giving durable state with zero footprint in diffs, checkpoint
   commits, or the tree-hash no-progress guard (verified live 2026-07-04: invisible to
   `git status --untracked-files=all` while worker changes stay visible; committed

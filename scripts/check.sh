@@ -55,13 +55,21 @@ must_contain() { # file fixed-string reason
   grep -qF -- "$2" "$1" || err "$1 must contain '$2' - $3"
 }
 must_contain skills/serve/SKILL.md  'started:'  "the receipt template reads state.md's started: for wallclock"
-must_contain skills/simmer/SKILL.md 'started:'  "the receipt template reads loop.md's started: for wallclock"
+must_contain skills/simmer/SKILL.md 'started:'  "the receipt template reads the branch-scoped loop file's started: for wallclock"
 must_contain skills/serve/SKILL.md  'findings:' "refire (via serve) reads state.md's findings: line"
 must_contain skills/serve/SKILL.md  'baseline:' "taste's post-fire scope reads state.md's baseline: line"
 must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findings.md's tree: anchor"
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
-must_contain skills/simmer/SKILL.md 'tier:'     "every lap's invocation reads loop.md's tier: line"
+must_contain skills/simmer/SKILL.md 'tier:'     "every Codex lap's invocation reads the branch-scoped loop file's tier: line"
+must_contain skills/simmer/SKILL.md 'tier: n/a' "Sonnet loops record the tier field receipts and resumes expect"
+must_contain skills/simmer/SKILL.md 'record a `worker:` line' "the loop contract fixes one worker route for every lap"
+must_contain skills/simmer/SKILL.md 'loop-<branch-slug>' "simultaneous branches need branch-scoped loop state"
+must_contain skills/simmer/SKILL.md '`/` replaced by `-` plus a 6-char suffix from a stable hash' "branch-scoped loop files cannot collide after slash replacement"
+must_contain skills/simmer/SKILL.md '[../fire/references/worker-routes.md](../fire/references/worker-routes.md)' "Sonnet laps use fire's subscription invocation"
+must_contain skills/simmer/SKILL.md 'git merge-base --is-ancestor' "recreated branches must not inherit stale loop state"
+must_contain skills/receipts/references/receipt-template.md '.expo/loop-<branch-slug>.md' "simmer receipts read branch-scoped loop state"
+must_contain skills/receipts/references/receipt-template.md 'filtered by `"branch":"<branch>"`' "simmer receipts select this branch's ledger laps"
 
 # A receipt's only savings claim is explicitly qualified with a floor or bound.
 while IFS= read -r line; do
