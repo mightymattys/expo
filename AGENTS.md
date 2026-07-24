@@ -9,7 +9,7 @@ step and no code to compile; everything is markdown, JSON, and TOML.
 - `.claude-plugin/` - plugin + marketplace manifests
 - `skills/serve|fire|taste|refire|simmer|mise|receipts/` - the seven skills (each `SKILL.md` + optional `references/`)
 - `codex/` - Codex-side delegation profile shipped to `~/.codex/`
-- `templates/` - files `/mise` scaffolds into user repos and `~/.expo/`
+- `templates/` - files `/mise` scaffolds into user repos and `~/.claude/CLAUDE.md`
 - `docs/design.md` - research receipts behind every design decision
 
 ## Working agreements

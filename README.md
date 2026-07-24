@@ -158,15 +158,17 @@ measured tokens, an API-list cost estimate, the diff, the verdict, and a
 paste-ready summary. `/expo:receipts` prints the last ten with a savings
 total.
 
-**What does delegation actually save?** Measured 2026-07-04: three seeded tasks
-(mechanical refactor, mid-size feature, parser-class feature), each run both ways
-from a clean clone against identical checkable done-criteria - direct in a fresh
-Claude Code session (Fable 5) vs a expo-profile `codex exec` (GPT-5.5, xhigh).
-All six runs green. Per task, Claude-side spend fell from 0.78-4.3M tokens
-(~$3.8-12.7 at cache-aware API list prices) to the ~5-7k-token orchestration
-overhead, with the worker burning 140-361k GPT-5.5 tokens (~$0.27-0.53) - roughly
-10-20x cheaper per task in effective API-price terms. Full method, per-task table,
-and caveats: [issue #2](../../issues/2).
+**What does delegation actually save?** Measured 2026-07-04 (upstream, on the
+sous-chef profile this plugin descends from): three seeded tasks (mechanical
+refactor, mid-size feature, parser-class feature), each run both ways from a clean
+clone against identical checkable done-criteria - direct in a fresh Claude Code
+session (Fable 5) vs a delegated `codex exec` (GPT-5.5, xhigh). All six runs green.
+Per task, Claude-side spend fell from 0.78-4.3M tokens (~$3.8-12.7 at cache-aware
+API list prices) to a few-thousand-token orchestration overhead, with the worker
+burning 140-361k GPT-5.5 tokens (~$0.27-0.53) - roughly 10-20x cheaper per task in
+effective API-price terms. Full method, per-task table, and caveats:
+[sous-chef#2](https://github.com/tomascupr/sous-chef/issues/2). Your own runs
+measure both sides live - see the ledger and receipts above.
 
 **What do I see while it cooks?** An announcement first: what was delegated, the
 expected duration (typically 5-20+ minutes per Codex run at high reasoning effort),
@@ -238,4 +240,4 @@ Field reports welcome - especially Windows, and especially receipts that contrad
 
 ## License
 
-MIT © Tomas Cupr
+MIT © Tomas Cupr (original work, sous-chef) & Matěj Štipčák (this fork, expo)
