@@ -15,6 +15,10 @@ worker tokens go to bulk. In the measured setup this pattern is built on,
 [Codex did ~20x the implementation work](https://madewithlove.com/blog/claude-up-front-codex-in-the-back/)
 per orchestration round trip, and two mid-tier subscriptions often beat one top-tier one.
 
+## What it looks like
+
+![expo flow: you hand the order to Claude, the head chef (Fable 5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-5.6 sol/terra/luna, or Sonnet 5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
+
 Codex saying "tests pass" is a sentence; `pnpm test` output is a fact - Claude
 re-runs everything itself.
 
