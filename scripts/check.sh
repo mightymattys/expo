@@ -36,6 +36,20 @@ if bash -n scripts/release.sh; then
 else
   err "scripts/release.sh does not parse"
 fi
+# A shipped version whose entry still says "Unreleased" happened twice before the
+# release script stamped the changelog itself.
+if grep -q "has no '## Unreleased' entry" scripts/release.sh; then
+  ok "release.sh refuses a release with no changelog entry"
+else
+  err "release.sh must refuse to release without a '## Unreleased' changelog entry"
+fi
+undated=$(grep -E '^## ' CHANGELOG.md | grep -vE '^## +Unreleased' | grep -cvE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+unreleased=$(grep -cE '^## +Unreleased' CHANGELOG.md || true)
+if [ "$undated" -eq 0 ] && [ "$unreleased" -le 1 ]; then
+  ok "every changelog heading is dated, at most one Unreleased"
+else
+  err "CHANGELOG.md has $undated undated heading(s) and $unreleased Unreleased heading(s) - a shipped version must carry its date"
+fi
 mark=$fail
 
 # 2. Skill frontmatter --------------------------------------------------------

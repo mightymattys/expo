@@ -105,10 +105,17 @@ if [ "$resume_push" = false ] && [ "$resume_refresh" = false ]; then
     err "cannot capture plugin version before bump"
     exit 1
   }
+  changelog_backup=$(mktemp) || { err "cannot create changelog backup file"; exit 1; }
+  cp CHANGELOG.md "$changelog_backup" || {
+    err "cannot capture changelog before stamp"
+    exit 1
+  }
   bump_in_progress=true
   restore_bump() {
     cp "$plugin_backup" .claude-plugin/plugin.json ||
       err "cannot restore plugin version after failed bump"
+    cp "$changelog_backup" CHANGELOG.md ||
+      err "cannot restore changelog after failed bump"
   }
   release_exit() {
     status=$?
@@ -150,6 +157,47 @@ PY
     exit 1
   fi
   ok "$versions"
+
+  # Stamp the changelog in the release commit. 0.7.9 and 0.7.10 both shipped with
+  # their entry still titled "Unreleased" because this was a manual step; a release
+  # with no entry at all is now refused outright.
+  if ! stamped=$(python3 - <<'PY'
+import json
+import re
+from datetime import datetime, timezone
+
+version = json.load(open(".claude-plugin/plugin.json", encoding="utf-8"))["version"]
+path = "CHANGELOG.md"
+with open(path, encoding="utf-8") as source:
+    text = source.read()
+
+match = re.search(r"^## +Unreleased *(?P<rest>.*)$", text, re.MULTILINE)
+if not match:
+    raise SystemExit("CHANGELOG.md has no '## Unreleased' entry - write one before releasing")
+
+rest = re.sub(r"^-\s*", "", match.group("rest").strip())
+declared = re.match(r"^(\d+\.\d+\.\d+)\b\s*-?\s*", rest)
+title = rest
+if declared:
+    if declared.group(1) != version:
+        raise SystemExit(
+            f"CHANGELOG.md Unreleased entry names {declared.group(1)}, "
+            f"but this release is {version}"
+        )
+    title = rest[declared.end():].strip()
+
+heading = f"## {version} - {datetime.now(timezone.utc).date().isoformat()}"
+if title:
+    heading += f" - {title}"
+with open(path, "w", encoding="utf-8") as target:
+    target.write(text[:match.start()] + heading + text[match.end():])
+print(heading)
+PY
+  ); then
+    err "could not stamp CHANGELOG.md"
+    exit 1
+  fi
+  ok "changelog: $stamped"
 
   if ! git add -A; then
     err "git add failed"

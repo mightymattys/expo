@@ -3,7 +3,17 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased - 0.7.11 - the benchmark harness
+## 0.7.12 - 2026-07-27
+
+- `scripts/release.sh` stamps the changelog inside the release commit: the
+  `## Unreleased` heading becomes `## <version> - <UTC date>`, keeping any title, and
+  a release with no entry - or an entry naming a different version - is refused. Both
+  0.7.9 and 0.7.10 shipped still labelled "Unreleased" because this was a manual step.
+  A failed stamp restores the changelog alongside the version bump.
+- CI asserts every changelog heading carries a date and that at most one Unreleased
+  heading exists.
+
+## 0.7.11 - 2026-07-27 - the benchmark harness
 
 - `scripts/bench.sh`: a reporter over a human-recorded JSONL of benchmark arms. Both
   arms are really measured - the delegated arm's worker tokens from its job log plus
