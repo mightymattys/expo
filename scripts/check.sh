@@ -67,6 +67,8 @@ must_contain skills/simmer/SKILL.md 'record a `worker:` line' "the loop contract
 must_contain skills/fire/SKILL.md '| `opus` |' "fire's worker table names the Opus route"
 must_contain skills/serve/SKILL.md 'worker: <codex | sonnet | opus>' "serve's state schema must be able to record every fire worker"
 must_contain skills/fire/references/worker-routes.md 'claude-opus-5' "Opus's model id is available to the route-must-be-priceable check"
+must_contain scripts/bench.sh 'observed difference on this measured task set' "both benchmark arms are measured, so the delta is a sample and must never be worded as a bound"
+must_contain docs/benchmark.md 'not a bound, guarantee, or general cross-model' "the methodology has to say what the delta is not"
 must_contain skills/simmer/SKILL.md 'loop-<branch-slug>' "simultaneous branches need branch-scoped loop state"
 must_contain skills/simmer/SKILL.md '`/` replaced by `-` plus a 6-char suffix from a stable hash' "branch-scoped loop files cannot collide after slash replacement"
 must_contain skills/simmer/SKILL.md '[../fire/references/worker-routes.md](../fire/references/worker-routes.md)' "Sonnet laps use fire's subscription invocation"
@@ -82,6 +84,9 @@ while IFS= read -r line; do
     *) err "unqualified savings claim: $line" ;;
   esac
 done < <(grep -rinE -- 'sav(e|ed|ings?)\b' skills/receipts/ || true)
+
+must_contain README.md 'docs/benchmark.md' "the delegation FAQ links expo's benchmark method"
+must_contain docs/benchmark.md 'scripts/bench.sh' "benchmark method names its reporter"
 
 # The tier names are one vocabulary, spelled identically wherever tiers are chosen.
 for t in sol terra luna; do
@@ -183,6 +188,16 @@ if bash -n scripts/tab.sh; then
 else
   err "scripts/tab.sh does not parse"
 fi
+if [ -x scripts/bench.sh ]; then
+  ok "scripts/bench.sh is executable"
+else
+  err "scripts/bench.sh must exist and be executable"
+fi
+if bash -n scripts/bench.sh; then
+  ok "scripts/bench.sh parses"
+else
+  err "scripts/bench.sh does not parse"
+fi
 
 FIXHOME=$(mktemp -d)
 mkdir -p "$FIXHOME/projects/-fixture"
@@ -234,7 +249,86 @@ fi
 tab=$(bash scripts/tab.sh "$FIXHOME/missing-ledger.jsonl")
 rc=$?
 [ "$rc" -eq 0 ] && [ "$tab" = '{"jobs": 0}' ] && ok "tab.sh drops missing ledger" || err "tab.sh missing ledger expected rc 0 and '{\"jobs\": 0}', got rc $rc and '$tab'"
-rm -rf "$FIXHOME" "$TAB_LEDGER"
+
+BENCH_LEDGER=$(mktemp)
+BENCH_MUTATED=$(mktemp)
+BENCH_MIXED=$(mktemp)
+BENCH_INVALID=$(mktemp)
+BENCH_RELATIVE_DIR=$(mktemp -d)
+REPO_ROOT=$PWD
+printf '%s\n' \
+  '{"task":"t1","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t1","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  > "$BENCH_LEDGER"
+bench=$(bash scripts/bench.sh "$BENCH_LEDGER")
+rc=$?
+if [ "$rc" -eq 0 ] \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | delegated | gpt-5.6-terra | 100,000 | 10,000 | ~$1.18 | yes | 300s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | 0 | 80,000 | ~$2.40 | yes | 240s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx -- '- t1: direct − delegated = ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.18; direct total ~$2.40; total observed delta (direct − delegated) ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null; then
+  ok "bench.sh reports fixture rows and exact measured totals"
+else
+  err "bench.sh fixture totals are wrong (rc $rc): $bench"
+fi
+jq -c 'if .arm == "direct" then .verified = false else . end' "$BENCH_LEDGER" > "$BENCH_MUTATED"
+bench=$(bash scripts/bench.sh "$BENCH_MUTATED")
+rc=$?
+if [ "$rc" -eq 0 ] \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | 0 | 80,000 | failed (excluded) | failed (excluded) | 240s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 0 tasks compared; delegated total ~$0.00; direct total ~$0.00; total observed delta (direct − delegated) n/a (no verified, priced task pairs).' >/dev/null \
+  && ! printf '%s\n' "$bench" | grep -F '~$2.40' >/dev/null; then
+  ok "bench.sh excludes failed arm after verified mutation"
+else
+  err "bench.sh failed-arm mutation exclusion is wrong (rc $rc): $bench"
+fi
+printf '%s\n' \
+  '{"task":"t1","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t1","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  '{"task":"t2","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t2","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":false,"wallclock_s":240}' \
+  '{"task":"t3","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t4","arm":"delegated","model":"unpriced-model","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t4","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  > "$BENCH_MIXED"
+bench=$(bash scripts/bench.sh "$BENCH_MIXED")
+rc=$?
+if [ "$rc" -eq 0 ] \
+  && printf '%s\n' "$bench" | grep -Fx -- '- t2: no delta — direct arm failed verification.' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx -- '- t3: no delta — missing direct arm.' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx -- '- t4: no delta — delegated arm is unpriced.' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.18; direct total ~$2.40; total observed delta (direct − delegated) ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null; then
+  ok "bench.sh reconciles totals on complete verified priced pairs only"
+else
+  err "bench.sh mixed-ledger reconciliation is wrong (rc $rc): $bench"
+fi
+printf '%s\n' '{"task":"invalid-direct","arm":"direct","model":"claude-fable-5","worker_tokens":1,"claude_tokens":1,"verified":true,"wallclock_s":1}' > "$BENCH_INVALID"
+bench=$(bash scripts/bench.sh "$BENCH_INVALID" 2>&1)
+rc=$?
+if [ "$rc" -eq 1 ] && [ "$bench" = 'bench: invalid JSONL schema, duplicate task/arm row, or direct arm worker_tokens is not zero' ]; then
+  ok "bench.sh rejects direct arms with worker tokens"
+else
+  err "bench.sh direct worker-token validation is wrong (rc $rc): $bench"
+fi
+# jq's % truncates its operands, so `. % 1 == 0` accepts 5.5 - a fractional token
+# count would render verbatim in the table. Integer-ness is asserted, not assumed.
+printf '%s\n' '{"task":"fractional","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000.7,"claude_tokens":10,"verified":true,"wallclock_s":1}' > "$BENCH_INVALID"
+bench=$(bash scripts/bench.sh "$BENCH_INVALID" 2>&1)
+rc=$?
+if [ "$rc" -eq 1 ]; then
+  ok "bench.sh rejects fractional token counts"
+else
+  err "bench.sh accepted a fractional token count (rc $rc): $bench"
+fi
+cp "$BENCH_LEDGER" "$BENCH_RELATIVE_DIR/local-bench.jsonl"
+bench=$(cd "$BENCH_RELATIVE_DIR" && bash "$REPO_ROOT/scripts/bench.sh" local-bench.jsonl)
+rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$bench" | grep -Fx '# expo benchmark report' >/dev/null; then
+  ok "bench.sh resolves caller-relative ledgers"
+else
+  err "bench.sh caller-relative ledger resolution is wrong (rc $rc): $bench"
+fi
+rm -rf "$FIXHOME" "$TAB_LEDGER" "$BENCH_LEDGER" "$BENCH_MUTATED" "$BENCH_MIXED" "$BENCH_INVALID" "$BENCH_RELATIVE_DIR"
 section_ok "measurement scripts"
 
 # 4. Link sweep ---------------------------------------------------------------

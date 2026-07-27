@@ -169,9 +169,10 @@ enough that only one-file surgical fixes stay cheaper done directly.
 
 Your own runs measure both sides live: worker tokens from the job log,
 orchestration tokens from the session transcript, dollar split at API-list blends
-on every receipt. The upstream project also published a seeded three-task
-benchmark of the pattern (roughly 10-20x cheaper per task in effective API-price
-terms, on the previous model generation) - method and caveats:
+on every receipt. See [expo's benchmark methodology](docs/benchmark.md) for this
+project's own measured comparisons. The upstream project also published a seeded
+three-task benchmark of the pattern (roughly 10-20x cheaper per task in effective
+API-price terms, on a previous model generation) - method and caveats:
 [sous-chef#2](https://github.com/tomascupr/sous-chef/issues/2).
 
 </details>

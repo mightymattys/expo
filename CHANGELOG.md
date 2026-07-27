@@ -3,7 +3,28 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased - 0.7.10
+## Unreleased - 0.7.11 - the benchmark harness
+
+- `scripts/bench.sh`: a reporter over a human-recorded JSONL of benchmark arms. Both
+  arms are really measured - the delegated arm's worker tokens from its job log plus
+  orchestration from `orch-tokens.py`, the direct arm's Claude tokens from the same
+  transcript measurement - so the delta is an observed difference, never a modelled
+  counterfactual. Prices are parsed from `prices.md`; an unpriced model is reported
+  loudly instead of guessed; an unverified arm never counts as a win.
+- `docs/benchmark.md`: the method, the JSONL schema, and what the numbers are not.
+  The delta is scoped to the measured task set with its n, explicitly not a bound or
+  a general multiple - the receipts' "floor" argument does not transfer to a
+  comparison where both arms actually ran.
+- README's savings FAQ now points at this project's own methodology; the upstream
+  three-task benchmark stays cited but labelled as a previous model generation.
+- Cross-review caught three defects in the first cut: per-arm totals summed a
+  different row set than the delta (a mixed ledger reported delegated $3.53 against
+  direct $2.40 while claiming delegation was $1.23 lower), direct arms accepted
+  nonzero `worker_tokens` in a direction that flattered delegation, and
+  caller-relative ledger paths resolved against the repo root. Rounding is now applied
+  once per row, so no two lines of a report can disagree about the same figure.
+
+## 0.7.10 - 2026-07-27
 
 - Logo: a `/e` terminal monogram (the slash is how the plugin is actually invoked),
   shipped as outlined SVG in a dark and a light variant plus PNG renders; replaces
