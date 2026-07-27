@@ -43,6 +43,13 @@ if grep -q 'scripts/stamp-changelog.py' scripts/release.sh; then
 else
   err "release.sh must stamp the changelog via scripts/stamp-changelog.py"
 fi
+# gh's {owner}/{repo} placeholder resolves to the UPSTREAM repo on a fork - verified
+# here, where it pointed at tomascupr/sous-chef. A release must never be aimed there.
+if grep -q 'repos/{owner}/{repo}' scripts/release.sh; then
+  err "release.sh uses gh's {owner}/{repo} placeholder - on a fork that targets upstream; derive the slug from origin"
+else
+  ok "release.sh targets the origin remote, not gh's fork-aware placeholder"
+fi
 undated=$(grep -E '^## ' CHANGELOG.md | grep -vE '^## +Unreleased' | grep -cvE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
 unreleased=$(grep -cE '^## +Unreleased' CHANGELOG.md || true)
 if [ "$undated" -eq 0 ] && [ "$unreleased" -le 1 ]; then

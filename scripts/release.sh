@@ -4,6 +4,37 @@ set -u
 
 err() { printf '%s\n' "$1" >&2; }
 ok() { printf '%s\n' "$1"; }
+warn() { printf 'warn %s\n' "$1"; }
+
+publish_github_release() { # version
+  # The fork went fifteen versions without a single tag because this was a manual
+  # step nobody remembered. Never fatal: the release itself already shipped by the
+  # time we get here, and a missing tag is not worth failing a completed release.
+  command -v gh >/dev/null 2>&1 || { warn "gh not installed - no GitHub release for v$1"; return 0; }
+  # Never gh's {owner}/{repo} placeholder: on a fork it resolves to the UPSTREAM repo
+  # (verified - it pointed at tomascupr/sous-chef here), so a release would be aimed at
+  # somebody else's project. The origin remote is the only correct target.
+  slug=$(git remote get-url origin 2>/dev/null | sed -E 's#^(git@github\.com:|https://github\.com/)##; s#\.git$##')
+  case $slug in
+    */*) ;;
+    *) warn "cannot derive owner/repo from origin - no GitHub release for v$1"; return 0 ;;
+  esac
+  if gh api "repos/$slug/releases/tags/v$1" >/dev/null 2>&1; then
+    ok "GitHub release v$1 already exists"
+    return 0
+  fi
+  notes=$(sed -n "/^## $1 /,/^## /p" CHANGELOG.md | sed '$d' | tail -n +2)
+  [ -n "$notes" ] || notes="See CHANGELOG.md."
+  # `gh release create` reports a misleading "workflow scope may be required" here
+  # even with a token that has it; the REST call is what actually works.
+  if gh api "repos/$slug/releases" -X POST \
+      -f tag_name="v$1" -f target_commitish=main \
+      -f name="v$1" -f body="$notes" >/dev/null 2>&1; then
+    ok "published GitHub release v$1"
+  else
+    warn "could not publish GitHub release v$1 - the code release itself is unaffected"
+  fi
+}
 
 if [ "$#" -ne 2 ]; then
   err 'usage: scripts/release.sh <patch|minor> "<commit message>"'
@@ -193,6 +224,7 @@ if ! version=$(python3 -c 'import json; print(json.load(open(".claude-plugin/plu
 fi
 if [ "$claude_present" = false ]; then
   printf '%s\n' "warn claude CLI not installed - skipping local install refresh and verification"
+  publish_github_release "$version"
   ok "released $version at $(git rev-parse --short HEAD) (local install verification skipped)"
   exit 0
 fi
@@ -212,9 +244,12 @@ if ! installed_sha=$(installed_user_sha "$install_file"); then
   err "cannot read installed expo@expo user-scope gitCommitSha"
   exit 1
 fi
+
 if [ "$installed_sha" != "$expected_sha" ]; then
   err "installed copy does not match HEAD"
   exit 1
 fi
+
+publish_github_release "$version"
 
 ok "released $version at $(git rev-parse --short HEAD)"

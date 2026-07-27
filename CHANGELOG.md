@@ -3,6 +3,20 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.8.1 - 2026-07-27
+
+- `release.sh` publishes the GitHub release itself. The fork had shipped fifteen
+  versions without a single tag because this was a manual step; it is now part of the
+  release, and non-fatal, since a missing tag is not worth failing a release that
+  already shipped.
+- It targets the `origin` remote explicitly rather than gh's `{owner}/{repo}`
+  placeholder, which on a fork resolves to the **upstream** repository - verified here,
+  where it pointed at `tomascupr/sous-chef`. Aimed at someone else's project, the call
+  only failed for lack of permission. CI now rejects the placeholder outright.
+- `gh release create` reports a misleading "workflow scope may be required" even with
+  a token that has it; the REST call works, so that is what the script uses. An earlier
+  session had concluded the user needed to re-authenticate, which was wrong.
+
 ## 0.8.0 - 2026-07-27 - the first measured benchmark
 
 - `bench/` holds the evidence: a dependency-free Python fixture both arms edit, three
