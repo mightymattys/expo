@@ -161,39 +161,11 @@ PY
   # Stamp the changelog in the release commit. 0.7.9 and 0.7.10 both shipped with
   # their entry still titled "Unreleased" because this was a manual step; a release
   # with no entry at all is now refused outright.
-  if ! stamped=$(python3 - <<'PY'
-import json
-import re
-from datetime import datetime, timezone
-
-version = json.load(open(".claude-plugin/plugin.json", encoding="utf-8"))["version"]
-path = "CHANGELOG.md"
-with open(path, encoding="utf-8") as source:
-    text = source.read()
-
-match = re.search(r"^## +Unreleased *(?P<rest>.*)$", text, re.MULTILINE)
-if not match:
-    raise SystemExit("CHANGELOG.md has no '## Unreleased' entry - write one before releasing")
-
-rest = re.sub(r"^-\s*", "", match.group("rest").strip())
-declared = re.match(r"^(\d+\.\d+\.\d+)\b\s*-?\s*", rest)
-title = rest
-if declared:
-    if declared.group(1) != version:
-        raise SystemExit(
-            f"CHANGELOG.md Unreleased entry names {declared.group(1)}, "
-            f"but this release is {version}"
-        )
-    title = rest[declared.end():].strip()
-
-heading = f"## {version} - {datetime.now(timezone.utc).date().isoformat()}"
-if title:
-    heading += f" - {title}"
-with open(path, "w", encoding="utf-8") as target:
-    target.write(text[:match.start()] + heading + text[match.end():])
-print(heading)
-PY
-  ); then
+  if ! bumped=$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])'); then
+    err "cannot read bumped version"
+    exit 1
+  fi
+  if ! stamped=$(python3 scripts/stamp-changelog.py "$bumped" CHANGELOG.md); then
     err "could not stamp CHANGELOG.md"
     exit 1
   fi

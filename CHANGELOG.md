@@ -3,6 +3,17 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.7.13 - 2026-07-27
+
+- The changelog stamp moved out of `release.sh` into `scripts/stamp-changelog.py`, so
+  CI fixture-tests it the way it already tests the measurement scripts: six cases
+  covering a heading with a version and a title, a version alone, a bare heading, a
+  title with no version, a version mismatch, and no entry at all. A refusal must leave
+  the file byte-identical, which is asserted rather than assumed.
+- Verified end to end in a throwaway clone against a scratch origin: a release with no
+  entry refuses after the bump, restores both the version and the changelog, and makes
+  no commit; a release with an entry lands the dated heading inside the release commit.
+
 ## 0.7.12 - 2026-07-27
 
 - `scripts/release.sh` stamps the changelog inside the release commit: the

@@ -38,10 +38,10 @@ else
 fi
 # A shipped version whose entry still says "Unreleased" happened twice before the
 # release script stamped the changelog itself.
-if grep -q "has no '## Unreleased' entry" scripts/release.sh; then
-  ok "release.sh refuses a release with no changelog entry"
+if grep -q 'scripts/stamp-changelog.py' scripts/release.sh; then
+  ok "release.sh stamps the changelog in the release commit"
 else
-  err "release.sh must refuse to release without a '## Unreleased' changelog entry"
+  err "release.sh must stamp the changelog via scripts/stamp-changelog.py"
 fi
 undated=$(grep -E '^## ' CHANGELOG.md | grep -vE '^## +Unreleased' | grep -cvE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
 unreleased=$(grep -cE '^## +Unreleased' CHANGELOG.md || true)
@@ -182,6 +182,38 @@ done
 section_ok "pricing freshness"
 
 # 3c. Measurement scripts -----------------------------------------------------
+if python3 -c 'import ast; ast.parse(open("scripts/stamp-changelog.py").read())'; then
+  ok "scripts/stamp-changelog.py parses"
+else
+  err "scripts/stamp-changelog.py does not parse"
+fi
+STAMP_FIX=$(mktemp)
+today=$(date -u +%F)
+stamp_case() { # heading, version, expected-heading-or-FAIL
+  printf '%s\n\n- entry.\n' "$1" > "$STAMP_FIX"
+  before=$(cat "$STAMP_FIX")
+  out=$(python3 scripts/stamp-changelog.py "$2" "$STAMP_FIX" 2>&1)
+  rc=$?
+  if [ "$3" = FAIL ]; then
+    if [ "$rc" -eq 1 ] && [ "$before" = "$(cat "$STAMP_FIX")" ]; then
+      ok "stamp-changelog.py refuses: $1"
+    else
+      err "stamp-changelog.py should have refused '$1' and left the file untouched (rc $rc): $out"
+    fi
+  elif [ "$rc" -eq 0 ] && [ "$out" = "$3" ] && head -1 "$STAMP_FIX" | grep -Fx "$3" >/dev/null; then
+    ok "stamp-changelog.py stamps: $1"
+  else
+    err "stamp-changelog.py expected '$3' for '$1' (rc $rc), got '$out'"
+  fi
+}
+stamp_case '## Unreleased - 0.7.13 - a title' 0.7.13 "## 0.7.13 - $today - a title"
+stamp_case '## Unreleased - 0.7.13' 0.7.13 "## 0.7.13 - $today"
+stamp_case '## Unreleased' 0.7.13 "## 0.7.13 - $today"
+stamp_case '## Unreleased - a title with no version' 0.7.13 "## 0.7.13 - $today - a title with no version"
+stamp_case '## Unreleased - 0.9.9 - wrong version' 0.7.13 FAIL
+stamp_case '## 0.7.12 - 2026-07-27' 0.7.13 FAIL
+rm -f "$STAMP_FIX"
+
 if [ -x scripts/orch-tokens.py ]; then
   ok "scripts/orch-tokens.py is executable"
 else
