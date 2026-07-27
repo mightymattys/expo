@@ -1,6 +1,6 @@
 ---
 name: fire
-description: Delegates a well-specified implementation task to Codex CLI in the background, picking a GPT-5.6 tier by task shape (--tier overrides; --with sonnet routes to Claude Sonnet 5 instead). Use when the user asks to hand work to Codex, or for substantial spec-able work - features, refactors, migrations, boilerplate; offer first unless the routing policy is autonomous. Not for small fixes or ambiguous design; never fire silently.
+description: Delegates well-specified implementation tasks to Codex CLI in the background, choosing a GPT-5.6 tier by task shape (--tier overrides; --with sonnet or opus routes to a Claude worker instead). Use for substantial spec-able work - features, refactors, migrations, or boilerplate; not small fixes or ambiguous design; never fire silently.
 ---
 
 # Fire - hand the ticket to the expo
@@ -60,19 +60,21 @@ rest as the task description. Workers:
 |---|---|---|
 | *(absent)* / `codex` | Codex CLI, GPT-5.6 tier picked per task (next section) | the default invocation below |
 | `sonnet` | Claude Sonnet 5, user's own subscription | `references/worker-routes.md` |
+| `opus` | Claude Opus 5, user's own subscription | `references/worker-routes.md` |
 
-Loose phrases ("fire with sonnet") mean the same thing - `--with` is just the
-unambiguous spelling, immune to task text that happens to mention a model name. The
-ticket, job dir, and plating are identical for every worker; only the invocation
-changes. Preflight differs per worker: step 2's Codex-profile stop applies to the
-Codex route only - the Sonnet route's preflight is just `command -v claude`.
+Loose phrases ("fire with sonnet" or "fire with opus") mean the same thing - `--with`
+is just the unambiguous spelling, immune to task text that happens to mention a model
+name. The ticket, job dir, and plating are identical for every worker; only the
+invocation changes. Preflight differs per worker: step 2's Codex-profile stop applies
+to the Codex route only - the Claude subscription route's preflight is just
+`command -v claude`.
 
 ## Choosing the model tier (Codex route)
 
 The Codex route runs GPT-5.6, which ships in three tiers. You already classify every
 task by shape to decide *whether* to fire - the same classification picks the tier,
 for free. Default: pick by task shape and name the tier in the announcement. This
-applies to the Codex route only; the Sonnet route has no tiers.
+applies to the Codex route only; the Claude subscription route has no tiers.
 
 | Tier | Effort | Task shape |
 |---|---|---|
@@ -106,7 +108,9 @@ Notes on the invocation:
 
 **Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-5.6-terra`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
-To route the ticket to Claude Sonnet 5 on the user's own subscription (no extra key - the natural fallback when Codex hits its usage limit mid-serve), see [references/worker-routes.md](references/worker-routes.md) - same ticket, different worker invocation.
+To route the ticket to Claude Sonnet 5 or Opus 5 on the user's own subscription (no
+extra key), see [references/worker-routes.md](references/worker-routes.md) - same
+ticket, different worker invocation.
 
 ## While it cooks
 

@@ -24,7 +24,7 @@ started: <UTC ISO-8601 of stage 1's fire>
 budget: 5
 runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
-worker: <codex | sonnet>
+worker: <codex | sonnet | opus>
 tier: <sol | terra | luna, Codex route only>
 baseline: <abs path to stage 1's pre-fire.patch>
 findings: <abs path to taste's findings.md>
@@ -43,7 +43,8 @@ dirs still hold the work.)
 If the arguments begin with `--with <worker>` (see fire's worker table), the
 choice applies to the whole line: fire and refire run on that worker; taste
 stays on Codex read-only when available, which makes the review cross-model
-when the worker is not Codex. Record the worker in `state.md` (`worker: sonnet`).
+when the worker is not Codex. Record the selected worker in `state.md` (for example,
+`worker: opus`).
 
 On the Codex route, fire also picks a GPT-5.6 tier by task shape (see fire's tier
 table), or honors an explicit `--tier sol|terra|luna`. Record it in `state.md`

@@ -2,7 +2,7 @@
 
 # 🧑‍🍳 expo
 
-**Fable 5 orchestrates and reviews; GPT-5.6 or Sonnet 5 implements.**
+**Fable 5 orchestrates and reviews; GPT-5.6, Sonnet 5, or Opus 5 implements.**
 
 *Your head chef doesn't chop onions.*
 
@@ -11,11 +11,11 @@
 ![MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-d97757)
 ![Codex CLI ≥ 0.134](https://img.shields.io/badge/Codex_CLI-%E2%89%A50.134-black)
-![Workers](https://img.shields.io/badge/workers-GPT--5.6_·_Sonnet_5-4a9eff)
+![Workers](https://img.shields.io/badge/workers-GPT--5.6_·_Sonnet_5_·_Opus_5-4a9eff)
 
 <br>
 
-![expo flow: you hand the order to Claude, the head chef (Fable 5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-5.6 sol/terra/luna, or Sonnet 5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
+![expo flow: you hand the order to Claude, the head chef (Fable 5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-5.6 sol/terra/luna, Sonnet 5, or Opus 5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
 
 <sub>expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr (MIT) - the expediter who calls the orders and checks every plate at the pass. Same two-model kitchen; this line is actively developed here.</sub>
 
@@ -25,7 +25,7 @@
 
 A Claude Code plugin that splits coding between two frontier models the way a
 kitchen splits work. **Fable plans, writes the ticket, reviews every diff line by
-line, and re-runs the checks itself. Codex (or Sonnet) does the implementation,
+line, and re-runs the checks itself. Codex (or a Claude worker) does the implementation,
 with no say over what ships.**
 
 The split is economic: the most expensive model on the line spends its tokens on
@@ -91,9 +91,10 @@ those flags are deliberately omitted. **Reviews (`taste`) always pin `sol`** -
 reviewer strength beats reviewer cost. 5.6's ultra mode stays off for delegated
 background runs: it multiplies token spend by design, with nobody watching.
 
-One alternate worker needs no extra key: `fire --with sonnet` sends the ticket to
-Claude Sonnet 5 headless on your own Anthropic subscription - the built-in
-fallback when Codex hits its usage limit mid-serve.
+Two Claude workers need no extra key: `fire --with sonnet` sends the ticket to cheap
+Claude Sonnet 5 headless on your own Anthropic subscription; `fire --with opus`
+sends it to premium Claude Opus 5. Sonnet is the fallback when Codex hits its usage
+limit mid-serve; Opus spends the shared Claude quota faster.
 
 ## 🧾 Receipts - every number measured, nothing guessed
 
@@ -116,8 +117,8 @@ around the block. Choose manual or autonomous routing in `/mise`.
 
 **The boundary that IS hard:** delegated Codex runs execute in a
 `workspace-write` sandbox with approvals off, and reviews run `read-only`. (The
-optional Sonnet worker route has no OS sandbox underneath - trusted repos or a
-branch/worktree only.)
+optional Claude Sonnet and Opus worker routes have no OS sandbox underneath - trusted
+repos or a branch/worktree only.)
 
 **One source of truth for standards.** Repo conventions live in `AGENTS.md`,
 which the worker re-reads on every run. Claude reads the same file via an
@@ -235,7 +236,7 @@ is dogfooded on macOS.
 ```text
 skills/serve/         the autonomous pipeline: fire, taste, refire, verify, report
 skills/simmer/        the loop: the worker cooks, Claude judges, until the goal passes
-skills/fire/          delegation skill + ticket template + Sonnet worker route
+skills/fire/          delegation skill + ticket template + Claude worker routes
 skills/taste/         cross-review skill + review prompt template
 skills/refire/        fix skill: confirmed findings become a scoped fix run
 skills/mise/          setup skill

@@ -3,6 +3,12 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased - 0.7.9
+
+- Added Claude Opus 5 as the premium keyless Claude subscription worker
+  (`--with opus`) alongside the cheap Sonnet fallback, with route pricing checks and
+  receipt honesty for the Fable-priced orchestration reference.
+
 ## 0.7.8 - 2026-07-24
 
 - This changelog.

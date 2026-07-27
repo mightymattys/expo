@@ -1,7 +1,7 @@
 # expo
 
 A Claude Code plugin: Claude (Fable 5) orchestrates and reviews; GPT-5.6 (Codex CLI)
-or Claude Sonnet 5 implements. This repo is the plugin itself - there is no build
+or a Claude worker (Sonnet 5 / Opus 5) implements. This repo is the plugin itself - there is no build
 step and no code to compile; everything is markdown, JSON, and TOML.
 
 ## Map

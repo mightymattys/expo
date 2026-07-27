@@ -84,10 +84,11 @@ Codex rebuilds its instruction chain from `AGENTS.md` on every run, including no
 
 ## 5. Alternate worker (optional)
 
-**Claude Sonnet 5 route (no setup):** nothing to install - `claude -p --model
-claude-sonnet-5` on the user's own subscription is always available as a
-fallback worker (see fire's `references/worker-routes.md`). Mention it
-only if the user asks, or when Codex auth/quota is the reason mise was re-run.
+**Claude subscription route (no setup):** nothing to install - `claude -p --model
+claude-sonnet-5` (or `claude-opus-5` for the premium worker) on the user's own
+subscription is always available as a fallback worker (see fire's
+`references/worker-routes.md`). Mention it only if the user asks, or when Codex
+auth/quota is the reason mise was re-run.
 
 ## 6. Routing policy (pick a mode, once per machine)
 

@@ -12,9 +12,10 @@ checks. And because each lap is a fresh context while your own conversation can 
 compacted or restarted mid-loop, neither of you is the loop's memory: the repo is.
 
 Parse `--with <worker>` exactly as fire does: absent or `codex` selects Codex;
-`--with sonnet` selects Claude Sonnet 5. For Codex, if `codex` is missing or
+`--with sonnet` or `--with opus` selects a Claude worker. For Codex, if `codex` is
+missing or
 `~/.codex/expo.config.toml` doesn't exist, stop and offer `/expo:mise` first
-(Codex silently ignores a missing profile - `test -f`). For Sonnet, require
+(Codex silently ignores a missing profile - `test -f`). For a Claude worker, require
 `command -v claude`. The repo must have at least one commit (the no-progress guard
 needs `HEAD`).
 
@@ -46,13 +47,13 @@ before lap 1 (simmer creates a branch and makes commits - say so):
   checks), resolve how per-lap checkpoints interact with them BEFORE lap 1 - ask the
   user rather than fighting the gate lap after lap.
 - **Worker** - record a `worker:` line for the whole loop: `codex` by default,
-  `sonnet` when `--with sonnet` selected it. Worker choice does not change between
-  laps.
+  `sonnet` or `opus` when the corresponding `--with` selected it. Worker choice does
+  not change between laps.
 - **Tier** - pick the GPT-5.6 tier once for the whole loop, by the goal's shape
   (fire's tier table; `--tier sol|terra|luna` overrides), and name it in the
   contract confirmation. Every Codex lap fires on the same tier - a loop that
   silently changed models mid-run would make its lap history incomparable. Record
-  `tier: n/a` for Sonnet.
+  `tier: n/a` for a Claude worker.
 
 ## 2. Loop state - in the repo, out of git
 
@@ -109,8 +110,8 @@ For each iteration, until the goal passes or the budget is spent:
    from this loop's `tier:` line
    (`-c model=gpt-5.6-<tier> -c model_reasoning_effort=<effort>`),
    `--output-last-message "$JOB/result.md"`, stdin from `$JOB/ticket.md`, and
-   stdout/stderr in `$JOB/job.log`. For `worker: sonnet`, use the `claude -p`
-   subscription invocation in
+   stdout/stderr in `$JOB/job.log`. For `worker: sonnet` or `worker: opus`, use the
+   matching `claude -p` subscription invocation in
    [../fire/references/worker-routes.md](../fire/references/worker-routes.md), reading
    the same `$JOB/ticket.md` and writing the same `$JOB/result.md` and
    `$JOB/job.log`.
@@ -151,7 +152,7 @@ For each iteration, until the goal passes or the budget is spent:
    what changed, check result) and add the lap to the running tab per fire's plating -
    Codex laps append the same `~/.expo/ledger.jsonl` line with `"skill":"simmer"`
    plus `"lap":N` and `"branch":"<branch>"`, pass or fail (a failed lap still spent
-   quota). Sonnet laps append no ledger line because `claude -p` emits no token
+   quota). Claude worker laps append no ledger line because `claude -p` emits no token
    summary. Then:
    - Checks pass → done. Report laps used, final check output, the commits made, and
      **the branch name** - merging (or deleting) it is the user's call. Mention that

@@ -64,6 +64,9 @@ must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve
 must_contain skills/simmer/SKILL.md 'tier:'     "every Codex lap's invocation reads the branch-scoped loop file's tier: line"
 must_contain skills/simmer/SKILL.md 'tier: n/a' "Sonnet loops record the tier field receipts and resumes expect"
 must_contain skills/simmer/SKILL.md 'record a `worker:` line' "the loop contract fixes one worker route for every lap"
+must_contain skills/fire/SKILL.md '| `opus` |' "fire's worker table names the Opus route"
+must_contain skills/serve/SKILL.md 'worker: <codex | sonnet | opus>' "serve's state schema must be able to record every fire worker"
+must_contain skills/fire/references/worker-routes.md 'claude-opus-5' "Opus's model id is available to the route-must-be-priceable check"
 must_contain skills/simmer/SKILL.md 'loop-<branch-slug>' "simultaneous branches need branch-scoped loop state"
 must_contain skills/simmer/SKILL.md '`/` replaced by `-` plus a 6-char suffix from a stable hash' "branch-scoped loop files cannot collide after slash replacement"
 must_contain skills/simmer/SKILL.md '[../fire/references/worker-routes.md](../fire/references/worker-routes.md)' "Sonnet laps use fire's subscription invocation"
@@ -132,6 +135,15 @@ section_ok "cross-file invariants"
 # 3b. Pricing freshness ---------------------------------------------------------
 # prices.md is manual data; these checks make its staleness loud instead of silent.
 PRICES=skills/receipts/references/prices.md
+# Every Claude subscription model this plugin can fire has a price-table row. Without
+# that row, receipts would silently be unable to price a route the plugin advertises.
+models=$(grep -oE -- '--model[= ]+claude-[a-z0-9-]+-5' skills/fire/references/worker-routes.md | grep -oE 'claude-[a-z0-9-]+-5' | sort -u || true)
+if [ -z "$models" ]; then
+  err "worker-routes.md names no Claude worker models - extraction pattern broken?"
+fi
+for model in $models; do
+  grep -qF "| $model |" "$PRICES" || err "Claude worker route '$model' has no matching prices.md row"
+done
 asof=$(sed -n 's/.*checked \([0-9-]*\).*/\1/p' "$PRICES" | head -1)
 if [ -n "$asof" ]; then
   age=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$asof')).days)" 2>/dev/null)

@@ -247,17 +247,24 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   the user explicitly ordered, under a hard run budget - what this project rejects is
   review firing on every stop, unbounded, not review inside an ordered pipeline.)
 
-## Why the only alternate worker is Claude Sonnet 5
+## Why the alternate workers are Claude Sonnet 5 and Opus 5
 
-- Two workers earn their place: Codex (default, sandboxed, subscription-billed) and a
-  Claude Sonnet 5 fallback on the user's own Anthropic plan for when Codex hits its
-  usage limit mid-serve - no extra key, no provider config, keyless like the rest of
-  the two-subscription setup.
+- Three workers earn their place: Codex (default, sandboxed, subscription-billed), a
+  Claude Sonnet 5 fallback, and a Claude Opus 5 premium worker on the user's own
+  Anthropic plan - no extra key, no provider config, keyless like the rest of the
+  two-subscription setup.
 - **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
   `--dangerously-skip-permissions`: it inherits the user's subscription auth from the
   default config dir with zero setup. The honest caveat is that it has no OS sandbox
   underneath (unlike Codex's `workspace-write`), so it is for trusted repos or a
   branch/worktree only.
+- **Opus 5 is the premium Claude worker**: it runs through the same keyless route and
+  is near Fable on coding benchmarks - SWE-bench Pro 79.2 versus Fable's 80.0 - at a
+  $5/$25 per-MTok API list price ($15 50/50 blend).
+  [Benchmark](https://codersera.com/blog/claude-opus-5-vs-fable-5-2026/)
+  [Pricing](https://platform.claude.com/docs/en/about-claude/pricing) It drains the
+  shared Anthropic quota faster than Sonnet, so Sonnet remains the cheap fallback
+  when quota conservation matters.
 
 ## Why fire picks a GPT-5.6 tier by task shape
 

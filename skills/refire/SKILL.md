@@ -31,9 +31,9 @@ Two ways the worker is set:
   the task text - serve's contract is that fire and refire run on the same worker and
   tier (taste stays Codex/sol). No `worker:` line means the default Codex route.
 - **Standalone `/expo:refire --with <worker>` / `--tier <tier>`:** strip both flags
-  from the args first, same convention as fire (`sonnet` = the Sonnet route; `sol`/
-  `terra`/`luna` = the Codex tier). Absent means the default Codex route at its
-  config-default tier.
+  from the args first, same convention as fire (`sonnet`/`opus` = the Claude
+  subscription route; `sol`/`terra`/`luna` = the Codex tier). Absent means the
+  default Codex route at its config-default tier.
 
 The findings handoff, the tree anchor, and plating are worker-agnostic: they read the
 working tree via git, blind to which worker produced the fix.
@@ -45,9 +45,9 @@ Same as fire, and for the same reasons:
 1. Git repo with at least one commit (`git rev-parse HEAD`).
 2. Worker preflight, per the chosen route: default/`codex` needs
    `test -f ~/.codex/expo.config.toml` (missing means stop and offer `/expo:mise` -
-   Codex silently ignores a missing profile); the Sonnet route (`sonnet`) needs only
-   `command -v claude` (`references/worker-routes.md`). The Codex-profile stop applies
-   to the Codex route only.
+   Codex silently ignores a missing profile); the Claude subscription route
+   (`sonnet`/`opus`) needs only `command -v claude` (`references/worker-routes.md`).
+   The Codex-profile stop applies to the Codex route only.
 3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-XXXXXX")`, then stamp
    its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`
    (`$SCRATCHPAD` is your session scratchpad directory; substitute its absolute path).
@@ -85,12 +85,13 @@ Write `$JOB/ticket.md` with the fire template's XML blocks, specialized:
 
 Identical to fire, backgrounding rule included: a backgrounded run from the repo root
 using the chosen worker's invocation - the default `codex exec --profile expo` for
-the Codex route, or the Sonnet invocation from `references/worker-routes.md` when
-`--with sonnet` (or serve's recorded `worker:`) selected it. No `&`, `nohup`, or
-`disown` inside the command. Announce it in one line (what, which worker, expected
-minutes, log path, cancel offer), no polling. Fire's ledger line applies too, with
-`"skill":"refire"` - except the Sonnet route emits no token summary, so it leaves no
-ledger line, same as on a fire.
+the Codex route, or the Claude subscription invocation from
+`references/worker-routes.md` when `--with sonnet` or `--with opus` (or serve's
+recorded `worker:`) selected it. No `&`, `nohup`, or `disown` inside the command.
+Announce it in one line (what, which worker, expected minutes, log path, cancel
+offer), no polling. Fire's ledger line applies too, with `"skill":"refire"` - except
+the Claude worker emits no token summary, so it leaves no ledger line, same as on a
+fire.
 
 At plating, in addition to fire's outcome checks (exit code, result file present,
 sandbox banner):
