@@ -167,13 +167,29 @@ enough that only one-file surgical fixes stay cheaper done directly.
 <summary><b>What does delegation actually save?</b></summary>
 <br>
 
-Your own runs measure both sides live: worker tokens from the job log,
-orchestration tokens from the session transcript, dollar split at API-list blends
-on every receipt. See [expo's benchmark methodology](docs/benchmark.md) for this
-project's own measured comparisons. The upstream project also published a seeded
-three-task benchmark of the pattern (roughly 10-20x cheaper per task in effective
-API-price terms, on a previous model generation) - method and caveats:
-[sous-chef#2](https://github.com/tomascupr/sous-chef/issues/2).
+**Measured, on three tasks, both arms run cold: ~1.4x cheaper in aggregate.**
+Not a multiple worth restructuring your workflow for, and we would rather publish it
+than a rounder number. Full table: [bench/RESULTS.md](bench/RESULTS.md); method and
+what it deliberately does not measure: [docs/benchmark.md](docs/benchmark.md).
+
+| task shape | delegated | direct | delta |
+|---|---|---|---|
+| feature + tests (terra) | ~$0.31 | ~$0.40 | delegated lower |
+| bugfix + regression tests (terra) | ~$0.26 | ~$0.26 | a tie |
+| mechanical bulk rename (luna) | ~$0.12 | ~$0.34 | delegated lower, ~2.8x |
+
+Read it honestly: the win is concentrated in the mechanical task, where tier routing
+sends bulk work to the cheapest model. On a small bugfix the two arms cost the same,
+which matches the rule of thumb above - surgical work stays with Claude. All three
+tasks are small (roughly 50 changed lines); a bigger task shifts more volume to the
+worker, but this task set does not measure that.
+
+Your own runs measure both sides live too: worker tokens from the job log,
+orchestration tokens from the session transcript, dollar split at API-list blends on
+every receipt. The upstream project published a seeded three-task benchmark reporting
+roughly 10-20x on a previous model generation
+([sous-chef#2](https://github.com/tomascupr/sous-chef/issues/2)); our own numbers are
+far more modest, and ours are the ones we stand behind.
 
 </details>
 

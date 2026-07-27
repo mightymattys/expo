@@ -3,6 +3,30 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.8.0 - 2026-07-27 - the first measured benchmark
+
+- `bench/` holds the evidence: a dependency-free Python fixture both arms edit, three
+  task specs written before either arm ran, the measured arms in `results.jsonl`, and
+  `RESULTS.md` as a pure render. CI diffs the render against the reporter, so a
+  price-table change fails the build until the table is refreshed.
+- **The measured result is ~1.4x cheaper in aggregate on three small tasks** - $0.69
+  delegated against $1.00 direct - not the 10-20x the upstream benchmark reported on a
+  previous model generation. The win is concentrated in the mechanical task routed to
+  luna (~2.8x); a small bugfix came out an exact tie. The README now leads with these
+  numbers and says plainly that ours are the modest ones.
+- Benchmark arms run cold and headless on both sides: `codex exec` against
+  `claude -p --output-format json`. A first attempt measured the direct arm inside the
+  session that had just authored the fixture and the spec - it read nothing and looked
+  ~10x cheaper, measuring warm context rather than delegation. Those numbers were
+  discarded and the method now says so.
+- `bench.sh` prices each arm's orchestration at the model that actually ran it, via a
+  new required `orchestrator` field. Pricing every arm at one reference orchestrator
+  overstated a direct arm on a cheaper Claude - on the fixture it reported ~$2.40
+  instead of ~$1.20 and inflated the delta from ~$0.17 to ~$1.23, always in
+  delegation's favour. A fixture asserts the corrected figures.
+- Descriptions in `plugin.json`, `marketplace.json` and on GitHub name the Opus worker;
+  the repository carries topics so it can be found.
+
 ## 0.7.13 - 2026-07-27
 
 - The changelog stamp moved out of `release.sh` into `scripts/stamp-changelog.py`, so

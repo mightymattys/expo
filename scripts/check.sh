@@ -102,6 +102,18 @@ done < <(grep -rinE -- 'sav(e|ed|ings?)\b' skills/receipts/ || true)
 must_contain README.md 'docs/benchmark.md' "the delegation FAQ links expo's benchmark method"
 must_contain docs/benchmark.md 'scripts/bench.sh' "benchmark method names its reporter"
 
+# The published results are a render of the recorded arms at current prices. If either
+# moves, the committed table is stale - and a stale table is a wrong cost claim.
+if bench_render=$(bash scripts/bench.sh bench/results.jsonl 2>&1); then
+  if printf '%s\n' "$bench_render" | diff -q - bench/RESULTS.md >/dev/null; then
+    ok "bench/RESULTS.md matches the reporter's current output"
+  else
+    err "bench/RESULTS.md is stale - rerun 'scripts/bench.sh bench/results.jsonl > bench/RESULTS.md'"
+  fi
+else
+  err "bench/results.jsonl does not render: $bench_render"
+fi
+
 # The tier names are one vocabulary, spelled identically wherever tiers are chosen.
 for t in sol terra luna; do
   for f in skills/fire/SKILL.md skills/refire/SKILL.md; do
@@ -303,14 +315,14 @@ BENCH_INVALID=$(mktemp)
 BENCH_RELATIVE_DIR=$(mktemp -d)
 REPO_ROOT=$PWD
 printf '%s\n' \
-  '{"task":"t1","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
-  '{"task":"t1","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  '{"task":"t1","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-fable-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t1","arm":"direct","model":"claude-fable-5","orchestrator":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
   > "$BENCH_LEDGER"
 bench=$(bash scripts/bench.sh "$BENCH_LEDGER")
 rc=$?
 if [ "$rc" -eq 0 ] \
-  && printf '%s\n' "$bench" | grep -Fx '| t1 | delegated | gpt-5.6-terra | 100,000 | 10,000 | ~$1.18 | yes | 300s |' >/dev/null \
-  && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | 0 | 80,000 | ~$2.40 | yes | 240s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | delegated | gpt-5.6-terra | claude-fable-5 | 100,000 | 10,000 | ~$1.18 | yes | 300s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | claude-fable-5 | 0 | 80,000 | ~$2.40 | yes | 240s |' >/dev/null \
   && printf '%s\n' "$bench" | grep -Fx -- '- t1: direct − delegated = ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null \
   && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.18; direct total ~$2.40; total observed delta (direct − delegated) ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null; then
   ok "bench.sh reports fixture rows and exact measured totals"
@@ -321,7 +333,7 @@ jq -c 'if .arm == "direct" then .verified = false else . end' "$BENCH_LEDGER" > 
 bench=$(bash scripts/bench.sh "$BENCH_MUTATED")
 rc=$?
 if [ "$rc" -eq 0 ] \
-  && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | 0 | 80,000 | failed (excluded) | failed (excluded) | 240s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | claude-fable-5 | 0 | 80,000 | failed (excluded) | failed (excluded) | 240s |' >/dev/null \
   && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 0 tasks compared; delegated total ~$0.00; direct total ~$0.00; total observed delta (direct − delegated) n/a (no verified, priced task pairs).' >/dev/null \
   && ! printf '%s\n' "$bench" | grep -F '~$2.40' >/dev/null; then
   ok "bench.sh excludes failed arm after verified mutation"
@@ -329,13 +341,13 @@ else
   err "bench.sh failed-arm mutation exclusion is wrong (rc $rc): $bench"
 fi
 printf '%s\n' \
-  '{"task":"t1","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
-  '{"task":"t1","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
-  '{"task":"t2","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
-  '{"task":"t2","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":false,"wallclock_s":240}' \
-  '{"task":"t3","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
-  '{"task":"t4","arm":"delegated","model":"unpriced-model","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
-  '{"task":"t4","arm":"direct","model":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  '{"task":"t1","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-fable-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t1","arm":"direct","model":"claude-fable-5","orchestrator":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  '{"task":"t2","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-fable-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t2","arm":"direct","model":"claude-fable-5","orchestrator":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":false,"wallclock_s":240}' \
+  '{"task":"t3","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-fable-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t4","arm":"delegated","model":"unpriced-model","orchestrator":"claude-fable-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"t4","arm":"direct","model":"claude-fable-5","orchestrator":"claude-fable-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
   > "$BENCH_MIXED"
 bench=$(bash scripts/bench.sh "$BENCH_MIXED")
 rc=$?
@@ -348,17 +360,34 @@ if [ "$rc" -eq 0 ] \
 else
   err "bench.sh mixed-ledger reconciliation is wrong (rc $rc): $bench"
 fi
-printf '%s\n' '{"task":"invalid-direct","arm":"direct","model":"claude-fable-5","worker_tokens":1,"claude_tokens":1,"verified":true,"wallclock_s":1}' > "$BENCH_INVALID"
+# Orchestration is priced per row at the model that ran it. Pricing every arm at one
+# reference orchestrator overstated a direct arm on a cheaper Claude - here it would
+# report ~$2.40 instead of ~$1.20 and inflate the delta from ~$0.17 to ~$1.23, in
+# delegation's favour.
+printf '%s\n' \
+  '{"task":"cheap-orch","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-opus-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
+  '{"task":"cheap-orch","arm":"direct","model":"claude-opus-5","orchestrator":"claude-opus-5","worker_tokens":0,"claude_tokens":80000,"verified":true,"wallclock_s":240}' \
+  > "$BENCH_MIXED"
+bench=$(bash scripts/bench.sh "$BENCH_MIXED")
+rc=$?
+if [ "$rc" -eq 0 ] \
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.03; direct total ~$1.20; total observed delta (direct − delegated) ~$0.17 (delegated lower; observed difference on this measured task set).' >/dev/null \
+  && ! printf '%s\n' "$bench" | grep -F '~$2.40' >/dev/null; then
+  ok "bench.sh prices each arm's orchestration at the model that ran it"
+else
+  err "bench.sh priced orchestration at a reference model instead of the row's own (rc $rc): $bench"
+fi
+printf '%s\n' '{"task":"invalid-direct","arm":"direct","model":"claude-fable-5","orchestrator":"claude-fable-5","worker_tokens":1,"claude_tokens":1,"verified":true,"wallclock_s":1}' > "$BENCH_INVALID"
 bench=$(bash scripts/bench.sh "$BENCH_INVALID" 2>&1)
 rc=$?
-if [ "$rc" -eq 1 ] && [ "$bench" = 'bench: invalid JSONL schema, duplicate task/arm row, or direct arm worker_tokens is not zero' ]; then
+if [ "$rc" -eq 1 ] && [ "$bench" = 'bench: invalid JSONL schema, duplicate task/arm row, direct arm worker_tokens is not zero, or direct arm model differs from its orchestrator' ]; then
   ok "bench.sh rejects direct arms with worker tokens"
 else
   err "bench.sh direct worker-token validation is wrong (rc $rc): $bench"
 fi
 # jq's % truncates its operands, so `. % 1 == 0` accepts 5.5 - a fractional token
 # count would render verbatim in the table. Integer-ness is asserted, not assumed.
-printf '%s\n' '{"task":"fractional","arm":"delegated","model":"gpt-5.6-terra","worker_tokens":100000.7,"claude_tokens":10,"verified":true,"wallclock_s":1}' > "$BENCH_INVALID"
+printf '%s\n' '{"task":"fractional","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-fable-5","worker_tokens":100000.7,"claude_tokens":10,"verified":true,"wallclock_s":1}' > "$BENCH_INVALID"
 bench=$(bash scripts/bench.sh "$BENCH_INVALID" 2>&1)
 rc=$?
 if [ "$rc" -eq 1 ]; then

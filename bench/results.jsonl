@@ -1,0 +1,6 @@
+{"task":"01-cents-precision","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-opus-5","worker_tokens":29233,"claude_tokens":3490,"verified":true,"wallclock_s":91}
+{"task": "01-cents-precision", "arm": "direct", "model": "claude-opus-5", "orchestrator": "claude-opus-5", "worker_tokens": 0, "claude_tokens": 26984, "verified": true, "wallclock_s": 84}
+{"task": "02-reject-nonfinite", "arm": "direct", "model": "claude-opus-5", "orchestrator": "claude-opus-5", "worker_tokens": 0, "claude_tokens": 17089, "verified": true, "wallclock_s": 35}
+{"task": "03-rename-label", "arm": "direct", "model": "claude-opus-5", "orchestrator": "claude-opus-5", "worker_tokens": 0, "claude_tokens": 22984, "verified": true, "wallclock_s": 56}
+{"task":"02-reject-nonfinite","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-opus-5","worker_tokens":26809,"claude_tokens":1961,"verified":true,"wallclock_s":67}
+{"task":"03-rename-label","arm":"delegated","model":"gpt-5.6-luna","orchestrator":"claude-opus-5","worker_tokens":24217,"claude_tokens":2155,"verified":true,"wallclock_s":67}

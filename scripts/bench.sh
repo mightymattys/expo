@@ -25,15 +25,17 @@ if ! jq -s -e '
     (.task | type == "string" and length > 0) and
     (.arm == "delegated" or .arm == "direct") and
     (.model | type == "string" and length > 0) and
+    (.orchestrator | type == "string" and length > 0) and
     (.worker_tokens | type == "number" and floor == . and . >= 0) and
     (.arm != "direct" or .worker_tokens == 0) and
+    (.arm != "direct" or .model == .orchestrator) and
     (.claude_tokens | type == "number" and floor == . and . >= 0) and
     (.verified | type == "boolean") and
     (.wallclock_s | type == "number" and floor == . and . >= 0)
   ) and
   ([.[] | [.task, .arm]] | group_by(.) | all(length == 1))
 ' "$ledger" >/dev/null; then
-  printf '%s\n' 'bench: invalid JSONL schema, duplicate task/arm row, or direct arm worker_tokens is not zero' >&2
+  printf '%s\n' 'bench: invalid JSONL schema, duplicate task/arm row, direct arm worker_tokens is not zero, or direct arm model differs from its orchestrator' >&2
   exit 1
 fi
 
@@ -57,7 +59,6 @@ from collections import defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 ledger_path, price_rows = sys.argv[1:3]
-ORCHESTRATOR_MODEL = "claude-fable-5"
 MILLION = Decimal("1000000")
 
 prices = {}
@@ -80,14 +81,18 @@ def money(value):
 def row_cost(row):
     # A model without a table row is unpriced even where its worker count is zero:
     # the input contract says the arm model itself must be priceable.
-    if row["model"] not in prices or ORCHESTRATOR_MODEL not in prices:
+    if row["model"] not in prices or row["orchestrator"] not in prices:
         return None
+    # Orchestration is priced at the model that actually ran it, per row. Pricing every
+    # arm at one reference orchestrator would inflate a direct arm that ran a cheaper
+    # Claude - and the direct arm is what delegation is measured against, so that error
+    # would flatter delegation.
     # Rounded to cents once, here. Every delta and total downstream is derived from
     # the same cent figures the table prints, so no two lines of the report can
     # disagree about the same number.
     return rounded_money(
         Decimal(row["worker_tokens"]) * prices[row["model"]] / MILLION
-        + Decimal(row["claude_tokens"]) * prices[ORCHESTRATOR_MODEL] / MILLION
+        + Decimal(row["claude_tokens"]) * prices[row["orchestrator"]] / MILLION
     )
 
 rows.sort(key=lambda r: (r["task"], 0 if r["arm"] == "delegated" else 1))
@@ -99,8 +104,8 @@ print("# expo benchmark report")
 print()
 print("Pricing is in API-list terms, using the 50/50 blend in `skills/receipts/references/prices.md`.")
 print()
-print("| task | arm | model | worker tokens | orchestration tokens | ~cost | verified | wallclock |")
-print("| --- | --- | --- | ---: | ---: | ---: | --- | ---: |")
+print("| task | arm | worker model | orchestrator | worker tokens | orchestration tokens | ~cost | verified | wallclock |")
+print("| --- | --- | --- | --- | ---: | ---: | ---: | --- | ---: |")
 for row in rows:
     cost = row_cost(row)
     if not row["verified"]:
@@ -113,10 +118,11 @@ for row in rows:
         cost_text = money(cost)
         verified = "yes"
     print(
-        "| {task} | {arm} | {model} | {worker:,} | {claude:,} | {cost} | {verified} | {wallclock:,}s |".format(
+        "| {task} | {arm} | {model} | {orch} | {worker:,} | {claude:,} | {cost} | {verified} | {wallclock:,}s |".format(
             task=row["task"], arm=row["arm"], model=row["model"],
-            worker=row["worker_tokens"], claude=row["claude_tokens"],
-            cost=cost_text, verified=verified, wallclock=row["wallclock_s"],
+            orch=row["orchestrator"], worker=row["worker_tokens"],
+            claude=row["claude_tokens"], cost=cost_text,
+            verified=verified, wallclock=row["wallclock_s"],
         )
     )
 
