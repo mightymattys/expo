@@ -3,6 +3,23 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.9.0 - 2026-07-27
+
+- A fourth, deliberately larger benchmark task (three new modules, filters, three
+  renderers, an argparse CLI with exit codes; ~300-380 lines across both arms). **The
+  delta scales with task size:** at a constant terra tier the ratio goes from a dead
+  tie on a small bugfix, to 1.3x on a small feature, to 1.9x on the multi-file one.
+  Aggregate over four tasks is ~1.6x, up from ~1.4x over three.
+- README now separates the two effects it can actually distinguish - task size at a
+  fixed tier, and tier routing - instead of reporting one blended multiple. The
+  measured tie on a small bugfix is published as the evidence for the project's own
+  "surgical work stays with Claude" rule.
+- Task 04 was held at terra to isolate size, though fire's table would arguably route a
+  multi-file feature to sol at twice the price. Stated as a limit; not modelled, since
+  that run never happened.
+- `bench/project` is marked `linguist-vendored` - the fixture is evidence, not the
+  product, and the language bar should describe the plugin.
+
 ## 0.8.1 - 2026-07-27
 
 - `release.sh` publishes the GitHub release itself. The fork had shipped fifteen

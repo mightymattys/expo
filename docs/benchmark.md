@@ -44,6 +44,14 @@ benchmark is for.
 Set `verified` to `true` only when the task's check command passes, checked
 independently rather than taken from the arm's own report.
 
+Tier choice is part of the measurement, not a knob to flatter it. Tasks 01, 02 and 04
+all ran on terra so that task size is the only variable between them; task 03 ran on
+luna because fire's table routes mechanical bulk there, and that is why its ratio is
+the highest in the set. Task 04 is a multi-file feature that fire's table would
+arguably send to sol at twice the per-token price - it was held at terra deliberately,
+and this benchmark does not model what sol would have cost, because that run never
+happened.
+
 One JSONL line is one measured arm of one task:
 
 ```json

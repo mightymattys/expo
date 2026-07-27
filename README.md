@@ -167,22 +167,28 @@ enough that only one-file surgical fixes stay cheaper done directly.
 <summary><b>What does delegation actually save?</b></summary>
 <br>
 
-**Measured, on three tasks, both arms run cold: ~1.4x cheaper in aggregate.**
-Not a multiple worth restructuring your workflow for, and we would rather publish it
-than a rounder number. Full table: [bench/RESULTS.md](bench/RESULTS.md); method and
-what it deliberately does not measure: [docs/benchmark.md](docs/benchmark.md).
+**Measured, on four tasks, both arms run cold: ~1.6x cheaper in aggregate.**
+Full table: [bench/RESULTS.md](bench/RESULTS.md); method and what it deliberately does
+not measure: [docs/benchmark.md](docs/benchmark.md).
 
-| task shape | delegated | direct | delta |
+| task shape | delegated | direct | ratio |
 |---|---|---|---|
-| feature + tests (terra) | ~$0.31 | ~$0.40 | delegated lower |
 | bugfix + regression tests (terra) | ~$0.26 | ~$0.26 | a tie |
-| mechanical bulk rename (luna) | ~$0.12 | ~$0.34 | delegated lower, ~2.8x |
+| feature + tests (terra) | ~$0.31 | ~$0.40 | 1.3x |
+| multi-file feature + CLI (terra) | ~$0.48 | ~$0.89 | 1.9x |
+| mechanical bulk rename (luna) | ~$0.12 | ~$0.34 | 2.8x |
 
-Read it honestly: the win is concentrated in the mechanical task, where tier routing
-sends bulk work to the cheapest model. On a small bugfix the two arms cost the same,
-which matches the rule of thumb above - surgical work stays with Claude. All three
-tasks are small (roughly 50 changed lines); a bigger task shifts more volume to the
-worker, but this task set does not measure that.
+Two things drive the gap, and neither is delegation on its own. **Task size:** at the
+same tier the ratio climbs from a dead tie on a small bugfix to 1.9x on a 300-line
+multi-file feature, because the worker absorbs volume the orchestrator would otherwise
+spend itself. **Tier routing:** the single best result is the mechanical task sent to
+the cheapest model. Small surgical work stays with Claude, exactly as the rule of thumb
+above says - the tie is that rule, measured.
+
+Honest limits: four tasks on one fixture, all in Python. The multi-file task ran on
+terra to keep the tier constant against the smaller ones; fire's own table would
+arguably route it to sol, which costs twice as much per token, and this benchmark does
+not model what that would have cost.
 
 Your own runs measure both sides live too: worker tokens from the job log,
 orchestration tokens from the session transcript, dollar split at API-list blends on
