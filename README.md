@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🧑‍🍳 expo
+<img src="docs/expo-logo.png" alt="" width="84" height="84">
+
+# expo
 
 **Fable 5 orchestrates and reviews; GPT-5.6, Sonnet 5, or Opus 5 implements.**
 

@@ -3,7 +3,13 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased - 0.7.9
+## Unreleased - 0.7.10
+
+- Logo: a `/e` terminal monogram (the slash is how the plugin is actually invoked),
+  shipped as outlined SVG in a dark and a light variant plus PNG renders; replaces
+  the emoji in the README hero.
+
+## 0.7.9 - 2026-07-27
 
 - Added Claude Opus 5 as the premium keyless Claude subscription worker
   (`--with opus`) alongside the cheap Sonnet fallback, with route pricing checks and
