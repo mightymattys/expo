@@ -3,6 +3,16 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.9.1 - 2026-07-30
+
+- The running tab survives a corrupt ledger line. Found in a real ledger: a token count
+  pasted straight from a job log's closing summary keeps its thousands separator, so
+  `"tokens":97,188` is invalid JSON - and `jq -s` aborted on it, hiding all 46 other
+  runs across four repositories behind a parse error. Bad lines are now skipped and
+  reported as `unreadable_lines`, never silently dropped.
+- fire's ledger-line schema says the token counts are bare digits and names the
+  separator as the trap, since the closing summary is where the number is copied from.
+
 ## 0.9.0 - 2026-07-27
 
 - A fourth, deliberately larger benchmark task (three new modules, filters, three

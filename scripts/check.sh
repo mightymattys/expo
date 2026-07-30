@@ -315,6 +315,26 @@ tab=$(bash scripts/tab.sh "$FIXHOME/missing-ledger.jsonl")
 rc=$?
 [ "$rc" -eq 0 ] && [ "$tab" = '{"jobs": 0}' ] && ok "tab.sh drops missing ledger" || err "tab.sh missing ledger expected rc 0 and '{\"jobs\": 0}', got rc $rc and '$tab'"
 
+# A token count pasted with its thousands separator is invalid JSON. Found in a real
+# ledger, where it took every other run's total down with it.
+TAB_CORRUPT=$(mktemp)
+printf '%s\n' \
+  '{"ts":"2026-01-01T00:00:00Z","repo":"r","skill":"fire","model":"m","tokens":100,"claude_tokens":10}' \
+  '{"ts":"2026-01-01T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":97,188}' \
+  '{"ts":"2026-01-01T00:00:00Z","repo":"r","skill":"refire","model":"m","tokens":200,"claude_tokens":20}' \
+  > "$TAB_CORRUPT"
+tab=$(bash scripts/tab.sh "$TAB_CORRUPT" | tr -d ' \n')
+rc=$?
+if [ "$rc" -eq 0 ] &&
+  printf '%s' "$tab" | grep -qF '"jobs":2' &&
+  printf '%s' "$tab" | grep -qF '"worker_tokens":300' &&
+  printf '%s' "$tab" | grep -qF '"unreadable_lines":1'; then
+  ok "tab.sh survives a corrupt ledger line and counts it"
+else
+  err "tab.sh must skip an unparseable ledger line and report it (rc $rc): $tab"
+fi
+rm -f "$TAB_CORRUPT"
+
 BENCH_LEDGER=$(mktemp)
 BENCH_MUTATED=$(mktemp)
 BENCH_MIXED=$(mktemp)

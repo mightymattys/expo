@@ -135,6 +135,10 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      to the running tab: append one line to `~/.expo/ledger.jsonl`
      (`mkdir -p ~/.expo` first) of the form
      `{"ts":"<UTC ISO-8601>","repo":"<repo basename>","skill":"fire","model":"<model from the log banner>","tokens":<total from the closing summary>,"claude_tokens":<measured orchestration tokens>}`.
+     Both token counts are **bare digits**: the closing summary prints thousands
+     separators (`97,188`), and pasting one straight in writes `"tokens":97,188`,
+     which is not valid JSON and takes the whole running tab down with it. Strip the
+     separators before writing the line.
      `claude_tokens` is the head chef's own spend for this round trip, **measured**
      from the session transcript over THIS job's window (`$JOB/started` → now) per
      [../receipts/references/orchestration-tokens.md](../receipts/references/orchestration-tokens.md)
