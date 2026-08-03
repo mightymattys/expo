@@ -3,6 +3,29 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.10.0 - 2026-08-03
+
+- `scripts/diffscan.py`: turns a unified diff into counted facts so a reviewer of a big
+  diff knows where to look. taste's own docs admit review goes shallow above ~1,500
+  changed lines, and 3 of 10 measured serve diffs crossed it, one at 7,130 lines. fire
+  runs it at plating before reading the diff line by line. Below `--min-lines` (default
+  200) it prints nothing, because under that size the summary is pure overhead.
+- Its one product rule: it reports what it counted, never what it means. No adjectives,
+  and no nouns that assert a match IS a guard, a dependency or a test.
+- Seven blockers were found before this shipped, none by the implementer's own tests:
+  an added empty file (no headers, no hunks) made the whole scan exit 0 silently; git
+  paths with spaces and C-quoted non-ASCII produced an authoritative `0 files changed`;
+  a missing input path and a negative threshold also exited 0; renaming a marketing key
+  `"catchphrase"` was reported under `Removed guard lines`; combined `diff --cc` entries
+  were unrecognised; non-UTF-8 on stdin bypassed the failure path; and a file name
+  containing a newline could print a forged `- 999 files changed, +999/-0` row of its own.
+  Paths are now escaped before they reach any output row, operational failures exit
+  non-zero with a message, and totals are suppressed rather than shown as zero when
+  every entry was skipped.
+- Fixtures are generated from real git rather than hand-written - the two defects that
+  survived longest both came from fictional fixture text - and CI asserts `git apply
+  --stat` accepts every one, with the combined-diff case as a documented exception.
+
 ## 0.9.1 - 2026-07-30
 
 - The running tab survives a corrupt ledger line. Found in a real ledger: a token count

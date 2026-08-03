@@ -206,6 +206,124 @@ if python3 -c 'import ast; ast.parse(open("scripts/stamp-changelog.py").read())'
 else
   err "scripts/stamp-changelog.py does not parse"
 fi
+if python3 -c 'import ast; ast.parse(open("scripts/diffscan.py").read())'; then
+  ok "scripts/diffscan.py parses"
+else
+  err "scripts/diffscan.py does not parse"
+fi
+DIFFSCAN_EXPECTED=$(mktemp)
+cat > "$DIFFSCAN_EXPECTED" <<'EOF'
+## Change scan
+
+- 8 files changed, +9/-22
+- by path pattern: config 2, generated 1, docs 1, source 3, tests 1
+- new files 1, deleted 1, renamed 1
+
+### Manifest-line matches
+- Pattern list: manifest-line regular expressions
+- package.json: +1/-1 matched lines
+
+### Removed-line matches
+- Pattern list: removed-line substrings (case-insensitive)
+- src/gone.py:-raise Gone()
+- src/pay.ts:-} catch (err) {
+- src/pay.ts:-  except Error:
+- src/pay.ts:-  finally:
+- src/pay.ts:-  rescue StandardError
+- src/pay.ts:-  throw error
+- src/pay.ts:-  raise Error()
+- src/pay.ts:-  assert ready
+- src/pay.ts:-  validate(data)
+- src/pay.ts:-  if err != nil {
+- src/pay.ts:-  panic("bad")
+- src/pay.ts:-  authorize(user)
+- src/pay.ts:-  authenticate(user)
+- src/pay.ts:-  permission = false
+- src/pay.ts:-  sanitize(input)
+- ... and 2 more
+
+### Test-pattern matches
+- Pattern list: test-pattern substrings (case-sensitive)
+- +3/-1 matched lines
+EOF
+if python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan.diff | diff -u "$DIFFSCAN_EXPECTED" - >/dev/null; then
+  ok "diffscan.py reports the fixture exactly"
+else
+  err "diffscan.py fixture output differs:"; python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan.diff
+fi
+diffscan_metadata_case() { # fixture, summary
+  out=$(python3 scripts/diffscan.py --min-lines 0 "$1")
+  rc=$?
+  if [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -Fx '## Change scan' >/dev/null \
+    && printf '%s\n' "$out" | grep -Fx -- '- 1 files changed, +0/-0' >/dev/null \
+    && printf '%s\n' "$out" | grep -Fx -- "$2" >/dev/null; then
+    ok "diffscan.py reads $1"
+  else
+    err "diffscan.py must read $1 (rc $rc): $out"
+  fi
+}
+diffscan_metadata_case scripts/fixtures/diffscan-added-empty.diff '- new files 1, deleted 0, renamed 0'
+diffscan_metadata_case scripts/fixtures/diffscan-deleted-empty.diff '- new files 0, deleted 1, renamed 0'
+diffscan_metadata_case scripts/fixtures/diffscan-binary-files.diff '- new files 0, deleted 0, renamed 0'
+out=$(python3 scripts/diffscan.py --min-lines 0 scripts/fixtures/diffscan-git-binary-patch.diff)
+rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -Fx -- '- 2 files changed, +1/-1' >/dev/null \
+  && printf '%s\n' "$out" | grep -Fx -- '- new files 0, deleted 0, renamed 0' >/dev/null; then
+  ok "diffscan.py reads scripts/fixtures/diffscan-git-binary-patch.diff"
+else
+  err "diffscan.py must read scripts/fixtures/diffscan-git-binary-patch.diff (rc $rc): $out"
+fi
+diffscan_metadata_case scripts/fixtures/diffscan-mode-change.diff '- new files 0, deleted 0, renamed 0'
+diffscan_metadata_case scripts/fixtures/diffscan-pure-rename.diff '- new files 0, deleted 0, renamed 1'
+if python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan-paths.diff | grep -Fx -- '- 2 files changed, +2/-2' >/dev/null; then
+  ok "diffscan.py reads spaced and C-quoted Git paths"
+else
+  err "diffscan.py must read spaced and C-quoted Git paths"
+fi
+if [ "$(python3 scripts/diffscan.py --min-lines 0 scripts/fixtures/diffscan-combined.diff)" = '- 1 combined diff entries were not line-counted' ]; then
+  ok "diffscan.py reports combined diffs without invented totals"
+else
+  err "diffscan.py must report combined diffs separately"
+fi
+if [ "$(printf '%s\n' 'diff --git a/broken.py b/broken.py' '@@ unreadable hunk' | python3 scripts/diffscan.py --min-lines 0 -)" = '- 1 diff entries were unreadable' ]; then
+  ok "diffscan.py suppresses zero totals when every entry is skipped"
+else
+  err "diffscan.py must suppress zero totals when every entry is skipped"
+fi
+out=$(python3 scripts/diffscan.py scripts/fixtures/no-such.diff 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && printf '%s\n' "$out" | grep -Fx "diffscan: cannot read 'scripts/fixtures/no-such.diff': No such file or directory" >/dev/null; then
+  ok "diffscan.py reports unreadable input"
+else
+  err "diffscan.py must reject unreadable input (rc $rc): $out"
+fi
+out=$(python3 scripts/diffscan.py --min-lines -1 - 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && [ "$out" = 'diffscan: --min-lines must be a non-negative integer' ]; then
+  ok "diffscan.py reports invalid arguments"
+else
+  err "diffscan.py must reject invalid arguments (rc $rc): $out"
+fi
+if [ -z "$(python3 scripts/diffscan.py scripts/fixtures/diffscan.diff)" ] \
+  && [ -z "$(printf 'not a diff\n' | python3 scripts/diffscan.py --min-lines 1 -)" ]; then
+  ok "diffscan.py drops below-threshold and malformed input"
+else
+  err "diffscan.py must drop below-threshold and malformed input"
+fi
+for f in scripts/fixtures/*.diff; do
+  if [ "$(basename "$f")" = diffscan-combined.diff ]; then
+    if ! git apply --stat "$f" >/dev/null 2>&1; then
+      ok "diffscan combined fixture is the documented git-apply exception"
+    else
+      err "$f must remain a standalone git-apply exception"
+    fi
+  elif git apply --stat "$f" >/dev/null 2>&1; then
+    ok "git apply --stat accepts $f"
+  else
+    err "git apply --stat rejects $f"
+  fi
+done
+rm -f "$DIFFSCAN_EXPECTED"
 STAMP_FIX=$(mktemp)
 today=$(date -u +%F)
 stamp_case() { # heading, version, expected-heading-or-FAIL

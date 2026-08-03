@@ -1,0 +1,8 @@
+diff --cc src/pay.ts
+index 45cf141,c376d89..20b117f
+--- a/src/pay.ts
++++ b/src/pay.ts
+@@@ -1,1 -1,1 +1,1 @@@
+- left
+ -right
+++merged

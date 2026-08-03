@@ -1,0 +1,14 @@
+diff --git a/foo bar/x.py b/foo bar/x.py
+index 3367afd..3e75765 100644
+--- a/foo bar/x.py	
++++ b/foo bar/x.py	
+@@ -1 +1 @@
+-old
++new
+diff --git "a/h\303\241.py" "b/h\303\241.py"
+index 3367afd..3e75765 100644
+--- "a/h\303\241.py"
++++ "b/h\303\241.py"
+@@ -1 +1 @@
+-old
++new
