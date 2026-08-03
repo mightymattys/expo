@@ -117,6 +117,33 @@ done < <(grep -rinE -- 'sav(e|ed|ings?)\b' skills/receipts/ || true)
 must_contain README.md 'docs/benchmark.md' "the delegation FAQ links expo's benchmark method"
 must_contain docs/benchmark.md 'scripts/bench.sh' "benchmark method names its reporter"
 
+# README's inventory drifted silently once: it named one script while the repo had
+# seven, and never mentioned the newest user-visible behaviour at all.
+box_drift=$(python3 - <<'INVENTORY'
+import os, re
+text = open("README.md", encoding="utf-8").read()
+match = re.search(r"## .{0,4} ?What's in the box\n\n```text\n(.*?)```", text, re.S)
+if not match:
+    print("README has no 'What's in the box' block")
+    raise SystemExit
+listed = {line.split()[0].rstrip("/") for line in match.group(1).splitlines() if line.strip()}
+real = {f"skills/{name}" for name in os.listdir("skills")} | {"codex", "templates", "bench"}
+for folder in ("scripts", "docs"):
+    real |= {f"{folder}/{name}" for name in os.listdir(folder)
+             if name.endswith((".sh", ".py", ".md"))}
+for name in sorted(real - listed):
+    print(f"{name} ships but README's inventory omits it")
+for name in sorted(listed - real):
+    print(f"README's inventory names {name}, which does not ship")
+INVENTORY
+)
+if [ -z "$box_drift" ]; then
+  ok "README's inventory matches what ships"
+else
+  err "README inventory drift:
+$box_drift"
+fi
+
 # The published results are a render of the recorded arms at current prices. If either
 # moves, the committed table is stale - and a stale table is a wrong cost claim.
 if bench_render=$(bash scripts/bench.sh bench/results.jsonl 2>&1); then

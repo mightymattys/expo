@@ -131,7 +131,12 @@ which the worker re-reads on every run. Claude reads the same file via an
 completion re-invokes Claude.
 
 **Claims are not evidence.** After every delegated run, Claude reviews the diff
-line by line and re-runs the verification commands itself.
+line by line and re-runs the verification commands itself. Above a couple of hundred
+changed lines a change scan runs first (`scripts/diffscan.py`): counted facts about the
+diff - what changed where, which removed lines matched a watch list, how the test
+surface moved - so a 7,000-line review starts with routing instead of scrolling. It
+reports only what it counted and never what it means; the judgement stays with the
+reader.
 
 Every load-bearing decision traces to a documented incident, an official doc, or
 a measured comparison - not vibes. A sample:
@@ -269,7 +274,16 @@ skills/receipts/      the check: per-run cost receipts + savings table
 codex/                Codex delegation profile → ~/.codex/expo.config.toml
 templates/            AGENTS.md scaffold, CLAUDE.md routing blocks
 docs/design.md        the receipts: sources for every design decision
+docs/benchmark.md     how the cost comparison is measured, and what it does not measure
+docs/diffscan.md      what the change scan counts, and the lists it counts with
+bench/                the fixture, task specs and measured arms behind the numbers
 scripts/check.sh      the executable invariant list - CI runs it on every push
+scripts/diffscan.py   counted change facts from a diff, for routing a large review
+scripts/orch-tokens.py  orchestration tokens for one window, from the session transcript
+scripts/tab.sh        the running tab across every repo, from ~/.expo/ledger.jsonl
+scripts/bench.sh      renders the benchmark arms into bench/RESULTS.md
+scripts/release.sh    the release gate: check, bump, stamp the changelog, publish
+scripts/stamp-changelog.py  turns the Unreleased heading into a dated one
 ```
 
 ## 🗑️ Uninstall

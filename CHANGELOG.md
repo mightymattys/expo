@@ -3,6 +3,14 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.10.3 - 2026-08-03
+
+- README's inventory named one script while seven shipped, and never mentioned the
+  change scan at all - the newest thing a user actually sees. It now lists every script
+  and doc that ships, and the honesty section says what the scan does and what it
+  refuses to do. CI compares the list against the repo in both directions, so a file
+  that ships without a line, or a line without a file, fails the build.
+
 ## 0.10.2 - 2026-08-03
 
 - Every diffscan fixture is pinned to its full expected output in a `.expected` file
