@@ -95,6 +95,11 @@ must_contain skills/simmer/SKILL.md '`/` replaced by `-` plus a 6-char suffix fr
 must_contain skills/simmer/SKILL.md '[../fire/references/worker-routes.md](../fire/references/worker-routes.md)' "Sonnet laps use fire's subscription invocation"
 must_contain skills/simmer/SKILL.md 'git merge-base --is-ancestor' "recreated branches must not inherit stale loop state"
 must_contain skills/receipts/references/receipt-template.md '.expo/loop-<branch-slug>.md' "simmer receipts read branch-scoped loop state"
+# A verdict is only true of the tree it was reached against, and a receipt outlives it.
+must_contain skills/receipts/references/receipt-template.md 'tree:' "a receipt records the tree its verdict was reached against"
+must_contain skills/receipts/SKILL.md 'tree moved' "printing receipts marks verdicts whose tree has since moved"
+# A worker inheriting a routing policy can delegate onward, unwatched.
+must_contain skills/fire/references/ticket-template.md 'do not delegate' "every ticket forbids onward delegation, not just the Claude routes"
 must_contain skills/receipts/references/receipt-template.md 'filtered by `"branch":"<branch>"`' "simmer receipts select this branch's ledger laps"
 
 # A receipt's only savings claim is explicitly qualified with a floor or bound.

@@ -57,5 +57,8 @@ the task impossible as specified, and say exactly what is missing.
 <action_safety>
 Stay narrow. No refactors, cleanups, or "improvements" outside the files listed above.
 Do not delete or rewrite code you do not understand - flag it under OPEN instead.
+Implement this ticket directly; do not delegate any part of it. A worker that inherits a
+routing policy can otherwise hand the work on again, spending another model's quota on a
+run nobody is watching.
 </action_safety>
 ```

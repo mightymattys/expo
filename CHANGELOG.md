@@ -3,6 +3,18 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.10.1 - 2026-08-03
+
+- Receipts carry a `tree:` anchor, and `/expo:receipts` marks any row whose tree has
+  since moved. A verdict is only true of the tree it was reached against; without this a
+  receipt read weeks later still reads "verified" over code that has changed underneath
+  it. Receipts written before the field are marked "tree unknown" rather than implied to
+  still hold.
+- Every ticket forbids onward delegation, not just the Claude worker routes. A worker
+  that inherits a routing policy can otherwise hand the work on again and spend another
+  model's quota on a run nobody is watching - which is why the Claude routes already
+  carried the line.
+
 ## 0.10.0 - 2026-08-03
 
 - `scripts/diffscan.py`: turns a unified diff into counted facts so a reviewer of a big

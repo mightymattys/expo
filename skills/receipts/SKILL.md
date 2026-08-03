@@ -17,6 +17,12 @@ Read the last 10 receipts by filename (newest last) and render one table:
 
 | when | task | worker | tokens | ~cost | delta vs Fable (floor) | verdict |
 
+A receipt's verdict was reached against the `tree:` anchor it carries. Recompute the
+current anchor once (taste's recipe) and mark every row whose anchor differs - a
+trailing ` (tree moved)` on the verdict is enough. Receipts without a `tree:` line
+predate the field; mark those ` (tree unknown)` rather than implying they still hold.
+Never silently print a stale verdict as if it described the code in front of you.
+
 Close with one line - "last N runs: ~$X all-in (measured), equal-volume delta
 ~$Y vs Fable list (floor)." Sum only lines that exist; a receipt missing a number
 contributes nothing to that column - say so rather than papering over it.

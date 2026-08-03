@@ -21,6 +21,9 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
 # serve: <task one-liner>
 
 - when: <UTC ISO-8601> · wallclock <Xm> (now minus state.md's `started:`)
+- tree: <the taste anchor recipe, computed at write time> - the state the verdict below
+  was reached against. A verdict is only true of a tree; without this, a receipt read
+  weeks later still reads "verified" over code that has since moved.
 - worker: <model(s) from the log banners>, <N> runs, <total>k tokens
   (a run that mixed tiers/models - e.g. a terra fire and a sol taste - prices each
   job at its own banner model's blend before summing, and lists per-model subtotals:
