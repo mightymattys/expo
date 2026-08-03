@@ -100,6 +100,9 @@ must_contain skills/receipts/references/receipt-template.md 'tree:' "a receipt r
 must_contain skills/receipts/SKILL.md 'tree moved' "printing receipts marks verdicts whose tree has since moved"
 # A worker inheriting a routing policy can delegate onward, unwatched.
 must_contain skills/fire/references/ticket-template.md 'do not delegate' "every ticket forbids onward delegation, not just the Claude routes"
+# A stale installed copy is silent; its first visible symptom is an unpriceable model.
+must_contain skills/receipts/references/receipt-template.md 'INSTALLED plugin is older' "an unpriceable model points at the install, not at prices.md"
+must_contain skills/mise/SKILL.md 'claude plugin update expo@expo' "mise reports the running version and offers the update"
 must_contain skills/receipts/references/receipt-template.md 'filtered by `"branch":"<branch>"`' "simmer receipts select this branch's ledger laps"
 
 # A receipt's only savings claim is explicitly qualified with a floor or bound.
@@ -256,30 +259,27 @@ if python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan.diff | di
 else
   err "diffscan.py fixture output differs:"; python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan.diff
 fi
-diffscan_metadata_case() { # fixture, summary
-  out=$(python3 scripts/diffscan.py --min-lines 0 "$1")
-  rc=$?
-  if [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -Fx '## Change scan' >/dev/null \
-    && printf '%s\n' "$out" | grep -Fx -- '- 1 files changed, +0/-0' >/dev/null \
-    && printf '%s\n' "$out" | grep -Fx -- "$2" >/dev/null; then
-    ok "diffscan.py reads $1"
-  else
-    err "diffscan.py must read $1 (rc $rc): $out"
+# Every fixture is pinned to its full expected output, not a few greps. A loose
+# assertion is how the empty-file blocker and a corrupt fixture both survived a run.
+for fixture in scripts/fixtures/*.diff; do
+  expected="${fixture%.diff}.expected"
+  if [ ! -f "$expected" ]; then
+    err "$fixture has no golden $expected - every fixture pins its full output"
+    continue
   fi
-}
-diffscan_metadata_case scripts/fixtures/diffscan-added-empty.diff '- new files 1, deleted 0, renamed 0'
-diffscan_metadata_case scripts/fixtures/diffscan-deleted-empty.diff '- new files 0, deleted 1, renamed 0'
-diffscan_metadata_case scripts/fixtures/diffscan-binary-files.diff '- new files 0, deleted 0, renamed 0'
-out=$(python3 scripts/diffscan.py --min-lines 0 scripts/fixtures/diffscan-git-binary-patch.diff)
-rc=$?
-if [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -Fx -- '- 2 files changed, +1/-1' >/dev/null \
-  && printf '%s\n' "$out" | grep -Fx -- '- new files 0, deleted 0, renamed 0' >/dev/null; then
-  ok "diffscan.py reads scripts/fixtures/diffscan-git-binary-patch.diff"
-else
-  err "diffscan.py must read scripts/fixtures/diffscan-git-binary-patch.diff (rc $rc): $out"
-fi
-diffscan_metadata_case scripts/fixtures/diffscan-mode-change.diff '- new files 0, deleted 0, renamed 0'
-diffscan_metadata_case scripts/fixtures/diffscan-pure-rename.diff '- new files 0, deleted 0, renamed 1'
+  if actual=$(python3 scripts/diffscan.py --min-lines 0 "$fixture" 2>&1) &&
+    printf '%s\n' "$actual" | diff -q - "$expected" >/dev/null; then
+    ok "diffscan.py matches the golden output for $(basename "$fixture")"
+  else
+    err "diffscan.py output differs from $expected:
+$(printf '%s\n' "$actual" | diff - "$expected" | head -12)"
+  fi
+done
+# A golden file with no fixture beside it is a leftover that pins nothing.
+for expected in scripts/fixtures/*.expected; do
+  [ -f "${expected%.expected}.diff" ] || err "$expected has no fixture beside it"
+done
+
 if python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan-paths.diff | grep -Fx -- '- 2 files changed, +2/-2' >/dev/null; then
   ok "diffscan.py reads spaced and C-quoted Git paths"
 else

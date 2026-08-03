@@ -82,6 +82,14 @@ Codex rebuilds its instruction chain from `AGENTS.md` on every run, including no
 - Bridge it for Claude: the repo's `CLAUDE.md` should contain the line `@AGENTS.md` so both models read the same standards. Add the line (or create a minimal CLAUDE.md containing it) with the user's OK. A symlink `CLAUDE.md -> AGENTS.md` also works if there's no Claude-specific content.
 - Note: fire needs a git repo with at least one commit - if this directory isn't one, say so now.
 
+## 4b. Installed version
+
+Report the version this run is executing as, read from
+`${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`. A stale installed copy is silent by
+nature: the skills still run, they just run the old text, and the first visible symptom
+is usually a receipt that cannot price a model the run just used. Offer
+`claude plugin update expo@expo`, which either updates or confirms the copy is current.
+
 ## 5. Alternate worker (optional)
 
 **Claude subscription route (no setup):** nothing to install - `claude -p --model

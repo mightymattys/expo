@@ -3,6 +3,21 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.10.2 - 2026-08-03
+
+- Every diffscan fixture is pinned to its full expected output in a `.expected` file
+  beside it, replacing greps for a few lines. The loose form was how an added empty
+  file disabled the whole scanner and a corrupt fixture both survived a run; the golden
+  form catches a path-parsing regression that the greps passed. CI also rejects a
+  fixture with no golden and a golden with no fixture.
+- A model the kitchen just ran but cannot price now points at the installed plugin
+  rather than at the price table, and `/expo:mise` reports the version it is running as
+  and offers `claude plugin update expo@expo`. Evidence: two receipts in a real repo,
+  dated 2026-07-24 and 2026-07-27, say the GPT-5.6 tiers are absent from prices.md -
+  which was only true of copies predating those rows, so those runs executed a plugin
+  several versions behind while its repo was being released from. A stale install is
+  silent by nature: the skills still run, they just run the old text.
+
 ## 0.10.1 - 2026-08-03
 
 - Receipts carry a `tree:` anchor, and `/expo:receipts` marks any row whose tree has

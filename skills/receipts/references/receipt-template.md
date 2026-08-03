@@ -31,7 +31,9 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   misprice both)
 - cost: ~$<X> API-list terms (per-model blends per prices.md; subscription quota =
   $0 marginal; a banner model missing from prices.md prices as unknown - warn
-  loudly and drop its dollar figure rather than guessing a blend)
+  loudly and drop its dollar figure rather than guessing a blend, and say that a model
+  the kitchen just ran but cannot price usually means the INSTALLED plugin is older
+  than the price table, so the fix is `/expo:mise`, not an edit to prices.md)
 - orchestration: <M>k Claude tokens, ~$<O> API-list (measured from the session
   transcript since the RUN's `started:` per orchestration-tokens.md - the run-level
   window, not a sum of the per-job ledger windows; drop this line if the snippet

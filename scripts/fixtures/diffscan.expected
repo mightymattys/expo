@@ -1,0 +1,32 @@
+## Change scan
+
+- 8 files changed, +9/-22
+- by path pattern: config 2, generated 1, docs 1, source 3, tests 1
+- new files 1, deleted 1, renamed 1
+
+### Manifest-line matches
+- Pattern list: manifest-line regular expressions
+- package.json: +1/-1 matched lines
+
+### Removed-line matches
+- Pattern list: removed-line substrings (case-insensitive)
+- src/gone.py:-raise Gone()
+- src/pay.ts:-} catch (err) {
+- src/pay.ts:-  except Error:
+- src/pay.ts:-  finally:
+- src/pay.ts:-  rescue StandardError
+- src/pay.ts:-  throw error
+- src/pay.ts:-  raise Error()
+- src/pay.ts:-  assert ready
+- src/pay.ts:-  validate(data)
+- src/pay.ts:-  if err != nil {
+- src/pay.ts:-  panic("bad")
+- src/pay.ts:-  authorize(user)
+- src/pay.ts:-  authenticate(user)
+- src/pay.ts:-  permission = false
+- src/pay.ts:-  sanitize(input)
+- ... and 2 more
+
+### Test-pattern matches
+- Pattern list: test-pattern substrings (case-sensitive)
+- +3/-1 matched lines
