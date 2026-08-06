@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.11.0 - 2026-08-06
 
 - Ledger lines are written by a script instead of transcribed by the model. Evidence
   from one day of real runs: two taste runs wrote round invented token counts (98,000
