@@ -89,9 +89,7 @@ the Codex route, or the Claude subscription invocation from
 `references/worker-routes.md` when `--with sonnet` or `--with opus` (or serve's
 recorded `worker:`) selected it. No `&`, `nohup`, or `disown` inside the command.
 Announce it in one line (what, which worker, expected minutes, log path, cancel
-offer), no polling. Fire's ledger line applies too, with `"skill":"refire"` - except
-the Claude worker emits no token summary, so it leaves no ledger line, same as on a
-fire.
+offer), no polling.
 
 At plating, in addition to fire's outcome checks (exit code, result file present,
 sandbox banner):
@@ -106,6 +104,10 @@ sandbox banner):
    out-of-scope changes.
 4. For risky diffs, offer a confirmation `/expo:taste`; two clean models in a row
    is the strongest ship signal this kitchen produces.
+5. Add the measured run to the running tab with
+   `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --job "$JOB" --skill refire
+   --session "${CLAUDE_CODE_SESSION_ID:-}"`; a Claude worker emits no token summary,
+   so the script leaves no line, same as on a fire.
 
 ## Cap
 

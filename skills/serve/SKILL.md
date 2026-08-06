@@ -12,7 +12,8 @@ per-stage conversation.
 
 ## Run state - the ticket on the rail
 
-Before stage 1, mint one run dir: `RUN=$(mktemp -d "$SCRATCHPAD/serve-XXXXXX")`.
+Before stage 1, mint one run dir and its real clock stamp: `RUN=$(mktemp -d
+"$SCRATCHPAD/serve-XXXXXX"); date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN/started"`.
 Each stage mints its job dir per its sibling skill, but inside `$RUN` (substitute
 `$RUN` for `$SCRATCHPAD` in the sibling's mktemp) - even with a stale state file,
 `ls "$RUN"` reconstructs the run. Keep `$RUN/state.md`, a few self-describing lines
@@ -20,7 +21,7 @@ rewritten in full at every stage transition:
 
 ```
 task: <one line>
-started: <UTC ISO-8601 of stage 1's fire>
+started: <contents of $RUN/started>
 budget: 5
 runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
@@ -36,7 +37,8 @@ job is in flight must not un-spend the budget. The conversation is not the ledge
 this run; state.md is. After compaction, or on any doubt about the count, read it
 before firing anything. (A `/clear` or session death mints a new scratchpad - serve
 is a single-session promise and does not survive that; the working tree and job
-dirs still hold the work.)
+dirs still hold the work.) Read `started:` from `$RUN/started`; never type it from
+memory or estimate it.
 
 ## Choosing the worker and tier
 
@@ -60,7 +62,9 @@ Claude's validation pass is the only cross-model check in that run.
 
 1. **Fire** - per `/expo:fire`: preflight, ticket, backgrounded run, plating with
    your own verification. Record the job's `pre-fire.patch` path as `baseline:` in
-   state.md - later stages scope against it. If plating fails verification, one delta
+   state.md - later stages scope against it. When fire plates, rewrite state.md in
+   full with its current `runs_used`, `baseline:`, `stage: fire plated; next: taste`,
+   and no cooking `job:`; the stage is not finished until state.md says so. If plating fails verification, one delta
    round (it counts against the serve budget). The pipeline advances only on green
    verification: still red after the delta means fix it yourself if a surgical fix
    will do, otherwise stop and report honestly - tasting a known-broken
@@ -68,11 +72,19 @@ Claude's validation pass is the only cross-model check in that run.
 2. **Taste** - per `/expo:taste`: read-only cross-review scoped to the delta
    against the `baseline:` patch in state.md - the user's pre-existing WIP is not
    part of this order - then your validation pass; record the resulting
-   `findings.md` path as `findings:`. Skip only if the diff is trivial (a few
+   `findings.md` path as `findings:`. When taste plates (or is skipped), rewrite
+   state.md in full with the current `runs_used`, `findings:`, `stage: taste plated;
+   next: refire`, and no cooking `job:`; the stage is not finished until state.md says
+   so. Skip only if the diff is trivial (a few
    lines); say so in the final report.
 3. **Refire** - per `/expo:refire`: if the `findings:` file lists any CONFIRMED
    findings, one scoped fix run, then re-verify each finding at its cited location.
-4. **Plate** - run the verification commands one final time and serve.
+   When refire plates (or no findings need it), rewrite state.md in full with the
+   current `runs_used`, `stage: refire plated; next: final plate`, and no cooking
+   `job:`; the stage is not finished until state.md says so.
+4. **Plate** - run the verification commands one final time, then rewrite state.md
+   in full with `stage: plated; next: report` and no cooking `job:`; the stage is not
+   finished until state.md says so.
 
 Stage transitions inherit fire/refire's changed-files-vs-`<files>` concurrent-edit
 check; outside-list paths are named, warned, and excluded from the stage delta.
@@ -107,14 +119,15 @@ check; outside-list paths are named, warned, and excluded from the stage delta.
 
 ## The final report
 
-One message: what shipped (files, summary), what taste found (confirmed findings and
+Before the final report, write the run's receipt to `.expo/receipts/` per
+[../receipts/references/receipt-template.md](../receipts/references/receipt-template.md).
+
+One message: name that receipt's path, what shipped (files, summary), what taste found (confirmed findings and
 how the refire resolved them; refuted count), the verification output you ran
 yourself, and anything OPEN. If all stages came back clean, say so plainly - two
 models in agreement, checks green, plate served.
 
-Then write the run's receipt to `.expo/receipts/` per
-[../receipts/references/receipt-template.md](../receipts/references/receipt-template.md)
-and, when the verdict is verified, end the report with its shareable summary line.
+When the verdict is verified, end the report with the receipt's shareable summary line.
 Receipt numbers come from the job logs, your own verification, and the diff against
 `baseline:` - a line you can't back with a measurement gets dropped, not guessed.
 

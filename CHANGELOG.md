@@ -3,6 +3,35 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- Ledger lines are written by a script instead of transcribed by the model. Evidence
+  from one day of real runs: two taste runs wrote round invented token counts (98,000
+  and 88,000) where their job logs said 203,126 and 170,850; ten lines carried
+  estimated `:00`-second timestamps; eleven of twenty-seven lost `claude_tokens`
+  because no real start stamp existed; two serves that reached a plated refire wrote no
+  receipt at all. `scripts/ledger-append.py` now reads the model from the banner, the
+  tokens from the closing summary, the time from the clock, and the orchestration
+  window from the job's own `started` stamp - and writes nothing when a run cannot be
+  measured. fire, taste, refire and simmer call it, and CI rejects a hand-written
+  ledger line anywhere under `skills/`.
+- The appender refuses numbers that are not the run's own. A job log echoes its entire
+  ticket and prints the worker's final message after the closing summary, so a
+  first-match model and a last-match token count can both be supplied by arbitrary
+  text - `tokens used` occurs three times in this repo's own fire log. The model is
+  read only inside the opening banner, the summary only from the region the final
+  message does not occupy, and grouped digits must group in threes, so `1,2` is
+  rejected rather than read as `12`. Three spoof fixtures pin all of it, and the
+  complete-run fixture pins the real byte shape - a result file with no trailing
+  newline, which a fixture that adds one had hidden while every real log went unwritten.
+- serve stamps its own start, rewrites `state.md` at every stage transition, and writes
+  the receipt before the final report instead of after it - the order that let two
+  receipts fall off the end of a turn.
+- fire's tier table now says it picks who gets the ticket, never whether to delegate,
+  and the `luna` row defers to the delegation floor. A one-word label rename had been
+  fired to luna for 32,680 worker tokens plus orchestration; both rules existed
+  already and nothing said which one won.
+
 ## 0.10.3 - 2026-08-03
 
 - README's inventory named one script while seven shipped, and never mentioned the

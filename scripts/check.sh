@@ -184,12 +184,22 @@ for f in $(grep -rlE 'run_in_background: true|backgrounded' skills/); do
   grep -qE 'nohup|backgrounding rule' "$f" || err "$f backgrounds a worker but carries neither the no-&/nohup/disown rule nor a pointer to fire's"
 done
 
-# One ledger line schema, defined once (fire); each writer names its own skill tag.
-n=$(grep -rlF '{"ts":' skills/ | wc -l | tr -d ' ')
-[ "$n" = 1 ] || err "ledger line schema must be defined in exactly one file (found $n)"
-for s in taste refire simmer; do
-  must_contain "skills/$s/SKILL.md" "\"skill\":\"$s\"" "its ledger lines carry its own skill tag"
+# Ledger writes are code, not a transcription task; every writer invokes the one
+# measured appender with its own skill tag.
+for s in fire taste refire simmer; do
+  must_contain "skills/$s/SKILL.md" 'scripts/ledger-append.py' "its ledger write uses the measured appender"
+  must_contain "skills/$s/SKILL.md" "--skill $s" "its ledger write carries its own skill tag"
 done
+if grep -R -qF '{"ts":' skills/; then
+  err "skills must not hand-write ledger JSON lines"
+else
+  ok "skills do not hand-write ledger JSON lines"
+fi
+if grep -R -nE '(>>|tee[[:space:]]+-a).*(~/.expo/ledger\.jsonl|ledger\.jsonl)|(~/.expo/ledger\.jsonl|ledger\.jsonl).*(>>|tee[[:space:]]+-a)' skills/ >/dev/null; then
+  err "skills must not hand-roll appends to ~/.expo/ledger.jsonl"
+else
+  ok "skills use the appender as the sole ledger writer"
+fi
 
 # Every plugin-root path a skill or template names actually ships in the repo.
 for p in $(grep -rho 'CLAUDE_PLUGIN_ROOT}/[A-Za-z0-9._/-]*' skills/ templates/ | sed 's|^CLAUDE_PLUGIN_ROOT}/||' | sort -u); do
@@ -304,7 +314,8 @@ $(printf '%s\n' "$actual" | diff - "$expected" | head -12)"
 done
 # A golden file with no fixture beside it is a leftover that pins nothing.
 for expected in scripts/fixtures/*.expected; do
-  [ -f "${expected%.expected}.diff" ] || err "$expected has no fixture beside it"
+  fixture="${expected%.expected}"
+  [ -f "$fixture.diff" ] || [ -f "$fixture.log" ] || err "$expected has no fixture beside it"
 done
 
 if python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan-paths.diff | grep -Fx -- '- 2 files changed, +2/-2' >/dev/null; then
@@ -393,6 +404,11 @@ if python3 -c 'import ast; ast.parse(open("scripts/orch-tokens.py").read())'; th
 else
   err "scripts/orch-tokens.py does not parse"
 fi
+if python3 -c 'import ast; ast.parse(open("scripts/ledger-append.py").read())'; then
+  ok "scripts/ledger-append.py parses"
+else
+  err "scripts/ledger-append.py does not parse"
+fi
 if [ -x scripts/tab.sh ]; then
   ok "scripts/tab.sh is executable"
 else
@@ -460,6 +476,68 @@ if [ "$rc" -eq 0 ] && printf '%s' "$tab" | jq -e '.jobs == 2 and .worker_tokens 
   ok "tab.sh reports fixture totals and work split"
 else
   err "tab.sh fixture totals or work split are wrong (rc $rc): $tab"
+fi
+
+LEDGER_FIX=$(mktemp -d)
+mkdir "$LEDGER_FIX/job"
+cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/job/job.log"
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/job" --skill fire --repo fixture --ledger "$LEDGER_FIX/ledger.jsonl")
+rc=$?
+normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/ledger.jsonl")" -eq 1 ] &&
+  printf '%s\n' "$normal" | diff -q scripts/fixtures/ledger-complete.expected - >/dev/null; then
+  ok "ledger-append.py writes the complete fixture exactly apart from its real timestamp"
+else
+  err "ledger-append.py complete fixture expected one golden line (rc $rc): $out"
+fi
+if python3 -m json.tool "$LEDGER_FIX/ledger.jsonl" >/dev/null; then
+  ok "ledger-append.py strips token separators into parseable JSON"
+else
+  err "ledger-append.py wrote invalid JSON for a comma-separated token summary"
+fi
+tab=$(bash scripts/tab.sh "$LEDGER_FIX/ledger.jsonl")
+rc=$?
+if [ "$rc" -eq 0 ] && printf '%s' "$tab" | jq -e '.jobs == 1 and .worker_tokens == 156605' >/dev/null; then
+  ok "tab.sh renders a ledger produced by ledger-append.py"
+else
+  err "tab.sh cannot render the ledger-append.py fixture (rc $rc): $tab"
+fi
+for fixture in ledger-no-summary ledger-no-banner; do
+  mkdir "$LEDGER_FIX/$fixture"
+  cp "scripts/fixtures/$fixture.log" "$LEDGER_FIX/$fixture/job.log"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
+  rc=$?
+  if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ]; then
+    ok "ledger-append.py drops $fixture fixture without output"
+  else
+    err "ledger-append.py must drop $fixture fixture without output (rc $rc): $out"
+  fi
+done
+for fixture in ledger-echoed-ticket-spoof ledger-malformed-grouping; do
+  mkdir "$LEDGER_FIX/$fixture"
+  cp "scripts/fixtures/$fixture.log" "$LEDGER_FIX/$fixture/job.log"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
+  rc=$?
+  if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ]; then
+    ok "ledger-append.py rejects $fixture fixture without output"
+  else
+    err "ledger-append.py must reject $fixture fixture without output (rc $rc): $out"
+  fi
+done
+mkdir "$LEDGER_FIX/ledger-final-message-spoof"
+cp scripts/fixtures/ledger-final-message-spoof.log "$LEDGER_FIX/ledger-final-message-spoof/job.log"
+# No trailing newline: Codex writes result.md exactly as the log's final message minus
+# the log's own line ending. A fixture that adds one lets a suffix match pass here and
+# fail on every real job log.
+printf '%s\n%s\n%s\n%s' 'The run is complete.' 'model: final-message-model' 'tokens used' '999,999' > "$LEDGER_FIX/ledger-final-message-spoof/result.md"
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/ledger-final-message-spoof" --skill fire --repo fixture --ledger "$LEDGER_FIX/ledger-final-message-spoof.jsonl")
+rc=$?
+normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/ledger-final-message-spoof.jsonl")" -eq 1 ] &&
+  printf '%s\n' "$normal" | diff -q scripts/fixtures/ledger-final-message-spoof.expected - >/dev/null; then
+  ok "ledger-append.py records the real summary before a final-message spoof"
+else
+  err "ledger-append.py must record the real summary before a final-message spoof (rc $rc): $out"
 fi
 tab=$(bash scripts/tab.sh "$FIXHOME/missing-ledger.jsonl")
 rc=$?
@@ -580,7 +658,7 @@ if [ "$rc" -eq 0 ] && printf '%s\n' "$bench" | grep -Fx '# expo benchmark report
 else
   err "bench.sh caller-relative ledger resolution is wrong (rc $rc): $bench"
 fi
-rm -rf "$FIXHOME" "$TAB_LEDGER" "$BENCH_LEDGER" "$BENCH_MUTATED" "$BENCH_MIXED" "$BENCH_INVALID" "$BENCH_RELATIVE_DIR"
+rm -rf "$FIXHOME" "$TAB_LEDGER" "$LEDGER_FIX" "$BENCH_LEDGER" "$BENCH_MUTATED" "$BENCH_MIXED" "$BENCH_INVALID" "$BENCH_RELATIVE_DIR"
 section_ok "measurement scripts"
 
 # 4. Link sweep ---------------------------------------------------------------

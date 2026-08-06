@@ -75,12 +75,14 @@ The Codex route runs GPT-5.6, which ships in three tiers. You already classify e
 task by shape to decide *whether* to fire - the same classification picks the tier,
 for free. Default: pick by task shape and name the tier in the announcement. This
 applies to the Codex route only; the Claude subscription route has no tiers.
+The table presupposes the fire-vs-cook gate already passed: it decides who gets the
+ticket, never whether to delegate.
 
 | Tier | Effort | Task shape |
 |---|---|---|
 | `gpt-5.6-sol` | high (`max` only for the very hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
 | `gpt-5.6-terra` | high | the daily driver - standard spec-able features, bugfixes, test writing; the default when unsure |
-| `gpt-5.6-luna` | medium | mechanical bulk - renames, boilerplate, docs, formatting sweeps |
+| `gpt-5.6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
 
 Override: `--tier sol|terra|luna` in the arguments (strip it like `--with`); an
 explicit tier wins over the shape heuristic. Never enable 5.6's `ultra` mode on a
@@ -132,22 +134,10 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      from the log's closing summary when the log carries one (the `tokens used`
      block near the end of job.log; Claude-worker routes emit none - say token
      usage is unavailable) - quota spend is otherwise invisible to the user. Then add the job
-     to the running tab: append one line to `~/.expo/ledger.jsonl`
-     (`mkdir -p ~/.expo` first) of the form
-     `{"ts":"<UTC ISO-8601>","repo":"<repo basename>","skill":"fire","model":"<model from the log banner>","tokens":<total from the closing summary>,"claude_tokens":<measured orchestration tokens>}`.
-     Both token counts are **bare digits**: the closing summary prints thousands
-     separators (`97,188`), and pasting one straight in writes `"tokens":97,188`,
-     which is not valid JSON and takes the whole running tab down with it. Strip the
-     separators before writing the line.
-     `claude_tokens` is the head chef's own spend for this round trip, **measured**
-     from the session transcript over THIS job's window (`$JOB/started` → now) per
-     [../receipts/references/orchestration-tokens.md](../receipts/references/orchestration-tokens.md)
-     - per-job windows are what let the running tab sum ledger lines without
-     double-counting. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/orch-tokens.py"
-     "$CLAUDE_CODE_SESSION_ID" "$(cat "$JOB/started")"`; omit the field if the
-     script prints nothing. If the log
-     carries no worker token summary, skip the ledger line entirely - never invent
-     either number.
+     to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py"
+     --job "$JOB" --skill fire --session "${CLAUDE_CODE_SESSION_ID:-}"`. The ledger is
+     the running tab; its worker and orchestration counts are measured from this job's
+     log and `$JOB/started`, and a run whose tokens cannot be read leaves no line.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.
 
 Cap follow-ups at two rounds. If it's still not right after two deltas, take over and finish it yourself - further debate has diminishing returns.
