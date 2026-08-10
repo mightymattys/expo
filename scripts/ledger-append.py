@@ -88,15 +88,19 @@ def repo_name(value):
 
 
 def claude_tokens(job, session):
+    # Returns (tokens, None) or (None, reason). The reason is reported on stderr: an
+    # omitted field is honest, but a SILENTLY omitted one leaves nobody able to say
+    # which precondition failed - and 42% of a real ledger's lines lost the field with
+    # no way left to find out why.
     if not session:
-        return None
+        return None, "no --session given - orchestration tokens not measured"
     try:
         with open(os.path.join(job, "started"), encoding="utf-8") as source:
             started = source.read().strip()
     except Exception:
-        return None
+        return None, "no started stamp in the job dir - orchestration tokens not measured"
     if not started:
-        return None
+        return None, "empty started stamp - orchestration tokens not measured"
     try:
         output = subprocess.run(
             [sys.executable, os.path.join(os.path.dirname(__file__), "orch-tokens.py"),
@@ -104,8 +108,10 @@ def claude_tokens(job, session):
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
         ).stdout.strip()
     except Exception:
-        return None
-    return int(output) if INTEGER_RE.fullmatch(output) else None
+        return None, "orch-tokens.py could not run - orchestration tokens not measured"
+    if INTEGER_RE.fullmatch(output):
+        return int(output), None
+    return None, f"orch-tokens.py measured nothing since {started} - orchestration tokens not measured"
 
 
 def main():
@@ -162,7 +168,7 @@ def main():
         "model": model,
         "tokens": tokens,
     }
-    orchestration = claude_tokens(args.job, args.session)
+    orchestration, unmeasured = claude_tokens(args.job, args.session)
     if orchestration is not None:
         line["claude_tokens"] = orchestration
     if args.skill == "simmer":
@@ -181,6 +187,8 @@ def main():
     except Exception:
         print(f"ledger-append: cannot write ledger: {ledger}", file=sys.stderr)
         return 1
+    if unmeasured:
+        print(f"ledger-append: {unmeasured}", file=sys.stderr)
     print(encoded)
     return 0
 

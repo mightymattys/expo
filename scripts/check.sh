@@ -472,8 +472,11 @@ printf '%s\n' \
   > "$TAB_LEDGER"
 tab=$(bash scripts/tab.sh "$TAB_LEDGER")
 rc=$?
-if [ "$rc" -eq 0 ] && printf '%s' "$tab" | jq -e '.jobs == 2 and .worker_tokens == 50 and .orchestration_tokens == 10 and .work_split == "5x worker:orchestrator"' >/dev/null; then
-  ok "tab.sh reports fixture totals and work split"
+# 20/10 on the paired line, NOT 50/10 across both: the unpaired line's 30 worker
+# tokens have no denominator, and folding them in as zero is what reported 5.1x on a
+# ledger whose like-for-like split was 2.8x.
+if [ "$rc" -eq 0 ] && printf '%s' "$tab" | jq -e '.jobs == 2 and .worker_tokens == 50 and .orchestration_tokens == 10 and .work_split == "2x worker:orchestrator" and .split_excludes_jobs == 1' >/dev/null; then
+  ok "tab.sh splits like for like and counts the jobs it excluded"
 else
   err "tab.sh fixture totals or work split are wrong (rc $rc): $tab"
 fi
@@ -538,6 +541,31 @@ if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/ledger-final-message-spoof.jsonl
   ok "ledger-append.py records the real summary before a final-message spoof"
 else
   err "ledger-append.py must record the real summary before a final-message spoof (rc $rc): $out"
+fi
+mkdir "$LEDGER_FIX/simmer"
+cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/simmer/job.log"
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/simmer" --skill simmer --lap 3 \
+  --branch feat/loop --repo fixture --ledger "$LEDGER_FIX/simmer.jsonl" 2>/dev/null)
+rc=$?
+# A lap row the receipt cannot attribute is a lap lost to the tab: receipts filter
+# simmer rows by "branch", so both fields have to survive the write, in this order.
+if [ "$rc" -eq 0 ] && printf '%s' "$out" | jq -e '.skill == "simmer" and .lap == 3 and .branch == "feat/loop"' >/dev/null &&
+  printf '%s' "$out" | grep -Fq '"tokens":156605,"lap":3,"branch":"feat/loop"'; then
+  ok "ledger-append.py writes a simmer lap with its lap and branch"
+else
+  err "ledger-append.py simmer lap row is wrong (rc $rc): $out"
+fi
+
+# An omitted claude_tokens is honest; an omitted one with no reason on stderr is how
+# 42% of a real ledger lost the field with nobody able to say which step failed.
+stderr=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/simmer" --skill fire \
+  --repo fixture --ledger "$LEDGER_FIX/why.jsonl" 2>&1 >/dev/null)
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(jq -r 'has("claude_tokens")' < "$LEDGER_FIX/why.jsonl")" = false ] &&
+  printf '%s' "$stderr" | grep -q 'orchestration tokens not measured'; then
+  ok "ledger-append.py names the reason when orchestration goes unmeasured"
+else
+  err "ledger-append.py must say why claude_tokens was omitted (rc $rc): $stderr"
 fi
 tab=$(bash scripts/tab.sh "$FIXHOME/missing-ledger.jsonl")
 rc=$?

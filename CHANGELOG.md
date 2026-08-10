@@ -3,6 +3,25 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.11.1 - 2026-08-10
+
+- The running tab divides like by like. It summed worker tokens across every run but
+  orchestration only across the runs that had it, folding the rest in as zero - so a
+  real ledger reported `5.1x worker:orchestrator` where the paired lines said `2.8x`,
+  with 55 of 132 rows contributing 8.87M worker tokens against no denominator. The
+  ratio is now computed over rows carrying both numbers and reports
+  `split_excludes_jobs` alongside it. The error ran in the plugin's own favour, which
+  is the direction that gets believed, and the fixture pinning it asserted the wrong
+  answer: two rows, one unpaired, had been pinned at `5x` when like-for-like is `2x`.
+- `ledger-append.py` says why it omitted `claude_tokens` instead of omitting it in
+  silence. Omitting an unmeasurable number is right; leaving nobody able to tell
+  whether `--session` was missing, the started stamp was absent, or the window
+  measured nothing is how 42% of a real ledger lost the field with the evidence
+  already deleted. One line on stderr, same ledger row, same exit code.
+- Simmer's lap row is covered by a test rather than by assumption - `--lap` and
+  `--branch` have to survive the write in the order receipts filter on, and no simmer
+  had run since the field became mandatory.
+
 ## 0.11.0 - 2026-08-06
 
 - Ledger lines are written by a script instead of transcribed by the model. Evidence
