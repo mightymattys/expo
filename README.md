@@ -279,7 +279,7 @@ docs/diffscan.md      what the change scan counts, and the lists it counts with
 bench/                the fixture, task specs and measured arms behind the numbers
 scripts/check.sh      the executable invariant list - CI runs it on every push
 scripts/diffscan.py   counted change facts from a diff, for routing a large review
-scripts/ledger-append.py  measured Codex job ledger lines, or no line when unmeasurable
+scripts/ledger-append.py  measured Codex job ledger lines, singly or by idempotent run sweep
 scripts/orch-tokens.py  orchestration tokens for one window, from the session transcript
 scripts/tab.sh        the running tab across every repo, from ~/.expo/ledger.jsonl
 scripts/bench.sh      renders the benchmark arms into bench/RESULTS.md

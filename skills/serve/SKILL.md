@@ -119,7 +119,11 @@ check; outside-list paths are named, warned, and excluded from the stage delta.
 
 ## The final report
 
-Before the final report, write the run's receipt to `.expo/receipts/` per
+Before writing the receipt, sweep the run into the running tab:
+`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$RUN" --session
+"${CLAUDE_CODE_SESSION_ID:-}"`.
+
+Then write the run's receipt to `.expo/receipts/` per
 [../receipts/references/receipt-template.md](../receipts/references/receipt-template.md).
 
 One message: name that receipt's path, what shipped (files, summary), what taste found (confirmed findings and

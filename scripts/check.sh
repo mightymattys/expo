@@ -104,6 +104,26 @@ must_contain skills/fire/references/ticket-template.md 'do not delegate' "every 
 must_contain skills/receipts/references/receipt-template.md 'INSTALLED plugin is older' "an unpriceable model points at the install, not at prices.md"
 must_contain skills/mise/SKILL.md 'claude plugin update expo@expo' "mise reports the running version and offers the update"
 must_contain skills/receipts/references/receipt-template.md 'filtered by `"branch":"<branch>"`' "simmer receipts select this branch's ledger laps"
+if python3 - <<'PY'
+lines = open("skills/serve/SKILL.md", encoding="utf-8").read().splitlines()
+command = [
+    '`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$RUN" --session',
+    '"${CLAUDE_CODE_SESSION_ID:-}"`.',
+]
+matches = [index for index in range(len(lines) - 1) if lines[index:index + 2] == command]
+receipts = [index for index, line in enumerate(lines)
+            if line == "Then write the run's receipt to `.expo/receipts/` per"]
+if len(matches) != 1 or len(receipts) != 1 or matches[0] >= receipts[0]:
+    raise SystemExit(1)
+before = "\n".join(lines[:matches[0]])
+if before.rfind("<!--") > before.rfind("-->"):
+    raise SystemExit(1)
+PY
+then
+  ok "serve runs the complete ledger sweep before writing its receipt"
+else
+  err "skills/serve/SKILL.md must run the complete ledger sweep before writing its receipt"
+fi
 
 # A receipt's only savings claim is explicitly qualified with a floor or bound.
 while IFS= read -r line; do
@@ -488,8 +508,9 @@ out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/job" --skill fire --re
 rc=$?
 normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
 if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/ledger.jsonl")" -eq 1 ] &&
+  [ "$(cat "$LEDGER_FIX/job/.ledgered")" = "$out" ] &&
   printf '%s\n' "$normal" | diff -q scripts/fixtures/ledger-complete.expected - >/dev/null; then
-  ok "ledger-append.py writes the complete fixture exactly apart from its real timestamp"
+  ok "ledger-append.py writes the complete fixture and its exact marker"
 else
   err "ledger-append.py complete fixture expected one golden line (rc $rc): $out"
 fi
@@ -497,6 +518,17 @@ if python3 -m json.tool "$LEDGER_FIX/ledger.jsonl" >/dev/null; then
   ok "ledger-append.py strips token separators into parseable JSON"
 else
   err "ledger-append.py wrote invalid JSON for a comma-separated token summary"
+fi
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/job" --skill fire \
+  --repo fixture --ledger "$LEDGER_FIX/ledger.jsonl" 2>"$LEDGER_FIX/repeated-job.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ] &&
+  [ "$(wc -l < "$LEDGER_FIX/ledger.jsonl")" -eq 1 ] &&
+  grep -Fxq "ledger-append: skipped already ledgered job dir: $LEDGER_FIX/job" \
+    "$LEDGER_FIX/repeated-job.stderr"; then
+  ok "ledger-append.py --job honours its marker and appends exactly once"
+else
+  err "ledger-append.py repeated --job must be a legible no-op (rc $rc): $out"
 fi
 tab=$(bash scripts/tab.sh "$LEDGER_FIX/ledger.jsonl")
 rc=$?
@@ -510,7 +542,8 @@ for fixture in ledger-no-summary ledger-no-banner; do
   cp "scripts/fixtures/$fixture.log" "$LEDGER_FIX/$fixture/job.log"
   out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
   rc=$?
-  if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ]; then
+  if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ] &&
+    [ ! -e "$LEDGER_FIX/$fixture/.ledgered" ]; then
     ok "ledger-append.py drops $fixture fixture without output"
   else
     err "ledger-append.py must drop $fixture fixture without output (rc $rc): $out"
@@ -521,12 +554,23 @@ for fixture in ledger-echoed-ticket-spoof ledger-malformed-grouping; do
   cp "scripts/fixtures/$fixture.log" "$LEDGER_FIX/$fixture/job.log"
   out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
   rc=$?
-  if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ]; then
+  if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ] &&
+    [ ! -e "$LEDGER_FIX/$fixture/.ledgered" ]; then
     ok "ledger-append.py rejects $fixture fixture without output"
   else
     err "ledger-append.py must reject $fixture fixture without output (rc $rc): $out"
   fi
 done
+mkdir "$LEDGER_FIX/ledger-write-fails"
+cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/ledger-write-fails/job.log"
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/ledger-write-fails" --skill fire \
+  --repo fixture --ledger "$LEDGER_FIX" 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && [ ! -e "$LEDGER_FIX/ledger-write-fails/.ledgered" ]; then
+  ok "ledger-append.py does not mark a failed ledger write"
+else
+  err "ledger-append.py must not mark a failed ledger write (rc $rc): $out"
+fi
 mkdir "$LEDGER_FIX/ledger-final-message-spoof"
 cp scripts/fixtures/ledger-final-message-spoof.log "$LEDGER_FIX/ledger-final-message-spoof/job.log"
 # No trailing newline: Codex writes result.md exactly as the log's final message minus
@@ -558,7 +602,9 @@ fi
 
 # An omitted claude_tokens is honest; an omitted one with no reason on stderr is how
 # 42% of a real ledger lost the field with nobody able to say which step failed.
-stderr=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/simmer" --skill fire \
+mkdir "$LEDGER_FIX/why"
+cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/why/job.log"
+stderr=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/why" --skill fire \
   --repo fixture --ledger "$LEDGER_FIX/why.jsonl" 2>&1 >/dev/null)
 rc=$?
 if [ "$rc" -eq 0 ] && [ "$(jq -r 'has("claude_tokens")' < "$LEDGER_FIX/why.jsonl")" = false ] &&
@@ -566,6 +612,172 @@ if [ "$rc" -eq 0 ] && [ "$(jq -r 'has("claude_tokens")' < "$LEDGER_FIX/why.jsonl
   ok "ledger-append.py names the reason when orchestration goes unmeasured"
 else
   err "ledger-append.py must say why claude_tokens was omitted (rc $rc): $stderr"
+fi
+
+SWEEP_RUN="$LEDGER_FIX/sweep-run"
+SWEEP_LEDGER="$LEDGER_FIX/sweep.jsonl"
+mkdir -p "$SWEEP_RUN"/{fire-AbC123,taste-Xy9876,refire-Q4w5e6,simmer-L0oP9q}
+for job in "$SWEEP_RUN"/*; do
+  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+done
+out=$(python3 scripts/ledger-append.py --run "$SWEEP_RUN" --repo fixture \
+  --ledger "$SWEEP_LEDGER" 2>"$LEDGER_FIX/sweep.stderr")
+rc=$?
+skills=$(jq -r '.skill' "$SWEEP_LEDGER" 2>/dev/null | sort | tr '\n' ' ')
+if [ "$rc" -eq 0 ] && [ "$(printf '%s\n' "$out" | grep -c '^{' || true)" -eq 3 ] &&
+  [ "$(wc -l < "$SWEEP_LEDGER")" -eq 3 ] &&
+  [ "$skills" = 'fire refire taste ' ] &&
+  [ "$(find "$SWEEP_RUN" -name .ledgered | wc -l | tr -d ' ')" -eq 3 ] &&
+  grep -Fq 'laps are ledgered per lap with --lap and --branch' "$LEDGER_FIX/sweep.stderr" &&
+  grep -Fq 'sweep skipped 1 job dir(s)' "$LEDGER_FIX/sweep.stderr"; then
+  ok "ledger-append.py sweeps stages but names and skips unattributable simmer laps"
+else
+  err "ledger-append.py recognised-stage sweep is wrong (rc $rc, skills '$skills'): $out"
+fi
+out=$(python3 scripts/ledger-append.py --run "$SWEEP_RUN" --repo fixture \
+  --ledger "$SWEEP_LEDGER" 2>"$LEDGER_FIX/sweep-again.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ "$(wc -l < "$SWEEP_LEDGER")" -eq 3 ] &&
+  [ "$(grep -c 'skipped already ledgered job dir' "$LEDGER_FIX/sweep-again.stderr")" -eq 3 ] &&
+  grep -Fq 'sweep skipped 4 job dir(s)' "$LEDGER_FIX/sweep-again.stderr"; then
+  ok "ledger-append.py sweep is idempotent and names marker skips"
+else
+  err "ledger-append.py second sweep must be a legible no-op (rc $rc): $out"
+fi
+
+MARKED_RUN="$LEDGER_FIX/marked-run"
+mkdir -p "$MARKED_RUN"/{fire-Marked,taste-Fresh}
+for job in "$MARKED_RUN"/*; do
+  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+done
+: > "$MARKED_RUN/fire-Marked/.ledgered"
+out=$(python3 scripts/ledger-append.py --run "$MARKED_RUN" --repo fixture \
+  --ledger "$LEDGER_FIX/marked.jsonl" 2>"$LEDGER_FIX/marked.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/marked.jsonl")" -eq 1 ] &&
+  [ "$(jq -r .skill "$LEDGER_FIX/marked.jsonl")" = taste ] &&
+  grep -Fq 'fire-Marked' "$LEDGER_FIX/marked.stderr"; then
+  ok "ledger-append.py conservatively skips an empty marker and lands other jobs"
+else
+  err "ledger-append.py marked-job sweep is wrong (rc $rc): $out"
+fi
+
+MIXED_RUN="$LEDGER_FIX/mixed-run"
+mkdir -p "$MIXED_RUN"/{audit-Unknown,refire-Known}
+cp scripts/fixtures/ledger-complete.log "$MIXED_RUN/audit-Unknown/job.log"
+cp scripts/fixtures/ledger-complete.log "$MIXED_RUN/refire-Known/job.log"
+out=$(python3 scripts/ledger-append.py --run "$MIXED_RUN" --repo fixture \
+  --ledger "$LEDGER_FIX/mixed.jsonl" 2>"$LEDGER_FIX/mixed.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/mixed.jsonl")" -eq 1 ] &&
+  [ "$(jq -r .skill "$LEDGER_FIX/mixed.jsonl")" = refire ] &&
+  grep -Fq 'audit-Unknown' "$LEDGER_FIX/mixed.stderr" &&
+  grep -Fq 'sweep skipped 1 job dir(s)' "$LEDGER_FIX/mixed.stderr"; then
+  ok "ledger-append.py names unknown prefixes and still lands recognised jobs"
+else
+  err "ledger-append.py unknown-prefix sweep is wrong (rc $rc): $out"
+fi
+
+BROKEN_RUN="$LEDGER_FIX/broken-run"
+mkdir -p "$BROKEN_RUN"/{fire-Aborted,refire-Good}
+cp scripts/fixtures/ledger-complete.log "$BROKEN_RUN/refire-Good/job.log"
+out=$(python3 scripts/ledger-append.py --run "$BROKEN_RUN" --repo fixture \
+  --ledger "$LEDGER_FIX/broken.jsonl" 2>"$LEDGER_FIX/broken.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/broken.jsonl")" -eq 1 ] &&
+  [ "$(jq -r .skill "$LEDGER_FIX/broken.jsonl")" = refire ] &&
+  grep -Fq "job log not found: $BROKEN_RUN/fire-Aborted/job.log" "$LEDGER_FIX/broken.stderr" &&
+  grep -Fq 'sweep skipped 1 job dir(s)' "$LEDGER_FIX/broken.stderr"; then
+  ok "ledger-append.py sweep skips a broken first job and lands the later one"
+else
+  err "ledger-append.py broken-first sweep must continue with rc 0 (rc $rc): $out"
+fi
+
+FATAL_RUN="$LEDGER_FIX/fatal-run"
+mkdir -p "$FATAL_RUN/fire-Complete" "$LEDGER_FIX/sweep-ledger-dir"
+cp scripts/fixtures/ledger-complete.log "$FATAL_RUN/fire-Complete/job.log"
+out=$(python3 scripts/ledger-append.py --run "$FATAL_RUN" --repo fixture \
+  --ledger "$LEDGER_FIX/sweep-ledger-dir" 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && [ ! -e "$FATAL_RUN/fire-Complete/.ledgered" ] &&
+  printf '%s' "$out" | grep -Fq "cannot write ledger: $LEDGER_FIX/sweep-ledger-dir"; then
+  ok "ledger-append.py sweep stops when the ledger itself cannot be written"
+else
+  err "ledger-append.py sweep ledger failure must be fatal (rc $rc): $out"
+fi
+
+BOUNDED_RUN="$LEDGER_FIX/bounded-run"
+mkdir -p "$BOUNDED_RUN"/{fire-Zlatername,refire-Aearliername}
+for job in "$BOUNDED_RUN"/*; do
+  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+done
+printf '%s\n' '2026-01-02T00:00:00Z' > "$BOUNDED_RUN/fire-Zlatername/started"
+printf '%s\n' '2026-01-03T00:00:00Z' > "$BOUNDED_RUN/refire-Aearliername/started"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py --run "$BOUNDED_RUN" \
+  --session aaaa-bbbb --repo fixture --ledger "$LEDGER_FIX/bounded.jsonl" \
+  2>"$LEDGER_FIX/bounded.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] &&
+  jq -e 'select(.skill == "fire") | .claude_tokens == 144' "$LEDGER_FIX/bounded.jsonl" >/dev/null &&
+  jq -e 'select(.skill == "refire") | .claude_tokens == 11' "$LEDGER_FIX/bounded.jsonl" >/dev/null &&
+  [ "$(jq -r .skill "$LEDGER_FIX/bounded.jsonl" | tr '\n' ' ')" = 'fire refire ' ]; then
+  ok "ledger-append.py sweep orders started stamps and passes the next one as the upper bound"
+else
+  err "ledger-append.py swept orchestration windows overlap or sort by name (rc $rc): $out"
+fi
+
+MISSING_BOUND_RUN="$LEDGER_FIX/missing-bound-run"
+mkdir -p "$MISSING_BOUND_RUN"/{fire-First,taste-Missing}
+for job in "$MISSING_BOUND_RUN"/*; do
+  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+done
+printf '%s\n' '2026-01-02T00:00:00Z' > "$MISSING_BOUND_RUN/fire-First/started"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py --run "$MISSING_BOUND_RUN" \
+  --session aaaa-bbbb --repo fixture --ledger "$LEDGER_FIX/missing-bound.jsonl" \
+  2>"$LEDGER_FIX/missing-bound.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] &&
+  [ "$(jq -r 'has("claude_tokens")' "$LEDGER_FIX/missing-bound.jsonl" | sort -u)" = false ] &&
+  grep -Fq 'no started stamp in the next job dir - orchestration tokens not measured' \
+    "$LEDGER_FIX/missing-bound.stderr"; then
+  ok "ledger-append.py omits swept orchestration when the next bound is unavailable"
+else
+  err "ledger-append.py must omit an unknowable swept bound (rc $rc): $out"
+fi
+
+EMPTY_RUN="$LEDGER_FIX/empty-run"
+mkdir "$EMPTY_RUN"
+out=$(python3 scripts/ledger-append.py --run "$EMPTY_RUN" --repo fixture \
+  --ledger "$LEDGER_FIX/empty.jsonl" 2>&1)
+rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/empty.jsonl" ]; then
+  ok "ledger-append.py accepts an empty sweep without output"
+else
+  err "ledger-append.py empty sweep expected rc 0 and no output (rc $rc): $out"
+fi
+
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/job" --run "$EMPTY_RUN" \
+  --skill fire --repo fixture --ledger "$LEDGER_FIX/caller.jsonl" 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q 'exactly one of --job or --run'; then
+  ok "ledger-append.py rejects both input modes"
+else
+  err "ledger-append.py must reject both input modes (rc $rc): $out"
+fi
+out=$(python3 scripts/ledger-append.py --repo fixture --ledger "$LEDGER_FIX/caller.jsonl" 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q 'exactly one of --job or --run'; then
+  ok "ledger-append.py rejects a missing input mode"
+else
+  err "ledger-append.py must require one input mode (rc $rc): $out"
+fi
+out=$(python3 scripts/ledger-append.py --run "$EMPTY_RUN" --lap 1 --branch feat/test \
+  --repo fixture --ledger "$LEDGER_FIX/caller.jsonl" 2>&1)
+rc=$?
+if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q -- '--lap and --branch are not valid with --run'; then
+  ok "ledger-append.py rejects lap metadata in sweep mode"
+else
+  err "ledger-append.py must reject sweep lap metadata (rc $rc): $out"
 fi
 tab=$(bash scripts/tab.sh "$FIXHOME/missing-ledger.jsonl")
 rc=$?

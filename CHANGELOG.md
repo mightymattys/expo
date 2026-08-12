@@ -3,6 +3,34 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.12.0 - 2026-08-12
+
+- The ledger write stops depending on the model remembering it. Measured: for five days
+  `~/.expo/ledger.jsonl` received zero lines while 34 runs completed carrying 6,670,646
+  worker tokens - receipts were written correctly throughout, so only the one remembered
+  step fell out. `ledger-append.py` gains a sweep mode (`--run DIR`) that walks a run dir
+  and appends a row per stage, and serve runs it immediately before writing the receipt,
+  which demonstrably always happens. A `.ledgered` marker per job dir makes the sweep
+  idempotent, and both modes now honour it - a repeated `--job` used to append the same
+  run twice.
+- The sweep survives the untidy run dirs it exists for. A recognised job dir that cannot
+  be ledgered is reported and the sweep continues; only a failure to write the ledger
+  itself is fatal. Before the fix a single job dir with no log aborted the whole sweep in
+  lexical order, so one aborted stage cost every later stage its row.
+- Swept orchestration windows cannot overlap. `claude_tokens` measures from a job's start
+  to now, which is the job's own window at plating but the whole remaining run at sweep
+  time - three stages would have reported the same orchestration two and three times, and
+  `tab.sh` sums them. Each swept job is now bounded by the next job's start, ordered by
+  the contents of the `started` stamps rather than by directory name, and a job whose
+  bound cannot be established omits the field rather than measuring an unbounded window.
+  Verified to partition exactly: 140 + 7 against a 147-token unbounded window.
+- The sweep refuses simmer dirs and says why: laps are ledgered per lap with `--lap` and
+  `--branch`, which a sweep cannot reconstruct, and a lap row without them is counted by
+  the tab yet invisible to the receipt that filters on `branch`.
+- `check.sh` asserts serve's sweep by behaviour rather than by substring - the complete
+  invocation, and that it precedes the receipt instruction, since the placement is the
+  whole point.
+
 ## 0.11.1 - 2026-08-10
 
 - The running tab divides like by like. It summed worker tokens across every run but

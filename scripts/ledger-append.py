@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append one measured Codex job to expo's running ledger, or nothing."""
+"""Append measured Codex jobs to expo's running ledger, or nothing."""
 import argparse
 import json
 import os
@@ -12,6 +12,11 @@ from datetime import datetime, timezone
 MODEL_RE = re.compile(r"^\s*model:\s*(\S.*?)\s*$")
 TOKENS_RE = re.compile(r"^\s*(\d+|\d{1,3}(?:,\d{3})+)\s*$")
 INTEGER_RE = re.compile(r"^\d+$")
+SKILLS = ("fire", "taste", "refire", "simmer")
+APPENDED = "appended"
+PER_DIR_ERROR = "per-dir-error"
+SKIPPED = "skipped"
+FATAL = "fatal"
 
 
 class SilentParser(argparse.ArgumentParser):
@@ -87,24 +92,44 @@ def repo_name(value):
     return os.path.basename(root) or None
 
 
-def claude_tokens(job, session):
+def started_stamp(job):
+    try:
+        with open(os.path.join(job, "started"), encoding="utf-8") as source:
+            started = source.read().strip()
+    except Exception:
+        return None, None, "no started stamp in the job dir - orchestration tokens not measured"
+    if not started:
+        return None, None, "empty started stamp - orchestration tokens not measured"
+    try:
+        parsed = datetime.fromisoformat(started.replace("Z", "+00:00"))
+    except Exception:
+        return None, None, "unparseable started stamp in the job dir - orchestration tokens not measured"
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return started, parsed.astimezone(timezone.utc), None
+
+
+def claude_tokens(job, session, until=None, window_error=None):
     # Returns (tokens, None) or (None, reason). The reason is reported on stderr: an
     # omitted field is honest, but a SILENTLY omitted one leaves nobody able to say
     # which precondition failed - and 42% of a real ledger's lines lost the field with
     # no way left to find out why.
     if not session:
         return None, "no --session given - orchestration tokens not measured"
+    started, _, started_error = started_stamp(job)
+    if started_error:
+        return None, started_error
+    if window_error:
+        return None, window_error
     try:
-        with open(os.path.join(job, "started"), encoding="utf-8") as source:
-            started = source.read().strip()
-    except Exception:
-        return None, "no started stamp in the job dir - orchestration tokens not measured"
-    if not started:
-        return None, "empty started stamp - orchestration tokens not measured"
-    try:
+        command = [
+            sys.executable, os.path.join(os.path.dirname(__file__), "orch-tokens.py"),
+            session, started,
+        ]
+        if until is not None:
+            command.append(until)
         output = subprocess.run(
-            [sys.executable, os.path.join(os.path.dirname(__file__), "orch-tokens.py"),
-             session, started],
+            command,
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
         ).stdout.strip()
     except Exception:
@@ -114,11 +139,75 @@ def claude_tokens(job, session):
     return None, f"orch-tokens.py measured nothing since {started} - orchestration tokens not measured"
 
 
+def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
+               window_error=None):
+    log = os.path.join(job, "job.log")
+    if not os.path.isdir(job):
+        print(f"ledger-append: job directory not found: {job}", file=sys.stderr)
+        return PER_DIR_ERROR
+    if not os.path.isfile(log):
+        print(f"ledger-append: job log not found: {log}", file=sys.stderr)
+        return PER_DIR_ERROR
+
+    try:
+        measured = measured_job(job)
+    except Exception as error:
+        print(f"ledger-append: cannot read job log: {error}", file=sys.stderr)
+        return PER_DIR_ERROR
+    repo = repo_name(repo_value)
+    if repo is None:
+        print("ledger-append: cannot resolve repo name", file=sys.stderr)
+        return PER_DIR_ERROR
+    if measured is None:
+        return SKIPPED
+    model, tokens = measured
+    line = {
+        "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "repo": repo,
+        "skill": skill,
+        "model": model,
+        "tokens": tokens,
+    }
+    orchestration, unmeasured = claude_tokens(job, session, until, window_error)
+    if orchestration is not None:
+        line["claude_tokens"] = orchestration
+    if skill == "simmer":
+        if lap is not None:
+            line["lap"] = lap
+        if branch is not None:
+            line["branch"] = branch
+
+    try:
+        parent = os.path.dirname(os.path.abspath(ledger))
+        os.makedirs(parent, exist_ok=True)
+        encoded = json.dumps(line, separators=(",", ":"))
+        with open(ledger, "a", encoding="utf-8") as target:
+            target.write(encoded + "\n")
+    except Exception:
+        print(f"ledger-append: cannot write ledger: {ledger}", file=sys.stderr)
+        return FATAL
+
+    marker = os.path.join(job, ".ledgered")
+    # The ledger append is already durable here. If this marker write fails, a retry
+    # can duplicate the row; closing that window requires an out-of-scope schema change.
+    try:
+        with open(marker, "w", encoding="utf-8") as target:
+            target.write(encoded + "\n")
+    except Exception:
+        print(encoded)
+        print(f"ledger-append: cannot write marker: {marker}", file=sys.stderr)
+        return FATAL
+    if unmeasured:
+        print(f"ledger-append: {unmeasured}", file=sys.stderr)
+    print(encoded)
+    return APPENDED
+
+
 def main():
     parser = SilentParser(add_help=False)
-    parser.add_argument("--job", required=True)
-    parser.add_argument("--skill", required=True,
-                        choices=("fire", "taste", "refire", "simmer"))
+    parser.add_argument("--job")
+    parser.add_argument("--run")
+    parser.add_argument("--skill", choices=SKILLS)
     parser.add_argument("--lap", type=int)
     parser.add_argument("--branch")
     parser.add_argument("--session")
@@ -130,7 +219,21 @@ def main():
         print(f"ledger-append: {error}", file=sys.stderr)
         return 1
 
-    if args.skill == "simmer":
+    if (args.job is None) == (args.run is None):
+        print("ledger-append: exactly one of --job or --run is required", file=sys.stderr)
+        return 1
+
+    if args.run is not None:
+        if args.lap is not None or args.branch is not None:
+            print("ledger-append: --lap and --branch are not valid with --run", file=sys.stderr)
+            return 1
+        if args.skill is not None:
+            print("ledger-append: --skill is only valid with --job", file=sys.stderr)
+            return 1
+    elif args.skill is None:
+        print("ledger-append: --job requires --skill", file=sys.stderr)
+        return 1
+    elif args.skill == "simmer":
         if args.lap is None or args.lap <= 0:
             print("ledger-append: --skill simmer requires a positive --lap", file=sys.stderr)
             return 1
@@ -141,55 +244,84 @@ def main():
         print("ledger-append: --lap and --branch are only valid with --skill simmer", file=sys.stderr)
         return 1
 
-    log = os.path.join(args.job, "job.log")
-    if not os.path.isdir(args.job):
-        print(f"ledger-append: job directory not found: {args.job}", file=sys.stderr)
-        return 1
-    if not os.path.isfile(log):
-        print(f"ledger-append: job log not found: {log}", file=sys.stderr)
-        return 1
-
-    try:
-        measured = measured_job(args.job)
-    except Exception as error:
-        print(f"ledger-append: cannot read job log: {error}", file=sys.stderr)
-        return 1
-    repo = repo_name(args.repo)
-    if repo is None:
-        print("ledger-append: cannot resolve repo name", file=sys.stderr)
-        return 1
-    if measured is None:
-        return 0
-    model, tokens = measured
-    line = {
-        "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "repo": repo,
-        "skill": args.skill,
-        "model": model,
-        "tokens": tokens,
-    }
-    orchestration, unmeasured = claude_tokens(args.job, args.session)
-    if orchestration is not None:
-        line["claude_tokens"] = orchestration
-    if args.skill == "simmer":
-        if args.lap is not None:
-            line["lap"] = args.lap
-        if args.branch is not None:
-            line["branch"] = args.branch
-
     ledger = args.ledger or os.path.expanduser("~/.expo/ledger.jsonl")
-    try:
-        parent = os.path.dirname(os.path.abspath(ledger))
-        os.makedirs(parent, exist_ok=True)
-        encoded = json.dumps(line, separators=(",", ":"))
-        with open(ledger, "a", encoding="utf-8") as target:
-            target.write(encoded + "\n")
-    except Exception:
-        print(f"ledger-append: cannot write ledger: {ledger}", file=sys.stderr)
+
+    if args.job is not None:
+        marker = os.path.join(args.job, ".ledgered")
+        if os.path.lexists(marker):
+            print(f"ledger-append: skipped already ledgered job dir: {args.job}",
+                  file=sys.stderr)
+            return 0
+        result = append_job(
+            args.job, args.skill, args.lap, args.branch, args.session, args.repo, ledger,
+        )
+        return 1 if result in (PER_DIR_ERROR, FATAL) else 0
+
+    if not os.path.isdir(args.run):
+        print(f"ledger-append: run directory not found: {args.run}", file=sys.stderr)
         return 1
-    if unmeasured:
-        print(f"ledger-append: {unmeasured}", file=sys.stderr)
-    print(encoded)
+    try:
+        entries = []
+        for index, entry in enumerate(os.scandir(args.run)):
+            if not entry.is_dir():
+                continue
+            started, order, started_error = started_stamp(entry.path)
+            entries.append((entry.name, entry.path, started, order, started_error, index))
+    except Exception as error:
+        print(f"ledger-append: cannot read run directory: {args.run}: {error}",
+              file=sys.stderr)
+        return 1
+
+    skipped = 0
+    jobs = []
+    for entry in entries:
+        name, job = entry[:2]
+        skill = name.split("-", 1)[0]
+        if skill not in SKILLS:
+            print(f"ledger-append: skipped unrecognised job dir: {job}", file=sys.stderr)
+            skipped += 1
+            continue
+        if skill == "simmer":
+            print(f"ledger-append: skipped simmer job dir: {job} - laps are ledgered per lap with --lap and --branch",
+                  file=sys.stderr)
+            skipped += 1
+            continue
+        jobs.append(entry)
+
+    jobs.sort(key=lambda item: (
+        item[3] is None, item[3] or datetime.max.replace(tzinfo=timezone.utc), item[5],
+    ))
+    for index, (name, job, _, _, _, _) in enumerate(jobs):
+        skill = name.split("-", 1)[0]
+        marker = os.path.join(job, ".ledgered")
+        # Presence is authoritative even when the marker is empty or unreadable: it
+        # may follow a successful append, so retrying would risk a duplicate line.
+        if os.path.lexists(marker):
+            print(f"ledger-append: skipped already ledgered job dir: {job}",
+                  file=sys.stderr)
+            skipped += 1
+            continue
+        until = None
+        window_error = None
+        if index + 1 < len(jobs):
+            next_started = jobs[index + 1][2]
+            next_error = jobs[index + 1][4]
+            if next_error:
+                window_error = next_error.replace("the job dir", "the next job dir")
+            else:
+                until = next_started
+        result = append_job(
+            job, skill, None, None, args.session, args.repo, ledger, until, window_error,
+        )
+        if result == FATAL:
+            return 1
+        if result == SKIPPED:
+            print(f"ledger-append: skipped unmeasurable job dir: {job}", file=sys.stderr)
+            skipped += 1
+        elif result == PER_DIR_ERROR:
+            skipped += 1
+    if skipped:
+        print(f"ledger-append: sweep skipped {skipped} job dir(s)", file=sys.stderr)
     return 0
 
 
