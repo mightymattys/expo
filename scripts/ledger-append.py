@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 
 MODEL_RE = re.compile(r"^\s*model:\s*(\S.*?)\s*$")
+WORKDIR_RE = re.compile(r"^\s*workdir:\s*(\S.*?)\s*$")
 TOKENS_RE = re.compile(r"^\s*(\d+|\d{1,3}(?:,\d{3})+)\s*$")
 INTEGER_RE = re.compile(r"^\d+$")
 SKILLS = ("fire", "taste", "refire", "simmer")
@@ -38,6 +39,7 @@ def measured_job(job):
         return None
 
     model = None
+    workdir = None
     banner_end = None
     for index in range(banner_start + 1, len(lines)):
         if lines[index].strip() == "--------":
@@ -49,7 +51,9 @@ def measured_job(job):
         match = MODEL_RE.match(line)
         if match:
             model = match.group(1)
-            break
+        match = WORKDIR_RE.match(line)
+        if match:
+            workdir = match.group(1)
     if not model:
         return None
 
@@ -75,21 +79,7 @@ def measured_job(job):
     if not match:
         return None
     value = match.group(1).replace(",", "")
-    return model, int(value)
-
-
-def repo_name(value):
-    if value:
-        return value
-    try:
-        root = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            text=True,
-        ).stdout.strip()
-    except Exception:
-        return None
-    return os.path.basename(root) or None
+    return model, int(value), workdir
 
 
 def started_stamp(job):
@@ -154,13 +144,14 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     except Exception as error:
         print(f"ledger-append: cannot read job log: {error}", file=sys.stderr)
         return PER_DIR_ERROR
-    repo = repo_name(repo_value)
-    if repo is None:
-        print("ledger-append: cannot resolve repo name", file=sys.stderr)
-        return PER_DIR_ERROR
     if measured is None:
         return SKIPPED
-    model, tokens = measured
+    model, tokens, workdir = measured
+    repo = repo_value or (os.path.basename(os.path.normpath(workdir)) if workdir else None)
+    if not repo:
+        print(f"ledger-append: job log has no workdir: {log} - cannot resolve repo name",
+              file=sys.stderr)
+        return SKIPPED
     line = {
         "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "repo": repo,
@@ -201,6 +192,76 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
         print(f"ledger-append: {unmeasured}", file=sys.stderr)
     print(encoded)
     return APPENDED
+
+
+def sweep_entries(directory):
+    entries = []
+    for index, entry in enumerate(os.scandir(directory)):
+        if not entry.is_dir():
+            continue
+        started, order, started_error = started_stamp(entry.path)
+        entries.append((entry.name, entry.path, started, order, started_error, index))
+    return entries
+
+
+def sweep_jobs(entries, session, repo_value, ledger, window_error=None,
+               known_bounds_only=False):
+    skipped = 0
+    jobs = []
+    for entry in entries:
+        name, job = entry[:2]
+        skill = name.split("-", 1)[0]
+        if skill not in SKILLS:
+            print(f"ledger-append: skipped unrecognised job dir: {job}", file=sys.stderr)
+            skipped += 1
+            continue
+        if skill == "simmer":
+            print(f"ledger-append: skipped simmer job dir: {job} - laps are ledgered per lap with --lap and --branch",
+                  file=sys.stderr)
+            skipped += 1
+            continue
+        jobs.append(entry)
+
+    jobs.sort(key=lambda item: (
+        item[3] is None, item[3] or datetime.max.replace(tzinfo=timezone.utc), item[5],
+    ))
+    for index, (name, job, _, _, _, _) in enumerate(jobs):
+        skill = name.split("-", 1)[0]
+        marker = os.path.join(job, ".ledgered")
+        # Presence is authoritative even when the marker is empty or unreadable: it
+        # may follow a successful append, so retrying would risk a duplicate line.
+        if os.path.lexists(marker):
+            print(f"ledger-append: skipped already ledgered job dir: {job}",
+                  file=sys.stderr)
+            skipped += 1
+            continue
+        until = None
+        job_window_error = window_error
+        if job_window_error is None and index + 1 < len(jobs):
+            if known_bounds_only:
+                # Unknown-start jobs contribute no orchestration at all, so bounding
+                # at the next known start is safe even when one ran in between.
+                next_started = jobs[index + 1][2]
+                if next_started is not None:
+                    until = next_started
+            else:
+                next_started = jobs[index + 1][2]
+                next_error = jobs[index + 1][4]
+                if next_error:
+                    job_window_error = next_error.replace("the job dir", "the next job dir")
+                else:
+                    until = next_started
+        result = append_job(
+            job, skill, None, None, session, repo_value, ledger, until, job_window_error,
+        )
+        if result == FATAL:
+            return skipped, FATAL
+        if result == SKIPPED:
+            print(f"ledger-append: skipped unmeasurable job dir: {job}", file=sys.stderr)
+            skipped += 1
+        elif result == PER_DIR_ERROR:
+            skipped += 1
+    return skipped, None
 
 
 def main():
@@ -261,65 +322,40 @@ def main():
         print(f"ledger-append: run directory not found: {args.run}", file=sys.stderr)
         return 1
     try:
-        entries = []
-        for index, entry in enumerate(os.scandir(args.run)):
-            if not entry.is_dir():
-                continue
-            started, order, started_error = started_stamp(entry.path)
-            entries.append((entry.name, entry.path, started, order, started_error, index))
+        entries = sweep_entries(args.run)
     except Exception as error:
         print(f"ledger-append: cannot read run directory: {args.run}: {error}",
               file=sys.stderr)
         return 1
 
-    skipped = 0
-    jobs = []
-    for entry in entries:
-        name, job = entry[:2]
-        skill = name.split("-", 1)[0]
-        if skill not in SKILLS:
-            print(f"ledger-append: skipped unrecognised job dir: {job}", file=sys.stderr)
-            skipped += 1
-            continue
-        if skill == "simmer":
-            print(f"ledger-append: skipped simmer job dir: {job} - laps are ledgered per lap with --lap and --branch",
-                  file=sys.stderr)
-            skipped += 1
-            continue
-        jobs.append(entry)
-
-    jobs.sort(key=lambda item: (
-        item[3] is None, item[3] or datetime.max.replace(tzinfo=timezone.utc), item[5],
-    ))
-    for index, (name, job, _, _, _, _) in enumerate(jobs):
-        skill = name.split("-", 1)[0]
-        marker = os.path.join(job, ".ledgered")
-        # Presence is authoritative even when the marker is empty or unreadable: it
-        # may follow a successful append, so retrying would risk a duplicate line.
-        if os.path.lexists(marker):
-            print(f"ledger-append: skipped already ledgered job dir: {job}",
-                  file=sys.stderr)
-            skipped += 1
-            continue
-        until = None
-        window_error = None
-        if index + 1 < len(jobs):
-            next_started = jobs[index + 1][2]
-            next_error = jobs[index + 1][4]
-            if next_error:
-                window_error = next_error.replace("the job dir", "the next job dir")
-            else:
-                until = next_started
-        result = append_job(
-            job, skill, None, None, args.session, args.repo, ledger, until, window_error,
-        )
-        if result == FATAL:
+    if os.path.basename(os.path.normpath(args.run)).startswith("serve-"):
+        skipped, fatal = sweep_jobs(entries, args.session, args.repo, ledger)
+        if fatal:
             return 1
-        if result == SKIPPED:
-            print(f"ledger-append: skipped unmeasurable job dir: {job}", file=sys.stderr)
-            skipped += 1
-        elif result == PER_DIR_ERROR:
-            skipped += 1
+    else:
+        scratchpad_entries = [entry for entry in entries if not entry[0].startswith("serve-")]
+        scratchpad_skipped = 0
+        for name, path, _, _, _, _ in entries:
+            if not name.startswith("serve-"):
+                continue
+            try:
+                nested_entries = sweep_entries(path)
+            except Exception as error:
+                print(f"ledger-append: cannot read run directory: {path}: {error}",
+                      file=sys.stderr)
+                scratchpad_skipped += 1
+                continue
+            scratchpad_entries.extend(nested_entries)
+        # Give ties a single, deterministic sweep-local order after flattening both
+        # direct and nested jobs into the session's one transcript timeline.
+        scratchpad_entries = [entry[:5] + (index,)
+                              for index, entry in enumerate(scratchpad_entries)]
+        skipped, fatal = sweep_jobs(
+            scratchpad_entries, args.session, args.repo, ledger, known_bounds_only=True,
+        )
+        skipped += scratchpad_skipped
+        if fatal:
+            return 1
     if skipped:
         print(f"ledger-append: sweep skipped {skipped} job dir(s)", file=sys.stderr)
     return 0

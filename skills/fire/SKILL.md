@@ -32,7 +32,7 @@ the one-line announcement then replaces the proposal: announce and fire.
 
 1. **Git repo with at least one commit** - `git rev-parse HEAD` succeeds. Codex refuses non-repos by default, and diff review needs a baseline. If not: tell the user to `git init` / make an initial commit first.
 2. **Profile exists** - `test -f ~/.codex/expo.config.toml`. This check is load-bearing: Codex **silently ignores a missing profile** (exit 0, runs under the user's own defaults - possibly no sandbox at all). If missing: stop and offer `/expo:mise`.
-3. **Job directory** - mint one per fire: `JOB=$(mktemp -d "$SCRATCHPAD/fire-XXXXXX")` (`$SCRATCHPAD` = your session scratchpad directory; substitute its absolute path), then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` - the ledger's `claude_tokens` window opens here. Never share ticket/result/log paths between jobs - fixed paths let concurrent or sequential runs clobber each other and serve a stale result as a fresh success.
+3. **Job directory** - mint one per fire: `JOB=$(mktemp -d "$SCRATCHPAD/fire-<label>-XXXXXX")` (`$SCRATCHPAD` = your session scratchpad directory; substitute its absolute path); a short descriptive label is welcome. The `fire-` prefix is not optional: the sweep reads the stage from it, and a job dir without it never reaches the running tab. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` - the ledger's `claude_tokens` window opens here. Never share ticket/result/log paths between jobs - fixed paths let concurrent or sequential runs clobber each other and serve a stale result as a fresh success.
 4. **Snapshot the tree** - if `git status --porcelain` is non-empty, warn the user their uncommitted changes will share the tree with Codex's edits (suggest committing/stashing first), and either way save the baseline: `git diff > "$JOB/pre-fire.patch"; git status --short > "$JOB/pre-fire.status"`. At plating you review Codex's delta against this baseline, not the raw diff.
 
 ## Writing the ticket
@@ -134,8 +134,7 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      from the log's closing summary when the log carries one (the `tokens used`
      block near the end of job.log; Claude-worker routes emit none - say token
      usage is unavailable) - quota spend is otherwise invisible to the user. Then add the job
-     to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py"
-     --job "$JOB" --skill fire --session "${CLAUDE_CODE_SESSION_ID:-}"`. The ledger is
+     to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`. The ledger is
      the running tab; its worker and orchestration counts are measured from this job's
      log and `$JOB/started`, and a run whose tokens cannot be read leaves no line.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.

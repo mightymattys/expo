@@ -188,6 +188,26 @@ for f in skills/fire/SKILL.md skills/taste/SKILL.md skills/refire/SKILL.md skill
   grep -qF '$JOB/started' "$f" || err "$f mints a job dir but never stamps \$JOB/started - its claude_tokens window has no anchor"
 done
 
+# Job names may be readable, but their stage prefix is the sweep's routing key.
+for s in fire taste refire simmer; do
+  minted="JOB=\$(mktemp -d \"\$SCRATCHPAD/$s-<label>-XXXXXX\")"
+  stale="\$SCRATCHPAD/$s-XXXXXX"
+  [ "$(grep -oF -- "$minted" "skills/$s/SKILL.md" | wc -l | tr -d ' ')" -eq 1 ] \
+    || err "skills/$s/SKILL.md must mint its stage-prefixed, labelled job dir exactly once"
+  if grep -qF -- "$stale" "skills/$s/SKILL.md"; then
+    err "skills/$s/SKILL.md still permits the unlabelled job-dir form"
+  fi
+done
+for s in fire taste refire; do
+  sweep='ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"'
+  stale="--job \"\$JOB\" --skill $s"
+  [ "$(grep -oF -- "$sweep" "skills/$s/SKILL.md" | wc -l | tr -d ' ')" -eq 1 ] \
+    || err "skills/$s/SKILL.md must contain its session-scratchpad plating command exactly once"
+  if grep -qF -- "$stale" "skills/$s/SKILL.md"; then
+    err "skills/$s/SKILL.md still permits a per-job plating call"
+  fi
+done
+
 # taste's reviewer pin is real, not a hope about the user's config.
 must_contain skills/taste/SKILL.md '-c model=gpt-5.6-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
 
@@ -205,11 +225,11 @@ for f in $(grep -rlE 'run_in_background: true|backgrounded' skills/); do
 done
 
 # Ledger writes are code, not a transcription task; every writer invokes the one
-# measured appender with its own skill tag.
+# measured appender. Simmer keeps its per-lap metadata; other stages sweep the session.
 for s in fire taste refire simmer; do
   must_contain "skills/$s/SKILL.md" 'scripts/ledger-append.py' "its ledger write uses the measured appender"
-  must_contain "skills/$s/SKILL.md" "--skill $s" "its ledger write carries its own skill tag"
 done
+must_contain skills/simmer/SKILL.md '--skill simmer' "simmer's per-lap write carries its own skill tag"
 if grep -R -qF '{"ts":' skills/; then
   err "skills must not hand-write ledger JSON lines"
 else
@@ -645,6 +665,106 @@ else
   err "ledger-append.py second sweep must be a legible no-op (rc $rc): $out"
 fi
 
+SCRATCHPAD_BARE="$LEDGER_FIX/scratchpad-bare"
+mkdir -p "$SCRATCHPAD_BARE"/{fire-cenik-AbC123,taste-draft-OFfRm1}
+for job in "$SCRATCHPAD_BARE"/*; do
+  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+done
+out=$(python3 scripts/ledger-append.py --run "$SCRATCHPAD_BARE" --repo fixture \
+  --ledger "$LEDGER_FIX/scratchpad-bare.jsonl" 2>"$LEDGER_FIX/scratchpad-bare.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/scratchpad-bare.jsonl")" -eq 2 ] &&
+  [ "$(jq -r .skill "$LEDGER_FIX/scratchpad-bare.jsonl" | sort | tr '\n' ' ')" = 'fire taste ' ]; then
+  ok "ledger-append.py sweeps bare stage-prefixed scratchpad jobs"
+else
+  err "ledger-append.py bare scratchpad sweep is wrong (rc $rc): $out"
+fi
+
+SCRATCHPAD_SERVE="$LEDGER_FIX/scratchpad-serve"
+mkdir -p "$SCRATCHPAD_SERVE/serve-XyZ987"/{fire-picker-OV0Asj,refire-varianty-RykTK2}
+for job in "$SCRATCHPAD_SERVE/serve-XyZ987"/*; do
+  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+done
+out=$(python3 scripts/ledger-append.py --run "$SCRATCHPAD_SERVE" --repo fixture \
+  --ledger "$LEDGER_FIX/scratchpad-serve.jsonl" 2>"$LEDGER_FIX/scratchpad-serve.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/scratchpad-serve.jsonl")" -eq 2 ] &&
+  [ "$(jq -r .skill "$LEDGER_FIX/scratchpad-serve.jsonl" | sort | tr '\n' ' ')" = 'fire refire ' ]; then
+  ok "ledger-append.py descends one level into a serve run in a scratchpad"
+else
+  err "ledger-append.py serve scratchpad descent is wrong (rc $rc): $out"
+fi
+
+SCRATCHPAD_MIXED="$LEDGER_FIX/scratchpad-mixed"
+mkdir -p "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU" \
+  "$SCRATCHPAD_MIXED/serve-QwErTy"/{taste-machop-f7jq4G,refire-no-start-azerty} \
+  "$SCRATCHPAD_MIXED/whatever-Q9"
+cp scripts/fixtures/ledger-complete.log "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU/job.log"
+cp scripts/fixtures/ledger-complete.log "$SCRATCHPAD_MIXED/serve-QwErTy/taste-machop-f7jq4G/job.log"
+cp scripts/fixtures/ledger-complete.log "$SCRATCHPAD_MIXED/serve-QwErTy/refire-no-start-azerty/job.log"
+printf '%s\n' '2026-01-02T00:00:00Z' > "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU/started"
+printf '%s\n' '2026-01-02T00:00:00.500Z' > "$SCRATCHPAD_MIXED/serve-QwErTy/taste-machop-f7jq4G/started"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py --run "$SCRATCHPAD_MIXED" \
+  --session aaaa-bbbb \
+  --ledger "$LEDGER_FIX/scratchpad-mixed.jsonl" 2>"$LEDGER_FIX/scratchpad-mixed.stderr")
+rc=$?
+mixed_unbounded=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py aaaa-bbbb 2026-01-02T00:00:00Z)
+mixed_total=$(jq -s 'map(select(.claude_tokens != null) | .claude_tokens) | add' "$LEDGER_FIX/scratchpad-mixed.jsonl" 2>/dev/null)
+if [ "$rc" -eq 0 ] && [ "$(wc -l < "$LEDGER_FIX/scratchpad-mixed.jsonl")" -eq 3 ] &&
+  [ "$(jq -r .skill "$LEDGER_FIX/scratchpad-mixed.jsonl" | sort | tr '\n' ' ')" = 'fire refire taste ' ] &&
+  jq -e 'select(.skill == "fire") | .claude_tokens == 4' "$LEDGER_FIX/scratchpad-mixed.jsonl" >/dev/null &&
+  jq -e 'select(.skill == "taste") | .claude_tokens == 151' "$LEDGER_FIX/scratchpad-mixed.jsonl" >/dev/null &&
+  jq -e 'select(.skill == "refire") | has("claude_tokens") | not' "$LEDGER_FIX/scratchpad-mixed.jsonl" >/dev/null &&
+  [ "$mixed_total" = "$mixed_unbounded" ] &&
+  grep -Fq 'no started stamp in the job dir - orchestration tokens not measured' "$LEDGER_FIX/scratchpad-mixed.stderr" &&
+  grep -Fq "$SCRATCHPAD_MIXED/whatever-Q9" "$LEDGER_FIX/scratchpad-mixed.stderr"; then
+  ok "ledger-append.py partitions mixed scratchpad orchestration windows and names unknown prefixes"
+else
+  err "ledger-append.py mixed scratchpad windows must partition the unbounded total (rc $rc): $out"
+fi
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py --run "$SCRATCHPAD_MIXED" \
+  --session aaaa-bbbb \
+  --ledger "$LEDGER_FIX/scratchpad-mixed.jsonl" 2>"$LEDGER_FIX/scratchpad-mixed-again.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ] &&
+  [ "$(wc -l < "$LEDGER_FIX/scratchpad-mixed.jsonl")" -eq 3 ] &&
+  [ "$(grep -c 'skipped already ledgered job dir' "$LEDGER_FIX/scratchpad-mixed-again.stderr")" -eq 3 ]; then
+  ok "ledger-append.py scratchpad sweep is idempotent"
+else
+  err "ledger-append.py second scratchpad sweep must append nothing (rc $rc): $out"
+fi
+
+REPO_SCRATCHPAD="$LEDGER_FIX/repo-scratchpad"
+mkdir -p "$REPO_SCRATCHPAD"/{fire-first,taste-second}
+sed 's|/Users/matty/Developer/expo|/Users/matty/Developer/first-repo|' \
+  scripts/fixtures/ledger-complete.log > "$REPO_SCRATCHPAD/fire-first/job.log"
+sed 's|/Users/matty/Developer/expo|/Users/matty/Developer/second-repo|' \
+  scripts/fixtures/ledger-complete.log > "$REPO_SCRATCHPAD/taste-second/job.log"
+out=$(python3 scripts/ledger-append.py --run "$REPO_SCRATCHPAD" \
+  --ledger "$LEDGER_FIX/repo-scratchpad.jsonl" 2>"$LEDGER_FIX/repo-scratchpad.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] &&
+  [ "$(jq -r 'select(.skill == "fire") | .repo' "$LEDGER_FIX/repo-scratchpad.jsonl")" = first-repo ] &&
+  [ "$(jq -r 'select(.skill == "taste") | .repo' "$LEDGER_FIX/repo-scratchpad.jsonl")" = second-repo ]; then
+  ok "ledger-append.py resolves each swept job's repo from its own banner"
+else
+  err "ledger-append.py must resolve each swept job's repo from its own banner (rc $rc): $out"
+fi
+
+NO_REPO_JOB="$LEDGER_FIX/no-repo"
+mkdir "$NO_REPO_JOB"
+sed '/^workdir:/d' scripts/fixtures/ledger-complete.log > "$NO_REPO_JOB/job.log"
+out=$(python3 scripts/ledger-append.py --job "$NO_REPO_JOB" --skill fire \
+  --ledger "$LEDGER_FIX/no-repo.jsonl" 2>"$LEDGER_FIX/no-repo.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/no-repo.jsonl" ] &&
+  [ ! -e "$NO_REPO_JOB/.ledgered" ] &&
+  grep -Fq 'cannot resolve repo name' "$LEDGER_FIX/no-repo.stderr"; then
+  ok "ledger-append.py skips a job with no repo instead of marking it ledgered"
+else
+  err "ledger-append.py must skip an unresolvable repo without a marker (rc $rc): $out"
+fi
+
 MARKED_RUN="$LEDGER_FIX/marked-run"
 mkdir -p "$MARKED_RUN"/{fire-Marked,taste-Fresh}
 for job in "$MARKED_RUN"/*; do
@@ -706,7 +826,7 @@ else
   err "ledger-append.py sweep ledger failure must be fatal (rc $rc): $out"
 fi
 
-BOUNDED_RUN="$LEDGER_FIX/bounded-run"
+BOUNDED_RUN="$LEDGER_FIX/serve-bounded-run"
 mkdir -p "$BOUNDED_RUN"/{fire-Zlatername,refire-Aearliername}
 for job in "$BOUNDED_RUN"/*; do
   cp scripts/fixtures/ledger-complete.log "$job/job.log"
@@ -726,7 +846,7 @@ else
   err "ledger-append.py swept orchestration windows overlap or sort by name (rc $rc): $out"
 fi
 
-MISSING_BOUND_RUN="$LEDGER_FIX/missing-bound-run"
+MISSING_BOUND_RUN="$LEDGER_FIX/serve-missing-bound-run"
 mkdir -p "$MISSING_BOUND_RUN"/{fire-First,taste-Missing}
 for job in "$MISSING_BOUND_RUN"/*; do
   cp scripts/fixtures/ledger-complete.log "$job/job.log"

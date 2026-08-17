@@ -95,7 +95,7 @@ to the user before starting fresh.
 
 For each iteration, until the goal passes or the budget is spent:
 
-1. **Fire the worker** - mint a fresh per-lap job dir and stamp its start
+1. **Fire the worker** - mint a fresh per-lap job dir (`JOB=$(mktemp -d "$SCRATCHPAD/simmer-<label>-XXXXXX")`; a short descriptive label is welcome) and stamp its start
    (`date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`); never reuse ticket, result,
    or log paths between laps. Snapshot the lap-start changed file set, then write
    `$JOB/ticket.md`: the full contents of `.expo/loop-<branch-slug>.md` (contract

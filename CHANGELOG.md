@@ -3,6 +3,37 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.13.0 - 2026-08-17
+
+- The stage prefix on a job dir becomes a rule, and a descriptive label becomes welcome:
+  `fire-cenik-XXXXXX`. Measured cause: of 16 runs completed since 0.12.0 only 5 reached
+  the ledger, and the 11 that did not (2,512,837 worker tokens, 73% of the volume) were
+  ordinary fire runs whose sessions had named the dir after the task and left it outside
+  any serve run dir. Sessions clearly want readable job dirs - they took one at the cost
+  of breaking the convention - so the convention bends to them, while the prefix the
+  sweep reads the stage from stays mandatory. Guessing the stage from directory contents
+  was considered and rejected: it cannot separate a fire from a refire, and a guessed
+  attribute is the thing this ledger exists not to contain.
+- The sweep walks a session scratchpad, not just a serve run dir, descending one level
+  into `serve-` dirs so an abandoned serve that never reached its receipt is still
+  ledgered. fire, taste and refire now plate through that sweep instead of a single-job
+  call, which makes the write self-healing: a run one of them forgot is picked up by the
+  next run in the same session, and the `.ledgered` markers keep that idempotent.
+- Orchestration windows stay disjoint across both levels. The first cut of this change
+  avoided the question by suppressing every measurement in scratchpad mode, which would
+  have traded a 73% worker-volume gap for losing all orchestration on the same path.
+  Every job in a scratchpad belongs to one session and one transcript, so one
+  timestamp-ordered timeline across both levels bounds each job by the next job's start.
+  Verified to partition exactly: a bare job at 10:00, a nested one at 10:05 and a bare
+  one at 10:15 measured 100 + 50 + 9 against a 159-token unbounded window.
+- Each swept job is attributed from its own log banner's `workdir:`, not from whichever
+  repo happened to be plating. The plating sweep runs from the repo being plated, so a
+  completed-but-unledgered job left in the scratchpad by earlier work elsewhere would
+  otherwise be filed under the wrong repo and its marker would make that permanent -
+  this repo's own backfill had to derive the repo per job for exactly that reason. An
+  explicit `--repo` still wins; a job whose repo cannot be determined is skipped without
+  a marker rather than filed wrong.
+
 ## 0.12.0 - 2026-08-12
 
 - The ledger write stops depending on the model remembering it. Measured: for five days

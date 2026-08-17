@@ -48,8 +48,8 @@ Same as fire, and for the same reasons:
    Codex silently ignores a missing profile); the Claude subscription route
    (`sonnet`/`opus`) needs only `command -v claude` (`references/worker-routes.md`).
    The Codex-profile stop applies to the Codex route only.
-3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-XXXXXX")`, then stamp
-   its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`
+3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-<label>-XXXXXX")`; a
+   short descriptive label is welcome. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`
    (`$SCRATCHPAD` is your session scratchpad directory; substitute its absolute path).
 4. Snapshot the tree: save `git diff` and `git status --short` into `$JOB` as the
    baseline. The tree is usually dirty here (it holds the diff that was just tasted);
@@ -104,9 +104,7 @@ sandbox banner):
    out-of-scope changes.
 4. For risky diffs, offer a confirmation `/expo:taste`; two clean models in a row
    is the strongest ship signal this kitchen produces.
-5. Add the measured run to the running tab with
-   `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --job "$JOB" --skill refire
-   --session "${CLAUDE_CODE_SESSION_ID:-}"`; a Claude worker emits no token summary,
+5. Add the measured run to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`; a Claude worker emits no token summary,
    so the script leaves no line, same as on a fire.
 
 ## Cap

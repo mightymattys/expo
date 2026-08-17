@@ -29,7 +29,7 @@ git diff --shortstat && git diff --shortstat --cached
 
 ## 2. Run the review - read-only, in the background
 
-Mint a job dir (`JOB=$(mktemp -d "$SCRATCHPAD/taste-XXXXXX")`, where `$SCRATCHPAD` is your session scratchpad directory - substitute its absolute path) and stamp its start (`date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` - the ledger's `claude_tokens` window). Build the review prompt from [references/review-prompt.md](references/review-prompt.md), filling in the diff scope and any focus the user gave, then:
+Mint a job dir (`JOB=$(mktemp -d "$SCRATCHPAD/taste-<label>-XXXXXX")`, where `$SCRATCHPAD` is your session scratchpad directory - substitute its absolute path); a short descriptive label is welcome. Stamp its start (`date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` - the ledger's `claude_tokens` window). Build the review prompt from [references/review-prompt.md](references/review-prompt.md), filling in the diff scope and any focus the user gave, then:
 
 ```
 Bash (run_in_background: true), cwd = repo root:
@@ -69,7 +69,7 @@ Then write the CONFIRMED set to `$JOB/findings.md`: a header line (verdict, scop
 
 Lead with the verdict (ship / fix first), then confirmed findings ordered by severity, each with file:line, the failure scenario in one sentence, and the fix. Close with "N findings refuted on validation" if any, plus the run's token usage from the log's closing summary. Name the absolute `$JOB/findings.md` path in the report. Do not apply fixes unless the user asked for that - the deliverable of a review is the assessment. If the user wants the confirmed findings fixed, that is `/expo:refire`, and the findings file is its input.
 
-Add the measured run to the running tab: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --job "$JOB" --skill taste --session "${CLAUDE_CODE_SESSION_ID:-}"`.
+Add the measured run to the running tab: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`.
 
 ## Notes
 
