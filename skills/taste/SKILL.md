@@ -11,6 +11,12 @@ If `codex` is missing or `~/.codex/expo.config.toml` doesn't exist, stop and off
 
 ## 1. Scope the diff
 
+If the arguments include `--security`, strip it before treating the remaining words as
+scope or focus. That selects the focused security pass below; otherwise run the normal
+review. Offer the lens when the diff touches authentication, sessions or tokens,
+payments, data storage or migrations, edge functions, or boundaries with third-party
+APIs.
+
 ```bash
 git status --short --untracked-files=all
 git diff --shortstat && git diff --shortstat --cached
@@ -41,7 +47,8 @@ env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN codex exec --profile expo --sandbox r
 
 The `-c model` pin is what makes "taste stays on sol" true - reviewer strength beats
 reviewer cost, regardless of which tier the fire ran on or what the user's config
-defaults to. Never assert a reviewer model you didn't pin.
+defaults to. Never assert a reviewer model you didn't pin. Moving this pass to a
+specialised model later changes this single `-c model=` pin, nothing else.
 
 Same backgrounding rule as fire: do not put `&`, `nohup`, or `disown` inside the command, or the harness can report false completion while Codex is still running.
 
@@ -49,7 +56,8 @@ Same backgrounding rule as fire: do not put `&`, `nohup`, or `disown` inside the
 
 Tell the user the review is running, that it can take several minutes on a real diff, and where the log lives. Do not poll while it runs.
 
-For production-critical code (auth, payments, data storage, external APIs), add the adversarial framing from the reference file - but only there. Adversarial mode over-flags small codebases with enterprise-pattern findings.
+With `--security`, append the Security prompt from the reference file inside `<task>`.
+It is a focused pass, not a generic adversarial addendum.
 
 ## 3. Validate before presenting - this step is the point
 
@@ -63,11 +71,11 @@ Then, for EACH finding:
    refuted blocker/major, which the report names with its refutation reason: a wrong
    refutation on a serious finding must be visible enough for the user to overrule.
 
-Then write the CONFIRMED set to `$JOB/findings.md`: a header line (verdict, scope, refuted count), then one block per finding - severity, file:line, the defect in one sentence, the quoted evidence, the prescribed fix. After the confirmed blocks, add a `## Refuted (audit trail - not refire input)` section: one line per refuted finding - severity, file:line, the claim, and why it fell. A REFUTED verdict is an unreviewed judgment call; persisting the reasoning is what makes it auditable later instead of dying with the session. Add a tree anchor to the header - `tree: $(git rev-parse --short HEAD)+$(idx=$(mktemp -u); GIT_INDEX_FILE=$idx git add -A && GIT_INDEX_FILE=$idx git write-tree | cut -c1-12)` (the temp-index write-tree makes untracked files count - a fire's newly created files are exactly what findings cite) - so a later refire can tell whether these file:line citations still describe the tree it is about to fire into. Write the file even when clean (`CONFIRMED: none`) so a clean taste is distinguishable from no taste. This file is the handoff to `/expo:refire` - validated once, carried on disk, never reconstructed from memory.
+Then write the CONFIRMED set to `$JOB/findings.md`: a header line (verdict, scope, refuted count), then one block per ordinary finding - severity, file:line, the defect in one sentence, the quoted evidence, the prescribed fix. With `--security`, put validated security blocks in their own `## Security findings` section after those ordinary blocks, using the same block shape, and add `reviewed, not audited` to that section. After the confirmed blocks, keep the existing `## Refuted (audit trail - not refire input)` section: one line per refuted finding - severity, file:line, the claim, and why it fell. A REFUTED verdict is an unreviewed judgment call; persisting the reasoning is what makes it auditable later instead of dying with the session. Add a tree anchor to the header - `tree: $(git rev-parse --short HEAD)+$(idx=$(mktemp -u); GIT_INDEX_FILE=$idx git add -A && GIT_INDEX_FILE=$idx git write-tree | cut -c1-12)` (the temp-index write-tree makes untracked files count - a fire's newly created files are exactly what findings cite) - so a later refire can tell whether these file:line citations still describe the tree it is about to fire into. Write the file even when clean (`CONFIRMED: none`) so a clean taste is distinguishable from no taste. This file is the handoff to `/expo:refire` - validated once, carried on disk, never reconstructed from memory.
 
 ## 4. Report
 
-Lead with the verdict (ship / fix first), then confirmed findings ordered by severity, each with file:line, the failure scenario in one sentence, and the fix. Close with "N findings refuted on validation" if any, plus the run's token usage from the log's closing summary. Name the absolute `$JOB/findings.md` path in the report. Do not apply fixes unless the user asked for that - the deliverable of a review is the assessment. If the user wants the confirmed findings fixed, that is `/expo:refire`, and the findings file is its input.
+Lead with the verdict (ship / fix first), then confirmed findings ordered by severity, each with file:line, the failure scenario in one sentence, and the fix. For a `--security` pass, say `Security review: reviewed, not audited.` in the report. Close with "N findings refuted on validation" if any, plus the run's token usage from the log's closing summary. Name the absolute `$JOB/findings.md` path in the report. Do not apply fixes unless the user asked for that - the deliverable of a review is the assessment. If the user wants the confirmed findings fixed, that is `/expo:refire`, and the findings file is its input.
 
 Add the measured run to the running tab: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`.
 

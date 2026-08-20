@@ -85,8 +85,9 @@ ticket, never whether to delegate.
 | `gpt-5.6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
 
 Override: `--tier sol|terra|luna` in the arguments (strip it like `--with`); an
-explicit tier wins over the shape heuristic. Never enable 5.6's `ultra` mode on a
-delegated background run - it multiplies token spend by design, with nobody watching.
+explicit tier wins over the shape heuristic. Never enable an `ultra` reasoning level
+on a delegated background run when the chosen model offers it - it multiplies token
+spend by design, with nobody watching.
 The chosen tier and effort ride the invocation as `-c` flags (CLI beats the profile
 and `~/.codex/config.toml`); if you deliberately want the config default instead,
 pass no `-c model` flag.

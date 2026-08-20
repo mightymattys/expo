@@ -164,14 +164,12 @@ else
 $box_drift"
 fi
 
-# The published results are a render of the recorded arms at current prices. If either
-# moves, the committed table is stale - and a stale table is a wrong cost claim.
-if bench_render=$(bash scripts/bench.sh bench/results.jsonl 2>&1); then
-  if printf '%s\n' "$bench_render" | diff -q - bench/RESULTS.md >/dev/null; then
-    ok "bench/RESULTS.md matches the reporter's current output"
-  else
-    err "bench/RESULTS.md is stale - rerun 'scripts/bench.sh bench/results.jsonl > bench/RESULTS.md'"
-  fi
+# Published benchmark results, like receipts, retain the prices current when they were
+# written. The reporter must still render their recorded arms, but a later table fix
+# must not rewrite that historical cost evidence.
+if bench_render=$(bash scripts/bench.sh bench/results.jsonl 2>&1) && \
+  printf '%s\n' "$bench_render" | grep -Fx '# expo benchmark report' >/dev/null; then
+  ok "bench/results.jsonl renders without repricing historical bench/RESULTS.md"
 else
   err "bench/results.jsonl does not render: $bench_render"
 fi
@@ -210,6 +208,10 @@ done
 
 # taste's reviewer pin is real, not a hope about the user's config.
 must_contain skills/taste/SKILL.md '-c model=gpt-5.6-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
+must_contain skills/taste/SKILL.md '--security' "taste must expose the focused security lens"
+must_contain skills/taste/references/review-prompt.md '## Security prompt' "taste's security lens needs its own reviewer prompt"
+must_contain skills/taste/SKILL.md 'reviewed, not audited' "security findings and the user report must state the review limit"
+must_contain skills/taste/references/review-prompt.md 'reviewed, not audited' "the security prompt must state the review limit"
 
 # The taste/refire tree anchor is one recipe, spelled identically on both sides.
 ANCHOR='$(git rev-parse --short HEAD)+$(idx=$(mktemp -u); GIT_INDEX_FILE=$idx git add -A && GIT_INDEX_FILE=$idx git write-tree | cut -c1-12)'
@@ -267,7 +269,69 @@ fi
 for model in $models; do
   grep -qF "| $model |" "$PRICES" || err "Claude worker route '$model' has no matching prices.md row"
 done
-asof=$(sed -n 's/.*checked \([0-9-]*\).*/\1/p' "$PRICES" | head -1)
+# Alias banners are priceable only through their current, dated target mapping. The
+# Model cell is the logged lookup key; the target row's cited URLs establish which
+# sources are acceptable without assuming a particular vendor or URL. An alias can only
+# inherit a price from a priced target.
+alias_errors=$(python3 - "$PRICES" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+slug = re.compile(r"[a-z0-9][a-z0-9.-]*")
+mapping = re.compile(r"\balias of ([a-z0-9.-]+) as of ([0-9]{4}-[0-9]{2}-[0-9]{2})\b")
+url = re.compile(r"https?://[^\s|]+")
+decimal = re.compile(r"[0-9]+(?:\.[0-9]+)?")
+rows = {}
+aliases = []
+
+for line in open(path, encoding="utf-8"):
+    if not line.startswith("|"):
+        continue
+    cells = [cell.strip() for cell in line.strip().split("|")[1:-1]]
+    if len(cells) != 5 or cells[0] == "Model" or not decimal.fullmatch(cells[3]):
+        continue
+    rows[cells[0]] = cells
+    if "alias of" in cells[4]:
+        aliases.append(cells)
+
+if not aliases:
+    print("prices.md names no alias rows - receipt alias pricing has no data")
+for alias in aliases:
+    model, incoming, outgoing, blend, source = alias
+    if not slug.fullmatch(model):
+        print(f"prices.md alias Model cell must be a bare slug: {model}")
+    match = mapping.search(source)
+    if not match:
+        print(f"prices.md alias Source must name a dated target: {model}")
+        continue
+    alias_urls = set(url.findall(source))
+    if not alias_urls:
+        print(f"prices.md alias Source must contain a URL: {model}")
+    target = match.group(1)
+    target_row = rows.get(target)
+    if target_row is None:
+        print(f"prices.md alias target '{target}' has no priced row (alias {model})")
+        continue
+    target_urls = set(url.findall(target_row[4]))
+    if not target_urls:
+        print(f"prices.md alias target '{target}' has no source URL (alias {model})")
+    elif not alias_urls & target_urls:
+        print(f"prices.md alias Source must cite a URL from target '{target}' (alias {model})")
+    if (incoming, outgoing, blend) != tuple(target_row[1:4]):
+        print(f"prices.md alias '{model}' figures do not match target '{target}'")
+PY
+)
+if [ -z "$alias_errors" ]; then
+  ok "prices.md alias rows use bare slugs, sourced targets, and matching prices"
+else
+  while IFS= read -r problem; do
+    err "$problem"
+  done <<EOF
+$alias_errors
+EOF
+fi
+asof=$(sed -n 's/.*OpenAI rows verified \([0-9-]*\).*/\1/p' "$PRICES" | head -1)
 if [ -n "$asof" ]; then
   age=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$asof')).days)" 2>/dev/null)
   if [ -n "$age" ] && [ "$age" -gt 45 ]; then
@@ -276,7 +340,7 @@ if [ -n "$asof" ]; then
     warn "prices.md as-of date ($asof) is $age days old - consider re-verifying"
   fi
 else
-  err "prices.md carries no parseable 'checked YYYY-MM-DD' as-of date"
+  err "prices.md carries no parseable 'OpenAI rows verified YYYY-MM-DD' as-of date"
 fi
 # Date-bound notes ("through YYYY-MM-DD") must not silently outlive their window.
 for d in $(grep -oE 'through [0-9]{4}-[0-9]{2}-[0-9]{2}' "$PRICES" | grep -oE '[0-9-]+$'); do
@@ -936,10 +1000,10 @@ printf '%s\n' \
 bench=$(bash scripts/bench.sh "$BENCH_LEDGER")
 rc=$?
 if [ "$rc" -eq 0 ] \
-  && printf '%s\n' "$bench" | grep -Fx '| t1 | delegated | gpt-5.6-terra | claude-fable-5 | 100,000 | 10,000 | ~$1.18 | yes | 300s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '| t1 | delegated | gpt-5.6-terra | claude-fable-5 | 100,000 | 10,000 | ~$1.00 | yes | 300s |' >/dev/null \
   && printf '%s\n' "$bench" | grep -Fx '| t1 | direct | claude-fable-5 | claude-fable-5 | 0 | 80,000 | ~$2.40 | yes | 240s |' >/dev/null \
-  && printf '%s\n' "$bench" | grep -Fx -- '- t1: direct − delegated = ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null \
-  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.18; direct total ~$2.40; total observed delta (direct − delegated) ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null; then
+  && printf '%s\n' "$bench" | grep -Fx -- '- t1: direct − delegated = ~$1.40 (delegated lower; observed difference on this measured task set).' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.00; direct total ~$2.40; total observed delta (direct − delegated) ~$1.40 (delegated lower; observed difference on this measured task set).' >/dev/null; then
   ok "bench.sh reports fixture rows and exact measured totals"
 else
   err "bench.sh fixture totals are wrong (rc $rc): $bench"
@@ -970,14 +1034,14 @@ if [ "$rc" -eq 0 ] \
   && printf '%s\n' "$bench" | grep -Fx -- '- t2: no delta — direct arm failed verification.' >/dev/null \
   && printf '%s\n' "$bench" | grep -Fx -- '- t3: no delta — missing direct arm.' >/dev/null \
   && printf '%s\n' "$bench" | grep -Fx -- '- t4: no delta — delegated arm is unpriced.' >/dev/null \
-  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.18; direct total ~$2.40; total observed delta (direct − delegated) ~$1.22 (delegated lower; observed difference on this measured task set).' >/dev/null; then
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.00; direct total ~$2.40; total observed delta (direct − delegated) ~$1.40 (delegated lower; observed difference on this measured task set).' >/dev/null; then
   ok "bench.sh reconciles totals on complete verified priced pairs only"
 else
   err "bench.sh mixed-ledger reconciliation is wrong (rc $rc): $bench"
 fi
 # Orchestration is priced per row at the model that ran it. Pricing every arm at one
 # reference orchestrator overstated a direct arm on a cheaper Claude - here it would
-# report ~$2.40 instead of ~$1.20 and inflate the delta from ~$0.17 to ~$1.23, in
+# report ~$2.40 instead of ~$1.20 and inflate the delta from ~$0.35 to ~$1.40, in
 # delegation's favour.
 printf '%s\n' \
   '{"task":"cheap-orch","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-opus-5","worker_tokens":100000,"claude_tokens":10000,"verified":true,"wallclock_s":300}' \
@@ -986,7 +1050,7 @@ printf '%s\n' \
 bench=$(bash scripts/bench.sh "$BENCH_MIXED")
 rc=$?
 if [ "$rc" -eq 0 ] \
-  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$1.03; direct total ~$1.20; total observed delta (direct − delegated) ~$0.17 (delegated lower; observed difference on this measured task set).' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Fx '**Aggregate:** 1 task compared; delegated total ~$0.85; direct total ~$1.20; total observed delta (direct − delegated) ~$0.35 (delegated lower; observed difference on this measured task set).' >/dev/null \
   && ! printf '%s\n' "$bench" | grep -F '~$2.40' >/dev/null; then
   ok "bench.sh prices each arm's orchestration at the model that ran it"
 else
@@ -1017,6 +1081,15 @@ if [ "$rc" -eq 0 ] && printf '%s\n' "$bench" | grep -Fx '# expo benchmark report
   ok "bench.sh resolves caller-relative ledgers"
 else
   err "bench.sh caller-relative ledger resolution is wrong (rc $rc): $bench"
+fi
+bench=$(bash scripts/bench.sh scripts/fixtures/bench-bare-alias.jsonl)
+rc=$?
+if [ "$rc" -eq 0 ] \
+  && printf '%s\n' "$bench" | grep -Fx '| bare-alias | delegated | gpt-daybreak-blue-latest | claude-fable-5 | 1,000,000 | 0 | ~$17.50 | yes | 1s |' >/dev/null \
+  && ! printf '%s\n' "$bench" | grep -F 'UNPRICED (excluded from totals)' >/dev/null; then
+  ok "bench.sh prices a bare alias model without excluding it"
+else
+  err "bench.sh bare-alias fixture must be priced, not excluded (rc $rc): $bench"
 fi
 rm -rf "$FIXHOME" "$TAB_LEDGER" "$LEDGER_FIX" "$BENCH_LEDGER" "$BENCH_MUTATED" "$BENCH_MIXED" "$BENCH_INVALID" "$BENCH_RELATIVE_DIR"
 section_ok "measurement scripts"

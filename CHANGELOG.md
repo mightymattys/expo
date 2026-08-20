@@ -3,6 +3,48 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.14.0 - 2026-08-20
+
+- The price table had been wrong for two rows, and chasing a new model surfaced it.
+  gpt-5.6-terra was listed at a 8.75 blend against an actual 7.00, and gpt-5.6-luna at
+  3.50 against an actual 0.70 - overstated five-fold. Verified against
+  https://developers.openai.com/api/docs/models. Every receipt that priced a terra or
+  luna run carried an inflated worker cost. The error ran against expo's own claim, since
+  an overstated worker cost understates the equal-volume delta, so the floor stayed a
+  floor - but the figures were wrong, and a table-wide "checked" date had just certified
+  them. The header now states which vendor's rows were verified and when, and the file
+  says plainly that correcting the table does not retroactively correct receipts already
+  written.
+- "Daybreak Blue" is an alias, not a new worker. Per
+  https://developers.openai.com/api/docs/pricing, `daybreak-blue-latest` and
+  `daybreak-red-latest` currently point at `gpt-5.6-sol` and `gpt-5.6-cyber`, so no route
+  and no tier row was added - a strength tier and a domain specialisation are different
+  axes. What was added is pricing, because a run pinned to an alias records the alias in
+  its banner (verified with a real `codex exec` run), and that string reaches the ledger
+  and the receipt.
+- Alias rows are keyed by the bare slug. The first cut put the dated mapping inside the
+  Model cell, which `bench.sh` keys on verbatim - so the row meant to make the banner
+  slug priceable rendered it `UNPRICED (excluded from totals)`. The mapping now lives in
+  the Source cell, a fixture pins that a bare alias prices, and CI checks that an alias
+  row names a target that exists as its own priced row with matching figures.
+- A receipt stops diagnosing by guess. It used to read any unpriceable model as evidence
+  that the installed plugin was older than the price table. But a receipt holds only the
+  banner's model string, so a brand-new alias absent from the table and a user-configured
+  model absent from it are the same input. Three states are decidable where two were
+  claimed: known alias (priced via its target, and said to be alias-derived), known model,
+  and unclassified - which now says so and offers `/expo:mise` as one possible remedy
+  rather than as the cause.
+- `taste` gains a `--security` pass. The manual "adversarial addendum" becomes a prompt
+  of its own that asks for a concrete exploit path - attacker-controlled entry point, each
+  step through the actual code, the harmful outcome - and forbids categories of concern it
+  cannot walk. Findings land in their own section so `/expo:refire` keeps consuming the
+  file unchanged, and a limit sentence is mandatory in both the file and the report: a
+  security verdict that reads as an assurance is worse than none. The reviewer stays
+  pinned to sol; moving this pass to a specialised model later is one `-c model=` flag.
+- The `ultra` prohibition stops naming one model. It applies to any model that offers an
+  ultra reasoning level, for the reason it always had - it multiplies token spend by
+  design, on a run nobody is watching - so it can no longer be sidestepped by a rename.
+
 ## 0.13.0 - 2026-08-17
 
 - The stage prefix on a job dir becomes a rule, and a descriptive label becomes welcome:

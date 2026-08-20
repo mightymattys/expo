@@ -30,10 +30,12 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   `terra <a>k ~$<b> · sol <c>k ~$<d>` - one blend applied to combined tokens would
   misprice both)
 - cost: ~$<X> API-list terms (per-model blends per prices.md; subscription quota =
-  $0 marginal; a banner model missing from prices.md prices as unknown - warn
-  loudly and drop its dollar figure rather than guessing a blend, and say that a model
-  the kitchen just ran but cannot price usually means the INSTALLED plugin is older
-  than the price table, so the fix is `/expo:mise`, not an edit to prices.md)
+  $0 marginal; if a banner matches a known alias row in prices.md, price it through
+  that row's dated target and say the figure is alias-derived. If it matches a known
+  model row, price it normally. If it matches neither, it is unpriceable and
+  unclassified: warn loudly and drop its dollar figure rather than guessing a blend.
+  The INSTALLED plugin is older than the price table is one possible cause, and
+  `/expo:mise` is one possible remedy - neither is a diagnosis from the banner alone)
 - orchestration: <M>k Claude tokens, ~$<O> API-list (measured from the session
   transcript since the RUN's `started:` per orchestration-tokens.md - the run-level
   window, not a sum of the per-job ledger windows; drop this line if the snippet

@@ -35,17 +35,22 @@ For each finding:
   EVIDENCE: the quoted code and why it fails; concrete inputs/state -> wrong outcome
   FIX: the minimal change that resolves it
 
+SECURITY FINDINGS (only when the Security prompt is present; empty section if none):
+Use the same finding block. Keep ordinary defects in FINDINGS and security defects here.
+
 Do not pad. Zero findings with a SHIP verdict is a valid and useful result.
 </structured_output_contract>
 ```
 
-## Adversarial addendum - production-critical code only
+## Security prompt
 
-Append inside `<task>` when reviewing auth, payments, data storage, or external API boundaries:
+Append inside `<task>` only for a `--security` taste:
 
 ```
-Additionally, challenge the approach itself: what assumptions does this design depend
-on, and under what real-world conditions do they break? Actively try to construct a
-concrete exploit or failure sequence for the security- and data-integrity-relevant
-paths. Report only attacks you can trace through the actual code.
+Perform a focused security review. For every reported issue, trace a concrete exploit
+path through the actual code: attacker-controlled entry point, each code path or state
+transition, and the harmful outcome. Do not list categories of concern or hypothetical
+attacks you cannot walk step by step through this repository. The grounding rules above
+still apply unchanged: cite file:line, quote the code, label INFERENCE, and report
+nothing you cannot anchor. This is reviewed, not audited.
 ```
