@@ -1,4 +1,4 @@
-# Rough price table - API list; OpenAI rows verified 2026-08-20
+# Rough price table - API list; OpenAI rows verified 2026-08-20, Claude rows 2026-08-25
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend
@@ -17,7 +17,7 @@ this table does not retroactively correct them.
 | gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models |
 | gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
-| claude-sonnet-5 | 3.00 | 15.00 | 9.00 | https://platform.claude.com/docs/en/about-claude/pricing - intro 2.00/10.00 through 2026-08-31 |
+| claude-sonnet-5 | 2.00 | 10.00 | 6.00 | https://platform.claude.com/docs/en/about-claude/pricing - the launch introductory 2.00/10.00 became the standard price; the scheduled 3.00/15.00 increase was cancelled |
 | claude-opus-5 | 5.00 | 25.00 | 15.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 
 Only models the kitchen actually runs, plus known banner aliases whose logged names

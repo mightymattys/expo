@@ -3,6 +3,18 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.14.2 - 2026-08-25
+
+- The Claude rows were verified too, and Sonnet 5 was wrong. The table carried
+  3.00/15.00 with the launch price as a footnote "through 2026-08-31"; per
+  https://platform.claude.com/docs/en/about-claude/pricing that introductory 2.00/10.00
+  is now the standard price and the scheduled increase was cancelled, so the footnote
+  was the truth and the row was the estimate - overstated by half. Fable 5 (10/50) and
+  Opus 5 (5/25) were confirmed unchanged. The header now dates each vendor's rows
+  separately, so "verified" never claims more than was checked. That is three wrong rows
+  found in two passes (terra, luna, sonnet); the table is manual data and deserves the
+  same suspicion as any other uncited number.
+
 ## 0.14.1 - 2026-08-25
 
 - The `ultra` prohibition gets an invariant. Generalising the rule in 0.14.0 left it
