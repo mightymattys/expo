@@ -3,6 +3,15 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.14.1 - 2026-08-25
+
+- The `ultra` prohibition gets an invariant. Generalising the rule in 0.14.0 left it
+  unguarded: a mutation test deleted the sentence outright and CI stayed green, while
+  the comparable backgrounding rule has been asserted since it was written. Two teeth
+  now - fire must keep the prohibition, and no skill may wire
+  `model_reasoning_effort=ultra` into an actual invocation. Both were mutation-tested
+  before shipping, which is how the gap was found in the first place.
+
 ## 0.14.0 - 2026-08-20
 
 - The price table had been wrong for two rows, and chasing a new model surfaced it.

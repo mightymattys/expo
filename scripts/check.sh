@@ -243,6 +243,18 @@ else
   ok "skills use the appender as the sole ledger writer"
 fi
 
+# `ultra` multiplies token spend by design, on a run nobody is watching. The rule that
+# forbids it was model-specific until 0.14.0 and had no invariant at all - a mutation
+# test deleted it and CI stayed green. Two teeth: fire still carries the prohibition,
+# and no skill wires an ultra effort into an actual invocation.
+must_contain skills/fire/SKILL.md 'ultra' "fire must keep the prohibition on ultra reasoning for delegated background runs"
+wired=$(grep -rlF 'model_reasoning_effort=ultra' skills/ || true)
+if [ -n "$wired" ]; then
+  err "a skill wires an ultra reasoning effort into an invocation: $wired"
+else
+  ok "no skill wires an ultra reasoning effort"
+fi
+
 # Every plugin-root path a skill or template names actually ships in the repo.
 for p in $(grep -rho 'CLAUDE_PLUGIN_ROOT}/[A-Za-z0-9._/-]*' skills/ templates/ | sed 's|^CLAUDE_PLUGIN_ROOT}/||' | sort -u); do
   [ -e "$p" ] || err "\${CLAUDE_PLUGIN_ROOT}/$p is referenced but does not exist"
