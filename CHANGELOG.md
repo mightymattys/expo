@@ -3,6 +3,26 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.14.3 - 2026-08-25
+
+- Every row of the price table is now verified against its vendor on one date, and sol
+  had moved. gpt-5.6-sol dropped from 5.00/30.00 to 4.00/20.00 - a blend of 12.00 where
+  the table said 17.50 - confirmed on both
+  https://developers.openai.com/api/docs/models and
+  https://developers.openai.com/api/docs/pricing. terra, luna, cyber, Fable 5 and Opus 5
+  were confirmed unchanged. That is four wrong rows found in three passes (terra, luna,
+  sonnet, sol), one of which moved inside five days, so the monthly re-check the freshness
+  warning implies is on the slow side for OpenAI rows.
+- The alias row moved with its target, which is what the alias invariant is for: leaving
+  `gpt-daybreak-blue-latest` at the old figures while sol dropped fails CI by design.
+- Two invariants were over-specified and a legitimate price change exposed it. The
+  bare-alias bench fixture pinned the exact dollar figure `~$17.50`, so a price move broke
+  a test whose actual subject is "priced rather than UNPRICED"; it now matches any priced
+  figure. The as-of parser hard-coded the phrase "OpenAI rows verified", a stopgap from
+  when only those rows had been checked, so an honest one-date header could not parse; it
+  now reads any `verified <date>`. Both were re-mutation-tested afterwards and still fail
+  when the behaviour they describe regresses.
+
 ## 0.14.2 - 2026-08-25
 
 - The Claude rows were verified too, and Sonnet 5 was wrong. The table carried

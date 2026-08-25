@@ -343,7 +343,7 @@ else
 $alias_errors
 EOF
 fi
-asof=$(sed -n 's/.*OpenAI rows verified \([0-9-]*\).*/\1/p' "$PRICES" | head -1)
+asof=$(sed -n 's/.*verified \([0-9][0-9-]*\).*/\1/p' "$PRICES" | head -1)
 if [ -n "$asof" ]; then
   age=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$asof')).days)" 2>/dev/null)
   if [ -n "$age" ] && [ "$age" -gt 45 ]; then
@@ -352,7 +352,7 @@ if [ -n "$asof" ]; then
     warn "prices.md as-of date ($asof) is $age days old - consider re-verifying"
   fi
 else
-  err "prices.md carries no parseable 'OpenAI rows verified YYYY-MM-DD' as-of date"
+  err "prices.md carries no parseable 'verified YYYY-MM-DD' as-of date"
 fi
 # Date-bound notes ("through YYYY-MM-DD") must not silently outlive their window.
 for d in $(grep -oE 'through [0-9]{4}-[0-9]{2}-[0-9]{2}' "$PRICES" | grep -oE '[0-9-]+$'); do
@@ -1097,7 +1097,7 @@ fi
 bench=$(bash scripts/bench.sh scripts/fixtures/bench-bare-alias.jsonl)
 rc=$?
 if [ "$rc" -eq 0 ] \
-  && printf '%s\n' "$bench" | grep -Fx '| bare-alias | delegated | gpt-daybreak-blue-latest | claude-fable-5 | 1,000,000 | 0 | ~$17.50 | yes | 1s |' >/dev/null \
+  && printf '%s\n' "$bench" | grep -Eq '^\| bare-alias \| delegated \| gpt-daybreak-blue-latest \| claude-fable-5 \| 1,000,000 \| 0 \| ~\$[0-9]' \
   && ! printf '%s\n' "$bench" | grep -F 'UNPRICED (excluded from totals)' >/dev/null; then
   ok "bench.sh prices a bare alias model without excluding it"
 else
