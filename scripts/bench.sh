@@ -11,6 +11,7 @@ if [ -n "$ledger" ]; then
 fi
 cd "$(dirname "$0")/.."
 prices=skills/receipts/references/prices.md
+price_asof=$(sed -n 's/.*verified \([0-9][0-9-]*\).*/\1/p' "$prices" | head -1)
 
 if [ -z "$ledger" ] || [ ! -f "$ledger" ]; then
   printf 'bench: ledger not found: %s\n' "${ledger:-<none>}" >&2
@@ -52,13 +53,13 @@ price_rows=$(awk -F '|' '
   }
 ' "$prices")
 
-python3 - "$ledger" "$price_rows" <<'PY'
+python3 - "$ledger" "$price_rows" "$price_asof" <<'PY'
 import json
 import sys
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-ledger_path, price_rows = sys.argv[1:3]
+ledger_path, price_rows, price_asof = sys.argv[1:4]
 MILLION = Decimal("1000000")
 
 prices = {}
@@ -101,6 +102,8 @@ for row in rows:
     by_task[row["task"]][row["arm"]] = row
 
 print("# expo benchmark report")
+print()
+print(f"Price table as of: {price_asof}.")
 print()
 print("Pricing is in API-list terms, using the 50/50 blend in `skills/receipts/references/prices.md`.")
 print()

@@ -13,12 +13,11 @@ completion while the worker keeps running.
 ## Two models, one route
 
 `sonnet` is the cheap fallback when Codex hits its usage limit mid-serve ("try again
-at HH:MM"): Claude Sonnet 5 has an API-list 50/50 blend of ~$6/MTok (intro pricing
-through 2026-08-31, then ~$9). `opus` is the
-premium keyless worker: Claude Opus 5 is near Fable coding ability - SWE-bench Pro
-79.2 vs Fable's 80.0 - at a ~$15/MTok blend
+at HH:MM"); `opus` is the premium keyless worker. Claude Opus 5 is near Fable coding
+ability - SWE-bench Pro 79.2 vs Fable's 80.0
 ([benchmark](https://codersera.com/blog/claude-opus-5-vs-fable-5-2026/)). Opus drains
-the shared Anthropic quota faster than Sonnet, so use that premium deliberately.
+the shared Anthropic quota faster than Sonnet, so use that premium deliberately. For
+current figures, see [prices.md](../../receipts/references/prices.md).
 Mise and taste still need Codex, so this is not a Codex-free configuration on its
 own. Installed marker: none needed - `claude` is already on the machine running this
 plugin.

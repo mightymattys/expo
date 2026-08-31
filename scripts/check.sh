@@ -75,6 +75,10 @@ section_ok "skill frontmatter"
 must_contain() { # file fixed-string reason
   grep -qF -- "$2" "$1" || err "$1 must contain '$2' - $3"
 }
+must_occur_once() { # file fixed-string reason
+  [ "$(grep -oF -- "$2" "$1" | wc -l | tr -d ' ')" -eq 1 ] \
+    || err "$1 must contain '$2' exactly once - $3"
+}
 must_contain skills/serve/SKILL.md  'started:'  "the receipt template reads state.md's started: for wallclock"
 must_contain skills/simmer/SKILL.md 'started:'  "the receipt template reads the branch-scoped loop file's started: for wallclock"
 must_contain skills/serve/SKILL.md  'findings:' "refire (via serve) reads state.md's findings: line"
@@ -164,14 +168,13 @@ else
 $box_drift"
 fi
 
-# Published benchmark results, like receipts, retain the prices current when they were
-# written. The reporter must still render their recorded arms, but a later table fix
-# must not rewrite that historical cost evidence.
+# The rendered benchmark is current-price evidence, not a historical cost snapshot:
+# any price-table correction must refresh the checked-in reporter output.
 if bench_render=$(bash scripts/bench.sh bench/results.jsonl 2>&1) && \
-  printf '%s\n' "$bench_render" | grep -Fx '# expo benchmark report' >/dev/null; then
-  ok "bench/results.jsonl renders without repricing historical bench/RESULTS.md"
+  diff -u <(printf '%s\n' "$bench_render") bench/RESULTS.md; then
+  ok "bench/RESULTS.md matches the current reporter output"
 else
-  err "bench/results.jsonl does not render: $bench_render"
+  err "bench/RESULTS.md must match the current reporter output: $bench_render"
 fi
 
 # The tier names are one vocabulary, spelled identically wherever tiers are chosen.
@@ -212,6 +215,51 @@ must_contain skills/taste/SKILL.md '--security' "taste must expose the focused s
 must_contain skills/taste/references/review-prompt.md '## Security prompt' "taste's security lens needs its own reviewer prompt"
 must_contain skills/taste/SKILL.md 'reviewed, not audited' "security findings and the user report must state the review limit"
 must_contain skills/taste/references/review-prompt.md 'reviewed, not audited' "the security prompt must state the review limit"
+must_occur_once skills/refire/SKILL.md 'carry its CONFIRMED blocks, including `## Security findings`, over' "refire's ticket must carry confirmed security findings"
+must_occur_once skills/refire/SKILL.md 'security findings use the same cited location and re-verification' "refire must fix and re-verify security findings at their cited locations"
+must_occur_once skills/refire/SKILL.md 'Report resolved security findings separately from other resolved findings' "refire's report must separate resolved security findings"
+must_contain skills/refire/SKILL.md 'reviewed, not audited' "refire must retain the security-review limit"
+# A security request is a routing contract, not merely vocabulary: it records yes and
+# must invoke taste with the flag. The canonical threading and stage clauses each have
+# one home, and the second guard rejects a state-driven invocation that drops the flag.
+must_occur_once skills/serve/SKILL.md '`security: yes` in `state.md`, and pass `--security` to taste' "serve must thread a security request into taste"
+must_occur_once skills/serve/SKILL.md 'security: <yes | no>' "serve state must record whether taste is a security pass"
+taste_stage='2. **Taste** - per `/expo:taste` (with `--security` when state.md says'
+taste_security_state='   `security: yes`): read-only cross-review scoped to the delta'
+if [ "$(grep -Fxc -- "$taste_stage" skills/serve/SKILL.md)" -eq 1 ] && \
+  [ "$(grep -F -A1 -- "$taste_stage" skills/serve/SKILL.md | grep -Fxc -- "$taste_security_state")" -eq 1 ]; then
+  ok "serve invokes taste with --security when state says security: yes"
+else
+  err "skills/serve/SKILL.md must contain the canonical security taste invocation exactly once"
+fi
+contradictory_security_taste=$(awk '
+  /per `\/expo:taste`/ {
+    invocation = $0
+    if (getline > 0 && $0 ~ /`security: yes`/ && invocation !~ /--security/) {
+      print (NR - 1) ": " invocation
+    }
+  }
+' skills/serve/SKILL.md)
+if [ -z "$contradictory_security_taste" ]; then
+  ok "serve has no security state that invokes taste without --security"
+else
+  err "skills/serve/SKILL.md invokes taste without --security after security: yes: $contradictory_security_taste"
+fi
+
+# API-list amounts live only in prices.md; routing text names relative choices and
+# points there, so a price correction has one source of truth.
+price_figure_pattern='\$[[:space:]]*[0-9]+(\.[0-9]+)?[[:space:]]*(/|per)[[:space:]]*([Mm][Tt]ok|[Mm]illion([[:space:]]+[Tt]okens?)?)'
+price_figures=$(grep -R -n -iE --exclude=prices.md -- "$price_figure_pattern" skills || true)
+if [ -z "$price_figures" ]; then
+  ok "no API-list per-million price figures appear outside prices.md"
+else
+  err "price figures outside prices.md:\n$price_figures"
+fi
+if [ "$(printf '%s\n' '$6 per MTok' '$5 per million tokens' '$12 /MTok' | grep -E -- "$price_figure_pattern" | wc -l | tr -d ' ')" -eq 3 ]; then
+  ok "price sweep catches equivalent per-million spellings"
+else
+  err "price sweep must catch per MTok, per million tokens, and /MTok spellings"
+fi
 
 # The taste/refire tree anchor is one recipe, spelled identically on both sides.
 ANCHOR='$(git rev-parse --short HEAD)+$(idx=$(mktemp -u); GIT_INDEX_FILE=$idx git add -A && GIT_INDEX_FILE=$idx git write-tree | cut -c1-12)'

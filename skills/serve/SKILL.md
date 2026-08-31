@@ -27,6 +27,7 @@ runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
 worker: <codex | sonnet | opus>
 tier: <sol | terra | luna, Codex route only>
+security: <yes | no>
 baseline: <abs path to stage 1's pre-fire.patch>
 findings: <abs path to taste's findings.md>
 job: <abs path to the job dir currently cooking, if any>
@@ -42,9 +43,11 @@ memory or estimate it.
 
 ## Choosing the worker and tier
 
-If the arguments begin with `--with <worker>` (see fire's worker table), the
-choice applies to the whole line: fire and refire run on that worker; taste
-stays on Codex read-only when available, which makes the review cross-model
+If the arguments include `--security`, strip it with the routing flags, record
+`security: yes` in `state.md`, and pass `--security` to taste; otherwise record
+`security: no`. If the arguments begin with `--with <worker>` (see fire's worker
+table), the choice applies to the whole line: fire and refire run on that worker;
+taste stays on Codex read-only when available, which makes the review cross-model
 when the worker is not Codex. Record the selected worker in `state.md` (for example,
 `worker: opus`).
 
@@ -69,7 +72,8 @@ Claude's validation pass is the only cross-model check in that run.
    verification: still red after the delta means fix it yourself if a surgical fix
    will do, otherwise stop and report honestly - tasting a known-broken
    implementation wastes the remaining budget.
-2. **Taste** - per `/expo:taste`: read-only cross-review scoped to the delta
+2. **Taste** - per `/expo:taste` (with `--security` when state.md says
+   `security: yes`): read-only cross-review scoped to the delta
    against the `baseline:` patch in state.md - the user's pre-existing WIP is not
    part of this order - then your validation pass; record the resulting
    `findings.md` path as `findings:`. When taste plates (or is skipped), rewrite
@@ -122,6 +126,8 @@ check; outside-list paths are named, warned, and excluded from the stage delta.
 Before writing the receipt, sweep the run into the running tab:
 `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$RUN" --session
 "${CLAUDE_CODE_SESSION_ID:-}"`.
+This write heals only while the job dirs survive, so a session that ends before later
+plating is never counted.
 
 Then write the run's receipt to `.expo/receipts/` per
 [../receipts/references/receipt-template.md](../receipts/references/receipt-template.md).

@@ -268,8 +268,9 @@ doc, or a measured comparison - collected via a multi-source research sweep on
 
 ## Why fire picks a GPT-5.6 tier by task shape
 
-- GPT-5.6 ships three tiers (sol/terra/luna) at 3.4x price spread. The head chef
-  already classifies every task by shape to decide *whether* to delegate; the same
+- GPT-5.6 ships three tiers (sol/terra/luna); their current blends live in
+  [`prices.md`](../skills/receipts/references/prices.md). The head chef already
+  classifies every task by shape to decide *whether* to delegate; the same
   classification picks the tier, so tier selection is free judgment already being
   spent - a mechanical rename doesn't need sol's ceiling, an architectural change
   shouldn't get luna's. The default is shape-driven with an explicit `--tier` escape;

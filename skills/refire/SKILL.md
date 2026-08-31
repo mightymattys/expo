@@ -70,8 +70,8 @@ Write `$JOB/ticket.md` with the fire template's XML blocks, specialized:
 - `<task>`: "Fix the review findings below. Each is confirmed against the code."
   Then one block per finding: file:line, the defect in one sentence, the evidence
   (quoted code), and the prescribed fix. Taste's `findings.md` is already in this
-  shape - carry its CONFIRMED blocks over near-verbatim; its refuted audit-trail
-  section is not refire input.
+  shape - carry its CONFIRMED blocks, including `## Security findings`, over
+  near-verbatim; its refuted audit-trail section is not refire input.
 - `<done_when>`: every listed finding resolved at its cited location, plus the repo's
   verification commands passing.
 - `<files>`: touch only files named in the findings. Everything else is off limits.
@@ -95,7 +95,7 @@ At plating, in addition to fire's outcome checks (exit code, result file present
 sandbox banner):
 
 1. Open each finding's cited location and confirm the defect is gone. A
-   finding-by-finding checklist, not a vibe.
+   finding-by-finding checklist, not a vibe; security findings use the same cited location and re-verification.
 2. Run the verification commands yourself.
 3. Diff against the pre-refire baseline and compare the changed file set to the
    ticket's `<files>` Touch list, using fire's concurrent-edit rule. Name outside-list
@@ -106,6 +106,9 @@ sandbox banner):
    is the strongest ship signal this kitchen produces.
 5. Add the measured run to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`; a Claude worker emits no token summary,
    so the script leaves no line, same as on a fire.
+
+Report resolved security findings separately from other resolved findings, and retain
+the limit: security findings were reviewed, not audited.
 
 ## Cap
 

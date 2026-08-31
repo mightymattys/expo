@@ -9,7 +9,8 @@ Receipts are per-run cost artifacts written by serve and simmer into the current
 repo at `.expo/receipts/<utc-timestamp>.md` (ignored via
 `.git/info/exclude`, never committed). Each holds the run's measured numbers and
 ends with a shareable one-liner. The global ledger (`~/.expo/ledger.jsonl`)
-stays the cross-repo running tab; receipts are the per-run, per-repo story.
+stays the cross-repo running tab - a floor, not a census: it counts what it could
+measure and under-counts by construction; receipts are the per-run, per-repo story.
 
 ## Printing the check
 

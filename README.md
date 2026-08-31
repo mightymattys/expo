@@ -162,9 +162,14 @@ Two subscriptions: any Claude plan for Claude Code, and a ChatGPT plan for Codex
 `codex login`, no API key needed. Subscription auth is the first-class path for
 headless runs: `codex exec` reuses the saved login, tokens auto-refresh even
 mid-run, and fire unsets the two env vars (`CODEX_API_KEY`, `CODEX_ACCESS_TOKEN`)
-that could silently switch a run to per-token billing. Delegation overhead on the
-Claude side is measured per run, not estimated - see the receipts - and is small
-enough that only one-file surgical fixes stay cheaper done directly.
+that could silently switch a run to per-token billing. The one-file delegation floor
+is a policy, not a measured cost inversion: ticket writing, plating and reviewing the
+diff, and orchestration tokens spent supervising are round-trip overhead that can
+outweigh a surgical change. The measured advantage shrinks from 2.12x for the
+multi-file feature to 1.54x for the feature and 1.18x for the smallest measured task;
+nothing smaller has been measured. A [one-word label rename fired to luna for 32,680
+worker tokens plus orchestration](CHANGELOG.md#0140---2026-08-20) is the concrete
+reason the policy remains operative.
 
 </details>
 
@@ -172,28 +177,31 @@ enough that only one-file surgical fixes stay cheaper done directly.
 <summary><b>What does delegation actually save?</b></summary>
 <br>
 
-**Measured, on four tasks, both arms run cold: ~1.6x cheaper in aggregate.**
+**Measured, on four tasks, both arms run cold: $0.95 delegated vs $1.89 direct = 1.99x.**
 Full table: [bench/RESULTS.md](bench/RESULTS.md); method and what it deliberately does
 not measure: [docs/benchmark.md](docs/benchmark.md).
 
 | task shape | delegated | direct | ratio |
 |---|---|---|---|
-| bugfix + regression tests (terra) | ~$0.26 | ~$0.26 | a tie |
-| feature + tests (terra) | ~$0.31 | ~$0.40 | 1.3x |
-| multi-file feature + CLI (terra) | ~$0.48 | ~$0.89 | 1.9x |
-| mechanical bulk rename (luna) | ~$0.12 | ~$0.34 | 2.8x |
+| bugfix + regression tests (terra) | ~$0.22 | ~$0.26 | 1.18x |
+| feature + tests (terra) | ~$0.26 | ~$0.40 | 1.54x |
+| multi-file feature + CLI (terra) | ~$0.42 | ~$0.89 | 2.12x |
+| mechanical bulk rename (luna) | ~$0.05 | ~$0.34 | 6.80x |
 
 Two things drive the gap, and neither is delegation on its own. **Task size:** at the
-same tier the ratio climbs from a dead tie on a small bugfix to 1.9x on a 300-line
+same tier the advantage grows from 1.18x on the smallest bugfix to 2.12x on the
 multi-file feature, because the worker absorbs volume the orchestrator would otherwise
 spend itself. **Tier routing:** the single best result is the mechanical task sent to
-the cheapest model. Small surgical work stays with Claude, exactly as the rule of thumb
-above says - the tie is that rule, measured.
+the cheapest model. A correction to the price table removed a piece of evidence this
+project had been citing: there is no measured cost tie for small surgical work. The cost
+case for the delegation floor is therefore weaker than the old table implied; that floor
+rests on round-trip overhead - ticket writing, plating, and orchestration tokens spent
+supervising - rather than a measured tie.
 
 Honest limits: four tasks on one fixture, all in Python. The multi-file task ran on
 terra to keep the tier constant against the smaller ones; fire's own table would
-arguably route it to sol, which costs twice as much per token, and this benchmark does
-not model what that would have cost.
+arguably route it to sol at the [current blend](skills/receipts/references/prices.md),
+and this benchmark does not model what that would have cost.
 
 Your own runs measure both sides live too: worker tokens from the job log,
 orchestration tokens from the session transcript, dollar split at API-list blends on

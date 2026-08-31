@@ -3,6 +3,39 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.0 - 2026-08-31
+
+- The delegation floor stops claiming to be measured. `README.md` and `skills/fire/SKILL.md`
+  both stated that a one-file surgical fix is cheaper done directly; nothing measures that.
+  The corrected benchmark has no direct-cheaper row - its smallest task is 1.18x cheaper
+  *delegated* - and README already conceded elsewhere on the same page that the measured
+  tie was gone, so the page contradicted itself. Both now state a policy grounded in
+  round-trip overhead, note that the advantage shrinks with task size (2.12x, 1.54x, 1.18x)
+  and that nothing smaller has been measured, and carry the repo's own one-word-rename
+  incident - 32,680 worker tokens for a one-minute edit - as the evidence that does exist.
+- The published benchmark renders at current prices, and CI keeps it that way. `bench/RESULTS.md`
+  had frozen dollar columns derived from four superseded price corrections; tokens and
+  wallclock are the measurement and are unchanged, dollars are a derivation and now re-render.
+  `scripts/bench.sh` stamps the price table's as-of date into its report, and the invariant
+  flips from "renders without repricing" to "matches the reporter's current output", so a
+  future correction that nobody re-renders fails the build. Aggregate moves from 1.62x to
+  **1.99x** on the same measured tokens.
+- Three more stale price multiples were found by sweeping for the class rather than the
+  instance: `docs/design.md`'s "3.4x price spread" (actual sol/luna spread 17.14x), and
+  `docs/benchmark.md`'s and README's "twice the per-token price" for sol over terra (1.71x).
+- Security findings get a consumer. `refire` reads taste's `## Security findings` section
+  and fixes at the cited location like any other confirmed finding, reports them separately,
+  and carries the `reviewed, not audited` limit so a fixed finding never reads as a cleared
+  audit. `serve` accepts `--security`, records it in `state.md` and threads it to taste - an
+  explicit flag, not a heuristic that silently decides whether a security review happened.
+- One source of truth for prices, enforced. Every `$N/MTok` figure is gone from
+  `worker-routes.md` - including a Sonnet sentence that still promised a September increase
+  the vendor had cancelled - and CI rejects price figures anywhere under `skills/` outside
+  `prices.md`, in equivalent spellings too.
+- The ledger's self-healing has a documented time bound: the sweep heals only while the job
+  dir survives, so a run whose session ends before any later plating is never counted, and
+  the running tab is a floor rather than a census.
+
 ## 0.14.4 - 2026-08-31
 
 - Every price row re-verified 2026-08-31 against both vendors: nothing moved. sol

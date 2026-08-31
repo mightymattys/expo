@@ -19,7 +19,9 @@ Fire when ALL of these hold:
 - You can state "done" as checkable criteria (tests pass, command output, types compile).
 
 Cook it yourself when ANY of these hold:
-- One-file or few-line surgical fix - the delegation round trip costs more than doing it.
+- One-file or few-line surgical fix - keep it direct: a round-trip-overhead policy,
+  not a measured cost inversion; no smaller task has been measured. The
+  [one-word-label incident](../../CHANGELOG.md#0140---2026-08-20) keeps the rule operative.
 - The approach is still ambiguous - resolve design questions first, then fire.
 - The task depends on conversation context that can't be written into a ticket.
 
@@ -137,7 +139,9 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      usage is unavailable) - quota spend is otherwise invisible to the user. Then add the job
      to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`. The ledger is
      the running tab; its worker and orchestration counts are measured from this job's
-     log and `$JOB/started`, and a run whose tokens cannot be read leaves no line.
+     log and `$JOB/started`, and a run whose tokens cannot be read leaves no line. This
+     write heals only while the job dir survives, so a session that ends before later
+     plating is never counted.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.
 
 Cap follow-ups at two rounds. If it's still not right after two deltas, take over and finish it yourself - further debate has diminishing returns.
