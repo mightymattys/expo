@@ -1,4 +1,4 @@
-# Rough price table - API list; every row verified 2026-08-25
+# Rough price table - API list; every row verified 2026-08-31
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend

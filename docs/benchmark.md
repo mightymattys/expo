@@ -93,7 +93,14 @@ printf '%s\n' '{"task":"my-task","arm":"delegated","model":"gpt-5.6-terra","orch
 The delta is an observed difference on this measured task set only; the report names
 the number of compared tasks. It is not a bound, guarantee, or general cross-model
 multiple. It does not measure output quality beyond the task's own check command,
-review effort, or run-to-run variance unless an arm was repeated.
+review effort, or run-to-run variance unless an arm was repeated. It does not normalise
+tokenizers: worker tokens are counted by the worker's tokenizer and orchestration
+tokens by Claude's, and Claude 4.7 and later use a newer tokenizer that produces
+roughly 30% more tokens for the same text
+(https://platform.claude.com/docs/en/about-claude/pricing). The equal-volume delta
+therefore prices the run's tokens as if a Claude-only run would have needed the same
+count, when the same text would likely take more of them - which makes the floor more
+conservative, never less.
 
 Dollar figures are API-list terms, never "you paid": subscription runs have $0
 marginal cost. The `~` marks estimates derived from the published 50/50 blends, not

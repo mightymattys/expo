@@ -3,6 +3,22 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.14.4 - 2026-08-31
+
+- Every price row re-verified 2026-08-31 against both vendors: nothing moved. sol
+  4.00/20.00, terra 2.00/12.00, luna 0.20/1.20, cyber 12.50/75.00, Fable 5 10.00/50.00,
+  Sonnet 5 2.00/10.00, Opus 5 5.00/25.00, and the daybreak aliases still point at sol and
+  cyber. Recording a check that found nothing is the point of the as-of date.
+- The benchmark method names the tokenizer asymmetry it cannot normalise. Worker tokens
+  are counted by the worker's tokenizer and orchestration tokens by Claude's, and Claude
+  4.7 and later use a newer tokenizer producing roughly 30% more tokens for the same text
+  (https://platform.claude.com/docs/en/about-claude/pricing). The equal-volume delta
+  prices the run's tokens as if a Claude-only run needed the same count, when the same
+  text would likely take more - so the asymmetry makes the floor more conservative, never
+  less. The rule that follows from it was already in place: orchestration-tokens.md
+  forbids dressing a raw token ratio up as savings precisely because the two sides are
+  different tokenizers. This adds the measured magnitude and its source.
+
 ## 0.14.3 - 2026-08-25
 
 - Every row of the price table is now verified against its vendor on one date, and sol
