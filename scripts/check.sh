@@ -319,6 +319,8 @@ section_ok "cross-file invariants"
 
 # 3b. Pricing freshness ---------------------------------------------------------
 # prices.md is manual data; these checks make its staleness loud instead of silent.
+# Thresholds match observed drift, not a guess: sol moved inside five days, and three
+# verification passes found four wrong rows (terra, luna, sonnet, sol). 14 warns, 30 fails.
 PRICES=skills/receipts/references/prices.md
 # Every Claude subscription model this plugin can fire has a price-table row. Without
 # that row, receipts would silently be unable to price a route the plugin advertises.
@@ -394,9 +396,9 @@ fi
 asof=$(sed -n 's/.*verified \([0-9][0-9-]*\).*/\1/p' "$PRICES" | head -1)
 if [ -n "$asof" ]; then
   age=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$asof')).days)" 2>/dev/null)
-  if [ -n "$age" ] && [ "$age" -gt 45 ]; then
+  if [ -n "$age" ] && [ "$age" -gt 30 ]; then
     err "prices.md as-of date ($asof) is $age days old - re-verify list prices and bump the date"
-  elif [ -n "$age" ] && [ "$age" -gt 30 ]; then
+  elif [ -n "$age" ] && [ "$age" -gt 14 ]; then
     warn "prices.md as-of date ($asof) is $age days old - consider re-verifying"
   fi
 else
@@ -480,6 +482,11 @@ done
 for expected in scripts/fixtures/*.expected; do
   fixture="${expected%.expected}"
   [ -f "$fixture.diff" ] || [ -f "$fixture.log" ] || err "$expected has no fixture beside it"
+done
+# A result without its matching log models no possible completed Codex job.
+for result in scripts/fixtures/*.result; do
+  fixture="${result%.result}"
+  [ -f "$fixture.log" ] || err "$result has no log fixture beside it"
 done
 
 if python3 scripts/diffscan.py --min-lines 1 scripts/fixtures/diffscan-paths.diff | grep -Fx -- '- 2 files changed, +2/-2' >/dev/null; then
@@ -621,6 +628,27 @@ out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py usage-null 2026
 rc=$?
 [ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops invalid usage" || err "orch-tokens.py invalid usage expected rc 0 and no output, got rc $rc and '$out'"
 
+printf '%s\n' \
+  '{"type":"assistant","timestamp":"2026-01-02T00:00:00Z","message":{"usage":{"input_tokens":1,"output_tokens":1}}}' \
+  'not valid JSON' \
+  > "$FIXHOME/projects/-fixture/malformed-line.jsonl"
+out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py malformed-line 2026-01-02T00:00:00Z)
+rc=$?
+[ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops a transcript containing a malformed line" || err "orch-tokens.py malformed transcript expected rc 0 and no output, got rc $rc and '$out'"
+
+for fixture in missing-input-tokens missing-output-tokens; do
+  if [ "$fixture" = missing-input-tokens ]; then
+    usage='{"output_tokens":1}'
+  else
+    usage='{"input_tokens":1}'
+  fi
+  printf '{"type":"assistant","timestamp":"2026-01-02T00:00:00Z","message":{"usage":%s}}\n' "$usage" \
+    > "$FIXHOME/projects/-fixture/$fixture.jsonl"
+  out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py "$fixture" 2026-01-02T00:00:00Z)
+  rc=$?
+  [ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops an assistant record with $fixture" || err "orch-tokens.py $fixture expected rc 0 and no output, got rc $rc and '$out'"
+done
+
 mkdir -p "$FIXHOME/projects/-fixture-duplicate"
 printf '%s\n' '{"type":"assistant","timestamp":"2026-01-02T00:00:00Z","message":{"usage":{"input_tokens":1,"output_tokens":1}}}' \
   > "$FIXHOME/projects/-fixture/two-match.jsonl"
@@ -628,6 +656,18 @@ cp "$FIXHOME/projects/-fixture/two-match.jsonl" "$FIXHOME/projects/-fixture-dupl
 out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py two-match 2026-01-02T00:00:00Z)
 rc=$?
 [ "$rc" -eq 0 ] && [ -z "$out" ] && ok "orch-tokens.py drops ambiguous transcript matches" || err "orch-tokens.py ambiguous matches expected rc 0 and no output, got rc $rc and '$out'"
+
+# A transcript is written live: its final line can be mid-write. That is a record not yet
+# finished, not a damaged one - treating it as corruption threw away a window that was
+# measurable, and ledger-append still marked the job, so the loss was permanent.
+printf '%s\n' '{"type":"assistant","timestamp":"2026-01-01T00:00:00Z","message":{"usage":{"input_tokens":10,"output_tokens":5}}}' > "$FIXHOME/projects/-fixture/live.jsonl"
+printf '%s' '{"type":"assistant","timestamp":"2026-01-01T00:01:00Z","message":{"usa' >> "$FIXHOME/projects/-fixture/live.jsonl"
+live=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/orch-tokens.py live 2025-01-01T00:00:00Z)
+if [ "$live" = 15 ]; then
+  ok "orch-tokens.py measures a transcript whose final line is still being written"
+else
+  err "orch-tokens.py must skip only the unterminated final line, got '$live' (want 15)"
+fi
 
 TAB_LEDGER=$(mktemp)
 printf '%s\n' \
@@ -646,8 +686,12 @@ else
 fi
 
 LEDGER_FIX=$(mktemp -d)
+seed_job() { # job-dir fixture-name
+  cp "scripts/fixtures/$2.log" "$1/job.log"
+  [ ! -f "scripts/fixtures/$2.result" ] || cp "scripts/fixtures/$2.result" "$1/result.md"
+}
 mkdir "$LEDGER_FIX/job"
-cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/job/job.log"
+seed_job "$LEDGER_FIX/job" ledger-complete
 out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/job" --skill fire --repo fixture --ledger "$LEDGER_FIX/ledger.jsonl")
 rc=$?
 normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
@@ -683,7 +727,7 @@ else
 fi
 for fixture in ledger-no-summary ledger-no-banner; do
   mkdir "$LEDGER_FIX/$fixture"
-  cp "scripts/fixtures/$fixture.log" "$LEDGER_FIX/$fixture/job.log"
+  seed_job "$LEDGER_FIX/$fixture" "$fixture"
   out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
   rc=$?
   if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ] &&
@@ -695,7 +739,7 @@ for fixture in ledger-no-summary ledger-no-banner; do
 done
 for fixture in ledger-echoed-ticket-spoof ledger-malformed-grouping; do
   mkdir "$LEDGER_FIX/$fixture"
-  cp "scripts/fixtures/$fixture.log" "$LEDGER_FIX/$fixture/job.log"
+  seed_job "$LEDGER_FIX/$fixture" "$fixture"
   out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
   rc=$?
   if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ] &&
@@ -705,8 +749,19 @@ for fixture in ledger-echoed-ticket-spoof ledger-malformed-grouping; do
     err "ledger-append.py must reject $fixture fixture without output (rc $rc): $out"
   fi
 done
+fixture=ledger-no-result-eof-spoof
+mkdir "$LEDGER_FIX/$fixture"
+seed_job "$LEDGER_FIX/$fixture" "$fixture"
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl")
+rc=$?
+if [ "$rc" -eq 0 ] && [ -z "$out" ] && [ ! -e "$LEDGER_FIX/$fixture.jsonl" ] &&
+  [ ! -e "$LEDGER_FIX/$fixture/.ledgered" ]; then
+  ok "ledger-append.py drops a valid-banner EOF summary with no result.md"
+else
+  err "ledger-append.py must drop a valid-banner EOF summary with no result.md (rc $rc): $out"
+fi
 mkdir "$LEDGER_FIX/ledger-write-fails"
-cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/ledger-write-fails/job.log"
+seed_job "$LEDGER_FIX/ledger-write-fails" ledger-complete
 out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/ledger-write-fails" --skill fire \
   --repo fixture --ledger "$LEDGER_FIX" 2>&1)
 rc=$?
@@ -716,11 +771,7 @@ else
   err "ledger-append.py must not mark a failed ledger write (rc $rc): $out"
 fi
 mkdir "$LEDGER_FIX/ledger-final-message-spoof"
-cp scripts/fixtures/ledger-final-message-spoof.log "$LEDGER_FIX/ledger-final-message-spoof/job.log"
-# No trailing newline: Codex writes result.md exactly as the log's final message minus
-# the log's own line ending. A fixture that adds one lets a suffix match pass here and
-# fail on every real job log.
-printf '%s\n%s\n%s\n%s' 'The run is complete.' 'model: final-message-model' 'tokens used' '999,999' > "$LEDGER_FIX/ledger-final-message-spoof/result.md"
+seed_job "$LEDGER_FIX/ledger-final-message-spoof" ledger-final-message-spoof
 out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/ledger-final-message-spoof" --skill fire --repo fixture --ledger "$LEDGER_FIX/ledger-final-message-spoof.jsonl")
 rc=$?
 normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
@@ -731,7 +782,7 @@ else
   err "ledger-append.py must record the real summary before a final-message spoof (rc $rc): $out"
 fi
 mkdir "$LEDGER_FIX/simmer"
-cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/simmer/job.log"
+seed_job "$LEDGER_FIX/simmer" ledger-complete
 out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/simmer" --skill simmer --lap 3 \
   --branch feat/loop --repo fixture --ledger "$LEDGER_FIX/simmer.jsonl" 2>/dev/null)
 rc=$?
@@ -747,7 +798,7 @@ fi
 # An omitted claude_tokens is honest; an omitted one with no reason on stderr is how
 # 42% of a real ledger lost the field with nobody able to say which step failed.
 mkdir "$LEDGER_FIX/why"
-cp scripts/fixtures/ledger-complete.log "$LEDGER_FIX/why/job.log"
+seed_job "$LEDGER_FIX/why" ledger-complete
 stderr=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/why" --skill fire \
   --repo fixture --ledger "$LEDGER_FIX/why.jsonl" 2>&1 >/dev/null)
 rc=$?
@@ -762,7 +813,7 @@ SWEEP_RUN="$LEDGER_FIX/sweep-run"
 SWEEP_LEDGER="$LEDGER_FIX/sweep.jsonl"
 mkdir -p "$SWEEP_RUN"/{fire-AbC123,taste-Xy9876,refire-Q4w5e6,simmer-L0oP9q}
 for job in "$SWEEP_RUN"/*; do
-  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+  seed_job "$job" ledger-complete
 done
 out=$(python3 scripts/ledger-append.py --run "$SWEEP_RUN" --repo fixture \
   --ledger "$SWEEP_LEDGER" 2>"$LEDGER_FIX/sweep.stderr")
@@ -792,7 +843,7 @@ fi
 SCRATCHPAD_BARE="$LEDGER_FIX/scratchpad-bare"
 mkdir -p "$SCRATCHPAD_BARE"/{fire-cenik-AbC123,taste-draft-OFfRm1}
 for job in "$SCRATCHPAD_BARE"/*; do
-  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+  seed_job "$job" ledger-complete
 done
 out=$(python3 scripts/ledger-append.py --run "$SCRATCHPAD_BARE" --repo fixture \
   --ledger "$LEDGER_FIX/scratchpad-bare.jsonl" 2>"$LEDGER_FIX/scratchpad-bare.stderr")
@@ -807,7 +858,7 @@ fi
 SCRATCHPAD_SERVE="$LEDGER_FIX/scratchpad-serve"
 mkdir -p "$SCRATCHPAD_SERVE/serve-XyZ987"/{fire-picker-OV0Asj,refire-varianty-RykTK2}
 for job in "$SCRATCHPAD_SERVE/serve-XyZ987"/*; do
-  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+  seed_job "$job" ledger-complete
 done
 out=$(python3 scripts/ledger-append.py --run "$SCRATCHPAD_SERVE" --repo fixture \
   --ledger "$LEDGER_FIX/scratchpad-serve.jsonl" 2>"$LEDGER_FIX/scratchpad-serve.stderr")
@@ -823,9 +874,9 @@ SCRATCHPAD_MIXED="$LEDGER_FIX/scratchpad-mixed"
 mkdir -p "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU" \
   "$SCRATCHPAD_MIXED/serve-QwErTy"/{taste-machop-f7jq4G,refire-no-start-azerty} \
   "$SCRATCHPAD_MIXED/whatever-Q9"
-cp scripts/fixtures/ledger-complete.log "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU/job.log"
-cp scripts/fixtures/ledger-complete.log "$SCRATCHPAD_MIXED/serve-QwErTy/taste-machop-f7jq4G/job.log"
-cp scripts/fixtures/ledger-complete.log "$SCRATCHPAD_MIXED/serve-QwErTy/refire-no-start-azerty/job.log"
+seed_job "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU" ledger-complete
+seed_job "$SCRATCHPAD_MIXED/serve-QwErTy/taste-machop-f7jq4G" ledger-complete
+seed_job "$SCRATCHPAD_MIXED/serve-QwErTy/refire-no-start-azerty" ledger-complete
 printf '%s\n' '2026-01-02T00:00:00Z' > "$SCRATCHPAD_MIXED/fire-pasma-hUDSeU/started"
 printf '%s\n' '2026-01-02T00:00:00.500Z' > "$SCRATCHPAD_MIXED/serve-QwErTy/taste-machop-f7jq4G/started"
 out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py --run "$SCRATCHPAD_MIXED" \
@@ -860,10 +911,13 @@ fi
 
 REPO_SCRATCHPAD="$LEDGER_FIX/repo-scratchpad"
 mkdir -p "$REPO_SCRATCHPAD"/{fire-first,taste-second}
-sed 's|/Users/matty/Developer/expo|/Users/matty/Developer/first-repo|' \
-  scripts/fixtures/ledger-complete.log > "$REPO_SCRATCHPAD/fire-first/job.log"
-sed 's|/Users/matty/Developer/expo|/Users/matty/Developer/second-repo|' \
-  scripts/fixtures/ledger-complete.log > "$REPO_SCRATCHPAD/taste-second/job.log"
+seed_job "$REPO_SCRATCHPAD/fire-first" ledger-complete
+seed_job "$REPO_SCRATCHPAD/taste-second" ledger-complete
+sed -i.bak 's|/Users/matty/Developer/expo|/Users/matty/Developer/first-repo|' \
+  "$REPO_SCRATCHPAD/fire-first/job.log"
+sed -i.bak 's|/Users/matty/Developer/expo|/Users/matty/Developer/second-repo|' \
+  "$REPO_SCRATCHPAD/taste-second/job.log"
+rm -f "$REPO_SCRATCHPAD"/{fire-first,taste-second}/job.log.bak
 out=$(python3 scripts/ledger-append.py --run "$REPO_SCRATCHPAD" \
   --ledger "$LEDGER_FIX/repo-scratchpad.jsonl" 2>"$LEDGER_FIX/repo-scratchpad.stderr")
 rc=$?
@@ -877,7 +931,9 @@ fi
 
 NO_REPO_JOB="$LEDGER_FIX/no-repo"
 mkdir "$NO_REPO_JOB"
-sed '/^workdir:/d' scripts/fixtures/ledger-complete.log > "$NO_REPO_JOB/job.log"
+seed_job "$NO_REPO_JOB" ledger-complete
+sed -i.bak '/^workdir:/d' "$NO_REPO_JOB/job.log"
+rm -f "$NO_REPO_JOB/job.log.bak"
 out=$(python3 scripts/ledger-append.py --job "$NO_REPO_JOB" --skill fire \
   --ledger "$LEDGER_FIX/no-repo.jsonl" 2>"$LEDGER_FIX/no-repo.stderr")
 rc=$?
@@ -892,7 +948,7 @@ fi
 MARKED_RUN="$LEDGER_FIX/marked-run"
 mkdir -p "$MARKED_RUN"/{fire-Marked,taste-Fresh}
 for job in "$MARKED_RUN"/*; do
-  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+  seed_job "$job" ledger-complete
 done
 : > "$MARKED_RUN/fire-Marked/.ledgered"
 out=$(python3 scripts/ledger-append.py --run "$MARKED_RUN" --repo fixture \
@@ -908,8 +964,8 @@ fi
 
 MIXED_RUN="$LEDGER_FIX/mixed-run"
 mkdir -p "$MIXED_RUN"/{audit-Unknown,refire-Known}
-cp scripts/fixtures/ledger-complete.log "$MIXED_RUN/audit-Unknown/job.log"
-cp scripts/fixtures/ledger-complete.log "$MIXED_RUN/refire-Known/job.log"
+seed_job "$MIXED_RUN/audit-Unknown" ledger-complete
+seed_job "$MIXED_RUN/refire-Known" ledger-complete
 out=$(python3 scripts/ledger-append.py --run "$MIXED_RUN" --repo fixture \
   --ledger "$LEDGER_FIX/mixed.jsonl" 2>"$LEDGER_FIX/mixed.stderr")
 rc=$?
@@ -924,7 +980,7 @@ fi
 
 BROKEN_RUN="$LEDGER_FIX/broken-run"
 mkdir -p "$BROKEN_RUN"/{fire-Aborted,refire-Good}
-cp scripts/fixtures/ledger-complete.log "$BROKEN_RUN/refire-Good/job.log"
+seed_job "$BROKEN_RUN/refire-Good" ledger-complete
 out=$(python3 scripts/ledger-append.py --run "$BROKEN_RUN" --repo fixture \
   --ledger "$LEDGER_FIX/broken.jsonl" 2>"$LEDGER_FIX/broken.stderr")
 rc=$?
@@ -939,7 +995,7 @@ fi
 
 FATAL_RUN="$LEDGER_FIX/fatal-run"
 mkdir -p "$FATAL_RUN/fire-Complete" "$LEDGER_FIX/sweep-ledger-dir"
-cp scripts/fixtures/ledger-complete.log "$FATAL_RUN/fire-Complete/job.log"
+seed_job "$FATAL_RUN/fire-Complete" ledger-complete
 out=$(python3 scripts/ledger-append.py --run "$FATAL_RUN" --repo fixture \
   --ledger "$LEDGER_FIX/sweep-ledger-dir" 2>&1)
 rc=$?
@@ -953,7 +1009,7 @@ fi
 BOUNDED_RUN="$LEDGER_FIX/serve-bounded-run"
 mkdir -p "$BOUNDED_RUN"/{fire-Zlatername,refire-Aearliername}
 for job in "$BOUNDED_RUN"/*; do
-  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+  seed_job "$job" ledger-complete
 done
 printf '%s\n' '2026-01-02T00:00:00Z' > "$BOUNDED_RUN/fire-Zlatername/started"
 printf '%s\n' '2026-01-03T00:00:00Z' > "$BOUNDED_RUN/refire-Aearliername/started"
@@ -973,7 +1029,7 @@ fi
 MISSING_BOUND_RUN="$LEDGER_FIX/serve-missing-bound-run"
 mkdir -p "$MISSING_BOUND_RUN"/{fire-First,taste-Missing}
 for job in "$MISSING_BOUND_RUN"/*; do
-  cp scripts/fixtures/ledger-complete.log "$job/job.log"
+  seed_job "$job" ledger-complete
 done
 printf '%s\n' '2026-01-02T00:00:00Z' > "$MISSING_BOUND_RUN/fire-First/started"
 out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py --run "$MISSING_BOUND_RUN" \

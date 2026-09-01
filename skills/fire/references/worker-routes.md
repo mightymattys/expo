@@ -56,6 +56,10 @@ claude -p --model claude-opus-5 --dangerously-skip-permissions --strict-mcp-conf
 - Honest caveat: `--dangerously-skip-permissions` has no OS sandbox underneath. Only
   fire this route inside a repo you'd trust Codex's `danger-full-access` in, or on a
   branch/worktree.
-- No ledger line - `claude -p` emits no token summary.
+- No ledger line yet - `claude -p --output-format json` does return a `usage` block
+  (input/output tokens, cache fields, `total_cost_usd`), so this route is probably
+  measurable; expo has not verified it on an authenticated run, so it writes no line
+  rather than guessing. Verify with `echo hi | claude -p --output-format json` from a
+  logged-in terminal before wiring it up.
 - Invocation spelling: `/expo:fire --with sonnet <task>` or `/expo:fire --with opus
   <task>` (or the loose phrases "fire with sonnet" and "fire with opus").

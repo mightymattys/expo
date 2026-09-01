@@ -3,6 +3,43 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.2 - 2026-09-01
+
+- **Security fix.** A job directory with no `result.md` had its log's last two lines
+  trusted as a token summary, so an interrupted or influenced run could forge a measured
+  ledger row. Reproduced before the fix: a valid banner plus a log ending in an echoed
+  `tokens used\n999,999`, with no result file, produced a 999,999-token row that `tab.sh`
+  then summed as measured cost. A completed `codex exec` run always writes
+  `--output-last-message`, so a job without one did not complete and is no longer
+  ledgerable at all. The EOF fallback this replaces was written in 0.11.0 on the reasoning
+  that "an interrupted job has no final message" - true, but an interrupted job's log still
+  carries the whole echoed ticket, and that is text an attacker or a broken worker can end
+  wherever they like. Found by the first real `/expo:taste --security` pass, run against
+  the ledger surface because it parses text the worker influences.
+- The fixtures were modelling an artifact that cannot exist. Requiring `result.md` broke 21
+  checks, all for the same reason: every fixture job dir was seeded from a `.log` alone -
+  a completed run without its result file. Fixtures now carry `.result` companions through
+  a `seed_job` helper, and a regression fixture covers the spoof itself. That is the third
+  time a fixture in this repo pinned an assumption instead of reality (a golden encoding
+  its own implementation, a fixture pinned to a price, and now this); a fixture that
+  invents its input only ever tests itself.
+- `orch-tokens.py` stops turning a damaged transcript into a measured-looking number. A
+  malformed line was skipped and a missing token counter defaulted to zero, so a window
+  with one broken record and one incomplete one printed `20`. It now prints nothing. The
+  first cut of that hardening over-corrected and a review caught it: a transcript's final
+  line can be mid-write, and treating that as corruption discarded a measurement that was
+  available - verified, 15 recoverable tokens lost - while `ledger-append` still wrote the
+  marker, making the loss permanent. An unterminated final line is now recognised as a
+  record still being written; a terminated malformed one still aborts.
+- `worker-routes.md` stops asserting that `claude -p` emits no token summary.
+  `claude -p --output-format json` returns a `usage` block with input/output tokens, cache
+  fields and `total_cost_usd`, so the Claude worker routes are probably measurable. expo
+  has not verified that on an authenticated run, so it still writes no line - but it now
+  says which of those two things is true, and names the command that would settle it.
+- Price-table freshness thresholds move from 30/45 days to 14/30, matched to observed
+  drift rather than a guess: sol moved inside five days, and three verification passes
+  found four wrong rows.
+
 ## 0.15.1 - 2026-09-01
 
 - The running tab admits both directions of its imprecision. It already said it

@@ -25,26 +25,38 @@ if len(matches) != 1:
 total = hits = 0
 try:
     with open(matches[0], encoding="utf-8") as transcript:
-        for line in transcript:
-            try:
-                data = json.loads(line)
-            except Exception:
-                continue
-            if not isinstance(data, dict) or data.get("type") != "assistant":
-                continue
-            at = stamp(data.get("timestamp", ""))
-            if at is None or at < start or (end is not None and at >= end):
-                continue
-            message = data.get("message")
-            usage = message.get("usage") if isinstance(message, dict) else None
-            if not isinstance(usage, dict):
-                sys.exit(0)
-            input_tokens = usage.get("input_tokens", 0)
-            output_tokens = usage.get("output_tokens", 0)
-            if type(input_tokens) is not int or type(output_tokens) is not int:
-                sys.exit(0)
-            total += input_tokens + output_tokens
-            hits += 1
+        raw = transcript.read()
+    lines = raw.splitlines()
+    # Transcripts are append-only and written live. A final line with no terminating
+    # newline is a record still being written, not a damaged one - dropping it costs at
+    # most the newest message, while treating it as corruption discards a window that was
+    # measurable. A malformed line that IS terminated is real corruption and still aborts.
+    if lines and not raw.endswith("\n"):
+        lines.pop()
+    for line in lines:
+        try:
+            data = json.loads(line)
+        except Exception:
+            # A damaged line means the window cannot be summed honestly. Skipping it
+            # would print a total that looks measured and is not.
+            sys.exit(0)
+        if not isinstance(data, dict) or data.get("type") != "assistant":
+            continue
+        at = stamp(data.get("timestamp", ""))
+        if at is None or at < start or (end is not None and at >= end):
+            continue
+        message = data.get("message")
+        usage = message.get("usage") if isinstance(message, dict) else None
+        if not isinstance(usage, dict):
+            sys.exit(0)
+        input_tokens = usage.get("input_tokens")
+        output_tokens = usage.get("output_tokens")
+        if type(input_tokens) is not int or type(output_tokens) is not int:
+            sys.exit(0)
+        if input_tokens < 0 or output_tokens < 0:
+            sys.exit(0)
+        total += input_tokens + output_tokens
+        hits += 1
 except Exception:
     sys.exit(0)
 if hits:

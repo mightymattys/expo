@@ -57,20 +57,25 @@ def measured_job(job):
     if not model:
         return None
 
+    # A completed run always writes --output-last-message. Without it the log's tail is
+    # just wherever the worker stopped - and a log echoes its whole ticket, so "ends with
+    # a token summary" is text an interrupted or compromised run can supply. Verified: a
+    # log with a valid banner and no result.md, ending in an echoed `tokens used\n999,999`,
+    # used to produce a 999,999-token row. No result.md means no row.
     result = os.path.join(job, "result.md")
-    if os.path.exists(result):
-        with open(result, encoding="utf-8") as source:
-            final_message = source.read().rstrip()
-        # Codex writes the final message verbatim to result.md; remove that suffix
-        # before reading the closing summary, so arbitrary final text cannot supply it.
-        # The log carries a trailing newline the result file does not, so both ends are
-        # rstripped before the suffix is matched.
-        trimmed = text.rstrip()
-        if not final_message or not trimmed.endswith(final_message):
-            return None
-        lines = trimmed[:-len(final_message)].splitlines(keepends=True)
+    if not os.path.exists(result):
+        return None
+    with open(result, encoding="utf-8") as source:
+        final_message = source.read().rstrip()
+    # Codex writes the final message verbatim to result.md; remove that suffix before
+    # reading the closing summary, so arbitrary final text cannot supply it. The log
+    # carries a trailing newline the result file does not, so both ends are rstripped
+    # before the suffix is matched.
+    trimmed = text.rstrip()
+    if not final_message or not trimmed.endswith(final_message):
+        return None
+    lines = trimmed[:-len(final_message)].splitlines(keepends=True)
 
-    # Without result.md, only EOF is trusted: an interrupted job has no final message.
     while lines and not lines[-1].strip():
         lines.pop()
     if len(lines) < 2 or lines[-2].strip() != "tokens used":
