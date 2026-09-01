@@ -46,7 +46,8 @@ Same as fire, and for the same reasons:
 2. Worker preflight, per the chosen route: default/`codex` needs
    `test -f ~/.codex/expo.config.toml` (missing means stop and offer `/expo:mise` -
    Codex silently ignores a missing profile); the Claude subscription route
-   (`sonnet`/`opus`) needs only `command -v claude` (`references/worker-routes.md`).
+   (`sonnet`/`opus`) needs the Claude-route preflight in `references/worker-routes.md` -
+   `command -v claude` alone passes while the route cannot run.
    The Codex-profile stop applies to the Codex route only.
 3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-<label>-XXXXXX")`; a
    short descriptive label is welcome. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`

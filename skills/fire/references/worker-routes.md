@@ -22,7 +22,33 @@ Mise and taste still need Codex, so this is not a Codex-free configuration on it
 own. Installed marker: none needed - `claude` is already on the machine running this
 plugin.
 
-Preflight for this route: `command -v claude` - no Codex profile check; fire's step-2
+Preflight for this route: `command -v claude` is NOT sufficient - it passes while the
+route cannot run. `claude -p` needs its own non-interactive credential, and without one
+it returns `is_error: true` with `result: "Not logged in · Please run /login"` even for a
+user who is signed in to the interactive app. Verified on the maintainer's machine, in
+their own shell, in 2026-09; the route has never produced a ledger row. So prove it can
+run before firing: `claude auth status` returns JSON, costs nothing and needs no prompt -
+require `.loggedIn` to be true. (On the machine above it answers
+`{"loggedIn": false, "authMethod": "none", "apiProvider": "firstParty"}` while
+`command -v claude` succeeds.) If you probe with `claude -p --output-format json` instead,
+check `is_error`, never `subtype` - that probe returned `subtype: "success"` alongside
+`is_error: true`, so a caller reading `subtype` sees a failed run as a good one.
+If it fails, the remedy has TWO steps and the first one alone looks like success:
+`claude setup-token` prints "token created successfully" but does not log the CLI in -
+`auth status` still reports `loggedIn: false` until the printed token is exported as
+`CLAUDE_CODE_OAUTH_TOKEN` in the environment the run will use. Observed exactly that way.
+Tell the user both steps and stop; never fire into a route whose preflight failed.
+The second step has its own trap, seen in practice: `setup-token` prints the token wrapped
+across two terminal lines next to an `export CLAUDE_CODE_OAUTH_TOKEN=<token>` suggestion,
+and pasting that wrapped text sets only the first half - zsh reports
+`not valid in this context` for the remainder, or nothing at all, and the CLI then fails
+with the unrelated-looking "Not logged in". So have the user confirm the result rather
+than the keystrokes: `echo -n "$CLAUDE_CODE_OAUTH_TOKEN" | wc -c` against the expected
+length, then `claude auth status`. Never
+ask for the token itself, and never accept one pasted into the conversation - it is a
+credential, it belongs only in the user's own environment, and one pasted anywhere else
+has to be treated as compromised and rotated.
+No Codex profile check; fire's step-2
 hard stop applies to the default Codex route only.
 
 ```

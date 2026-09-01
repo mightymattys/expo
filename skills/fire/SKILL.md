@@ -69,7 +69,8 @@ is just the unambiguous spelling, immune to task text that happens to mention a 
 name. The ticket, job dir, and plating are identical for every worker; only the
 invocation changes. Preflight differs per worker: step 2's Codex-profile stop applies
 to the Codex route only - the Claude subscription route's preflight is just
-`command -v claude`.
+`command -v claude` AND a proof it can actually run non-interactively - see
+`references/worker-routes.md`, which names the check and the `claude setup-token` remedy.
 
 ## Choosing the model tier (Codex route)
 

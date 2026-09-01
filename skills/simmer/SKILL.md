@@ -16,7 +16,8 @@ Parse `--with <worker>` exactly as fire does: absent or `codex` selects Codex;
 missing or
 `~/.codex/expo.config.toml` doesn't exist, stop and offer `/expo:mise` first
 (Codex silently ignores a missing profile - `test -f`). For a Claude worker, require
-`command -v claude`. The repo must have at least one commit (the no-progress guard
+the Claude-route preflight in fire's `references/worker-routes.md` - `command -v claude`
+alone passes while the route cannot run. The repo must have at least one commit (the no-progress guard
 needs `HEAD`).
 
 ## 1. Write the loop contract first - and get it confirmed

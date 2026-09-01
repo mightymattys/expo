@@ -3,6 +3,30 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.3 - 2026-09-01
+
+- The Claude worker routes were never usable, and the preflight could not tell. `--with
+  sonnet` and `--with opus` are documented routes with **0 ledger rows across the whole
+  project history**; the reason turned out to be that they do not run. `claude -p` needs
+  its own non-interactive credential, so on a machine whose user is signed in to the
+  interactive app it still answers `is_error: true`, `"Not logged in"`. The preflight
+  checked `command -v claude`, which passes in exactly that state - so a `serve --with
+  sonnet` would announce, fire, fail on its first invocation and spend a budget slot to
+  learn what a free probe answers instantly. Preflight now requires `claude auth status`
+  to report `loggedIn`, and the three skills that quoted the weaker check point at it.
+- The remedy is documented in full, because each step looks like the last one.
+  `claude setup-token` prints "token created successfully" while `auth status` still says
+  `loggedIn: false` - the printed token must be exported as `CLAUDE_CODE_OAUTH_TOKEN`.
+  And that export has its own trap, hit in practice: the token is printed wrapped across
+  two terminal lines, so pasting it sets only the first half, and the CLI then fails with
+  the unrelated-looking "Not logged in". The skill now says to confirm the outcome -
+  token length, then `auth status` - rather than the keystrokes.
+- Two rules that came out of the same session. A skill must never ask for a worker token
+  or accept one pasted into the conversation: it belongs only in the user's environment,
+  and one that appears anywhere else is compromised and has to be rotated. And a caller
+  probing with `claude -p --output-format json` must read `is_error`, never `subtype` -
+  an observed failure carried `subtype: "success"` alongside `is_error: true`.
+
 ## 0.15.2 - 2026-09-01
 
 - **Security fix.** A job directory with no `result.md` had its log's last two lines
