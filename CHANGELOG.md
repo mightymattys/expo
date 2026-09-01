@@ -3,6 +3,24 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.1 - 2026-09-01
+
+- The running tab admits both directions of its imprecision. It already said it
+  under-counts by construction; it now also says it can over-count in one narrow window -
+  a run whose ledger line landed but whose `.ledgered` marker did not is re-appended by a
+  later sweep. The trade-off itself is unchanged and still deliberate; what changed is
+  that it no longer lives only in a comment inside `ledger-append.py`, where no reader of
+  a receipt would find it.
+- simmer was exercised end to end for the first time. It had 0 rows in the ledger across
+  the project's whole history while fire had 87, taste 66 and refire 36 - and it is the
+  only skill that creates a branch and commits. A disposable repository with two real
+  defects was driven through the documented contract: branch-slug derivation with the
+  hashed suffix, `.expo/` excluded from git, a `simmer-<label>-XXXXXX` lap dir, a
+  checkpoint that staged only the authorised path, and the first `"skill":"simmer"` row
+  ever written - carrying `lap` and `branch`, and recoverable by the exact filter the
+  receipt template documents. Nothing broke. The paths that had only ever been held up by
+  fixtures now have one real run behind them.
+
 ## 0.15.0 - 2026-08-31
 
 - The delegation floor stops claiming to be measured. `README.md` and `skills/fire/SKILL.md`

@@ -10,7 +10,10 @@ repo at `.expo/receipts/<utc-timestamp>.md` (ignored via
 `.git/info/exclude`, never committed). Each holds the run's measured numbers and
 ends with a shareable one-liner. The global ledger (`~/.expo/ledger.jsonl`)
 stays the cross-repo running tab - a floor, not a census: it counts what it could
-measure and under-counts by construction; receipts are the per-run, per-repo story.
+measure and under-counts by construction. It can also, in one narrow window, over-count:
+a run whose ledger line was appended but whose `.ledgered` marker never landed is
+re-appended by a later sweep. Neither direction is estimated away; receipts are the
+per-run, per-repo story.
 
 ## Printing the check
 
