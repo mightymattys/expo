@@ -3,6 +3,21 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.4 - 2026-09-02
+
+- Claude Fable 5.1 is priced, and the table is re-dated. It ships at $10/$50 - the same
+  50/50 blend of 30.00 as Fable 5 - so nothing the plugin computes moves; the row exists
+  so a receipt that ever sees that model string can price it instead of reporting it
+  unclassified. Its cheaper cache-read multiplier (0.025x rather than 0.1x) does not enter
+  a blend built from base input and output rates. Claude Mythos 5.1 is limited-availability
+  and stays out of the table under the rule that only models the kitchen may actually run
+  belong in it.
+- A correction to the 0.14.4 entry: that pass reported "nothing moved" after re-verifying
+  every row, and did not mention the 5.1 rows. Whether they were absent from the vendor
+  page that day or the check simply missed them cannot be established after the fact - so
+  it is recorded as a possible miss rather than a vendor change. The table is manual data
+  read by a model; that is exactly the failure mode the as-of date exists to bound.
+
 ## 0.15.3 - 2026-09-01
 
 - The Claude worker routes were never usable, and the preflight could not tell. `--with
