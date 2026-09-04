@@ -29,7 +29,8 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   job at its own banner model's blend before summing, and lists per-model subtotals:
   `terra <a>k ~$<b> · sol <c>k ~$<d>` - one blend applied to combined tokens would
   misprice both)
-- cost: ~$<X> API-list terms (per-model blends per prices.md; subscription quota =
+- cost: ~$<X> API-list terms - add "(lower bound)" when the run's worker total
+  crosses 272,000 tokens, per prices.md's long-context note (per-model blends per prices.md; subscription quota =
   $0 marginal; if a banner matches a known alias row in prices.md, price it through
   that row's dated target and say the figure is alias-derived. If it matches a known
   model row, price it normally. If it matches neither, it is unpriceable and

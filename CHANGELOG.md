@@ -3,6 +3,24 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.6 - 2026-09-04
+
+- The long-context question from 0.15.5 is closed with a measurement rather than a
+  caveat. A prompt over **272,000 input tokens** is billed at 2x input and 1.5x output for
+  that whole request (https://openai.com/index/gpt-5-6/) - arithmetic the vendor's own
+  table confirms, `gpt-5.6-sol` going $4.00 -> $8.00 and $20.00 -> $30.00.
+- The threshold is per request and a run makes many, but the run's total bounds any single
+  request inside it, and that settles most of the exposure: a run totalling under 272,000
+  tokens cannot contain a request that crossed it, so its short-context pricing is exact.
+  Measured against the real ledger, **188 of 208 OpenAI rows (90%) are provably exact**.
+  The remaining 20 - all large fire runs, 8.1M of 31.7M worker tokens - are lower bounds,
+  because only the requests that actually exceeded the threshold are repriced, not the run,
+  and nothing on disk records which those were.
+- Receipts now say so where it matters: a run whose worker total crosses 272,000 carries
+  "(lower bound)" on its cost line, and nothing extra below it. This remains the only
+  error direction that would flatter expo - an understated worker cost overstates the
+  equal-volume delta - so it is bounded and labelled rather than described in prose.
+
 ## 0.15.5 - 2026-09-04
 
 - `gpt-6-astra` is priced. A new OpenAI tier at $10/$50 short-context (blend 30.00),

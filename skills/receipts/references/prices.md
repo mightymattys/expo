@@ -8,14 +8,24 @@ when list prices move - the as-of date is part of the receipt's honesty. Receipt
 already written carry whatever figures were current when they were written; correcting
 this table does not retroactively correct them.
 
-Every OpenAI figure here is the **short-context** rate. The vendor's table also carries
-long-context columns - verbatim, `gpt-5.6-sol | $4.00 | ... | $8.00 | ... | $30.00` - so a
-run billed at long context costs roughly twice what this table computes, and the page
-defines no token threshold at which it starts. Two consequences worth stating plainly.
-A receipt cannot tell which rate a run was billed at: the ledger stores a total token
-count, and the job log's banner does not say. And unlike every other error this table has
-had, this one runs in expo's favour - an understated worker cost overstates the
-equal-volume delta - so it is named here rather than left to be discovered.
+Every OpenAI figure here is the **short-context** rate. A prompt over 272,000 input
+tokens is billed at 2x input and 1.5x output for that whole request
+(https://openai.com/index/gpt-5-6/); the vendor's own table shows the same arithmetic -
+`gpt-5.6-sol | $4.00 | ... | $8.00 | ... | $30.00`.
+
+The threshold is per request, and a run makes many. But the run's total is an upper bound
+on any single request inside it, which settles most cases: **a run whose total token count
+is below 272,000 cannot contain a request that crossed the threshold, so its short-context
+pricing is exact.** Measured against this ledger, that covers 90% of OpenAI rows (188 of
+208). For the remaining 10% - the large fire runs - the figure is a lower bound, since
+only the requests that actually exceeded 272,000 input tokens are repriced, not the run.
+Nothing on disk records which requests those were: the closing summary is a run total and
+the banner does not say.
+
+Say "lower bound" on a receipt whose run total crosses 272,000, and nothing extra below
+it. This is the one error direction that would flatter expo - an understated worker cost
+overstates the equal-volume delta - which is why it is bounded here rather than left
+unstated.
 
 | Model | In $/MTok | Out $/MTok | 50/50 blend $/MTok | Source |
 |---|---|---|---|---|
