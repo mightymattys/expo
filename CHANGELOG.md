@@ -3,6 +3,24 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.15.5 - 2026-09-04
+
+- `gpt-6-astra` is priced. A new OpenAI tier at $10/$50 short-context (blend 30.00),
+  rolling out to Trusted Access enterprises and not yet in the local Codex model list -
+  so expo cannot route to it, but a receipt that ever meets the name can price it rather
+  than reporting it unclassified. Noticed while checking: `gpt-5.6-sol`'s own description
+  in the Codex cache changed from "Latest frontier agentic coding model" to "Reliable
+  agentic workhorse for everyday tasks", which is what a new tier above it looks like.
+- The bigger find is a caveat, not a number. The vendor's table carries **two rate tiers**
+  per model - verbatim, `gpt-5.6-sol | $4.00 | ... | $8.00 | ... | $30.00` for short and
+  long context - and every figure in `prices.md` is the short-context one. A run billed at
+  long context therefore costs roughly twice what a receipt reports, the page defines no
+  threshold at which that starts, and nothing on disk records which tier applied: the
+  ledger stores a total token count and the banner does not say. Unlike every previous
+  error in this table - terra, luna, sonnet, sol, all of which overstated worker cost and
+  so understated the delta - this one runs in expo's favour. It is now stated in
+  `prices.md` and tracked, rather than left to be found by someone checking the arithmetic.
+
 ## 0.15.4 - 2026-09-02
 
 - Claude Fable 5.1 is priced, and the table is re-dated. It ships at $10/$50 - the same
