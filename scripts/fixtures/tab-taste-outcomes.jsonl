@@ -1,0 +1,8 @@
+{"ts":"2026-01-01T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":100,"claude_tokens":10,"verdict":"fix-first","confirmed":1,"refuted":0,"diff_lines":45}
+not valid JSON
+{"ts":"2026-01-02T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":200,"claude_tokens":20,"verdict":"ship","confirmed":0,"refuted":2,"diff_lines":250}
+{"ts":"2026-01-03T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":300,"claude_tokens":30}
+{"ts":"2026-01-04T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":400,"claude_tokens":40,"verdict":"ship","confirmed":"0","refuted":0,"diff_lines":"100"}
+{"ts":"2026-01-05T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":500,"claude_tokens":50,"verdict":"ship","confirmed":1,"refuted":0,"diff_lines":"600"}
+{"ts":"2026-01-06T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":600,"claude_tokens":60,"verdict":"ship","confirmed":1,"refuted":-1,"diff_lines":30}
+{"ts":"2026-01-07T00:00:00Z","repo":"r","skill":"taste","model":"m","tokens":700,"claude_tokens":70,"verdict":"maybe","confirmed":1,"refuted":0,"diff_lines":30}

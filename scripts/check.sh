@@ -3,13 +3,20 @@
 # The value is this executable invariant list; CI just runs it (issue #8).
 # Deterministic except the link sweep, which fails only on hard 404/410
 # (transient codes and bot-blocks warn). SKIP_LINKS=1 skips the sweep.
+# --quiet (or QUIET=1) prints only FAIL and warn lines plus the summary: the ok lines
+# are the same 100+ every run, and a head chef re-reading them on every verification
+# pays orchestration tokens for nothing. FAIL and warn are never suppressed.
 set -u
 cd "$(dirname "$0")/.."
 
+quiet=${QUIET:-0}
+case "${1:-}" in -q|--quiet) quiet=1 ;; esac
 fail=0
-ok()   { printf 'ok   %s\n' "$1"; }
+okc=0
+warnc=0
+ok()   { okc=$((okc + 1)); [ "$quiet" = 1 ] || printf 'ok   %s\n' "$1"; }
 err()  { printf 'FAIL %s\n' "$1"; fail=$((fail + 1)); }
-warn() { printf 'warn %s\n' "$1"; }
+warn() { warnc=$((warnc + 1)); printf 'warn %s\n' "$1"; }
 section_ok() { [ "$fail" -eq "$mark" ] && ok "$1"; mark=$fail; }
 mark=0
 
@@ -212,6 +219,33 @@ else
   done <<EOF
 $unpinned
 EOF
+fi
+
+# The shipped profile keeps delegated requests in the short-context band by pinning the
+# window at or under the threshold prices.md states. Both numbers are read from their
+# files: a threshold edit in prices.md that leaves the profile behind fails here.
+window_errors=$(python3 - codex/expo.config.toml skills/receipts/references/prices.md <<'PY2'
+import re, sys
+profile, prices = (open(p, encoding="utf-8").read() for p in sys.argv[1:3])
+pin = re.search(r"^model_context_window\s*=\s*(\d+)\s*$", profile, re.M)
+if not pin:
+    print("codex/expo.config.toml pins no model_context_window - delegated runs inherit the user's window")
+    raise SystemExit
+threshold = re.search(r"\b(\d{3},\d{3}) input\s+tokens", prices)
+if not threshold:
+    print("prices.md states no 'N,NNN input tokens' long-context threshold to check the profile against")
+    raise SystemExit
+limit = int(threshold.group(1).replace(",", ""))
+if int(pin.group(1)) > limit:
+    print(f"codex/expo.config.toml model_context_window {pin.group(1)} exceeds prices.md's long-context threshold {threshold.group(1)}")
+PY2
+)
+if [ "$?" -ne 0 ]; then
+  err "context-window check failed to run"
+elif [ -z "$window_errors" ]; then
+  ok "the shipped profile pins the context window at or under the long-context threshold"
+else
+  err "$window_errors"
 fi
 
 # The smoke test's diagnostic IS the absence of a pin: it reports whatever the user's
@@ -839,6 +873,141 @@ if [ "$rc" -eq 0 ] && printf '%s' "$tab" | jq -e '.jobs == 1 and .worker_tokens 
 else
   err "tab.sh cannot render the ledger-append.py fixture (rc $rc): $tab"
 fi
+
+fixture_nonempty() {
+  if [ -s "$1" ]; then
+    return 0
+  fi
+  err "fixture missing or empty: $1"
+  return 1
+}
+
+TASTE_VALID="$LEDGER_FIX/taste-valid-run/taste-fixture"
+taste_valid_ready=1
+for path in scripts/fixtures/ledger-taste-outcome.{log,result,findings,expected}; do
+  fixture_nonempty "$path" || taste_valid_ready=0
+done
+mkdir -p "$TASTE_VALID"
+if [ "$taste_valid_ready" -eq 1 ]; then
+  seed_job "$TASTE_VALID" ledger-taste-outcome
+  cp scripts/fixtures/ledger-taste-outcome.findings "$TASTE_VALID/findings.md"
+  printf '%s\n' '2026-01-02T00:00:00Z' > "$TASTE_VALID/started"
+  out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
+    --run "$LEDGER_FIX/taste-valid-run" --session aaaa-bbbb --repo fixture \
+    --ledger "$LEDGER_FIX/taste-valid.jsonl" 2>"$LEDGER_FIX/taste-valid.stderr")
+  rc=$?
+  normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
+else
+  out='fixture unavailable'
+  normal=$out
+  rc=1
+fi
+if [ "$rc" -eq 0 ] && [ -s "$LEDGER_FIX/taste-valid.jsonl" ] &&
+  [ "$(wc -l < "$LEDGER_FIX/taste-valid.jsonl")" -eq 1 ] &&
+  printf '%s\n' "$normal" | diff -q scripts/fixtures/ledger-taste-outcome.expected - >/dev/null; then
+  ok "ledger-append.py records a swept taste outcome in exact field order"
+else
+  err "ledger-append.py valid taste outcome differs from its golden (rc $rc): $out"
+fi
+
+mkdir "$LEDGER_FIX/taste-missing"
+seed_job "$LEDGER_FIX/taste-missing" ledger-complete
+out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/taste-missing" --skill taste \
+  --repo fixture --ledger "$LEDGER_FIX/taste-missing.jsonl" \
+  2>"$LEDGER_FIX/taste-missing.stderr")
+rc=$?
+if [ "$rc" -eq 0 ] &&
+  jq -e '[has("verdict"), has("confirmed"), has("refuted"), has("diff_lines")] | any | not' \
+    "$LEDGER_FIX/taste-missing.jsonl" >/dev/null &&
+  grep -Fxq 'ledger-append: taste outcome not recorded: findings.md missing' \
+    "$LEDGER_FIX/taste-missing.stderr"; then
+  ok "ledger-append.py distinguishes a missing taste outcome from a clean taste"
+else
+  err "ledger-append.py missing taste findings behavior is wrong (rc $rc): $out"
+fi
+
+# eight-digits pins the bound exactly: a 17-digit fixture alone lets the bound widen.
+for fixture in taste-trailing-junk taste-overlong taste-eight-digits; do
+  findings="scripts/fixtures/$fixture.findings"
+  fixture_nonempty "$findings" || continue
+  mkdir "$LEDGER_FIX/$fixture"
+  seed_job "$LEDGER_FIX/$fixture" ledger-complete
+  cp "$findings" "$LEDGER_FIX/$fixture/findings.md"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill taste \
+    --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl" \
+    2>"$LEDGER_FIX/$fixture.stderr")
+  rc=$?
+  if [ "$rc" -eq 0 ] &&
+    jq -e '[has("verdict"), has("confirmed"), has("refuted"), has("diff_lines")] | any | not' \
+      "$LEDGER_FIX/$fixture.jsonl" >/dev/null &&
+    grep -Fxq 'ledger-append: taste outcome not recorded: first line does not match the taste outcome format' \
+      "$LEDGER_FIX/$fixture.stderr"; then
+    ok "ledger-append.py rejects the $fixture outcome"
+  else
+    err "ledger-append.py must omit the $fixture outcome fields (rc $rc): $out"
+  fi
+done
+
+fixture_nonempty scripts/fixtures/taste-fire.findings
+fire_fixture_ready=$?
+mkdir "$LEDGER_FIX/fire-with-findings"
+if [ "$fire_fixture_ready" -eq 0 ]; then
+  seed_job "$LEDGER_FIX/fire-with-findings" ledger-complete
+  cp scripts/fixtures/taste-fire.findings "$LEDGER_FIX/fire-with-findings/findings.md"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/fire-with-findings" --skill fire \
+    --repo fixture --ledger "$LEDGER_FIX/fire-with-findings.jsonl" \
+    2>"$LEDGER_FIX/fire-with-findings.stderr")
+  rc=$?
+else
+  out='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] &&
+  jq -e '[has("verdict"), has("confirmed"), has("refuted"), has("diff_lines")] | any | not' \
+    "$LEDGER_FIX/fire-with-findings.jsonl" >/dev/null &&
+  ! grep -q 'taste outcome' "$LEDGER_FIX/fire-with-findings.stderr"; then
+  ok "ledger-append.py ignores findings.md outside taste jobs"
+else
+  err "ledger-append.py added taste fields to a fire row (rc $rc): $out"
+fi
+
+tab_fixture_ready=1
+for path in scripts/fixtures/tab-taste-outcomes.{jsonl,golden}; do
+  fixture_nonempty "$path" || tab_fixture_ready=0
+done
+if [ "$tab_fixture_ready" -eq 1 ]; then
+  tab=$(bash scripts/tab.sh scripts/fixtures/tab-taste-outcomes.jsonl)
+  rc=$?
+else
+  tab='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] &&
+  printf '%s\n' "$tab" | diff -q scripts/fixtures/tab-taste-outcomes.golden - >/dev/null; then
+  ok "tab.sh reports measured taste outcomes without folding in old or bad rows"
+else
+  err "tab.sh taste outcome block differs from its golden (rc $rc): $tab"
+fi
+
+tab_old_fixture_ready=1
+for path in scripts/fixtures/tab-no-taste-outcomes.{jsonl,golden}; do
+  fixture_nonempty "$path" || tab_old_fixture_ready=0
+done
+if [ "$tab_old_fixture_ready" -eq 1 ]; then
+  tab=$(bash scripts/tab.sh scripts/fixtures/tab-no-taste-outcomes.jsonl)
+  rc=$?
+else
+  tab='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] &&
+  printf '%s\n' "$tab" | diff -q scripts/fixtures/tab-no-taste-outcomes.golden - >/dev/null &&
+  ! printf '%s' "$tab" | jq -e 'has("taste")' >/dev/null; then
+  ok "tab.sh leaves pre-outcome ledgers byte-for-byte unchanged"
+else
+  err "tab.sh added taste data to a pre-outcome ledger (rc $rc): $tab"
+fi
+
 for fixture in ledger-no-summary ledger-no-banner; do
   mkdir "$LEDGER_FIX/$fixture"
   seed_job "$LEDGER_FIX/$fixture" "$fixture"
@@ -1339,5 +1508,5 @@ if [ "${SKIP_LINKS:-}" != 1 ]; then
   section_ok "link sweep"
 fi
 
-if [ "$fail" -eq 0 ]; then echo "all checks passed"; else echo "$fail check(s) FAILED"; fi
+if [ "$fail" -eq 0 ]; then echo "all checks passed ($okc ok, $warnc warn)"; else echo "$fail check(s) FAILED ($okc ok, $warnc warn)"; fi
 exit $((fail > 0))

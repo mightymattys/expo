@@ -13,6 +13,10 @@ MODEL_RE = re.compile(r"^\s*model:\s*(\S.*?)\s*$")
 WORKDIR_RE = re.compile(r"^\s*workdir:\s*(\S.*?)\s*$")
 TOKENS_RE = re.compile(r"^\s*(\d+|\d{1,3}(?:,\d{3})+)\s*$")
 INTEGER_RE = re.compile(r"^\d+$")
+TASTE_OUTCOME_RE = re.compile(
+    r"^taste: verdict=(ship|fix-first) confirmed=([0-9]{1,7}) "
+    r"refuted=([0-9]{1,7}) diff_lines=([0-9]{1,7})$"
+)
 SKILLS = ("fire", "taste", "refire", "simmer")
 APPENDED = "appended"
 PER_DIR_ERROR = "per-dir-error"
@@ -134,6 +138,29 @@ def claude_tokens(job, session, until=None, window_error=None):
     return None, f"orch-tokens.py measured nothing since {started} - orchestration tokens not measured"
 
 
+def taste_outcome(job):
+    findings = os.path.join(job, "findings.md")
+    if not os.path.isfile(findings):
+        return None, "findings.md missing"
+    try:
+        # A later workspace-write refire can reach this scratchpad. Bound the only
+        # line read; the anchored regex below bounds what can enter the ledger.
+        with open(findings, encoding="utf-8") as source:
+            first_line = source.readline(256)
+    except Exception as error:
+        return None, f"cannot read findings.md: {error}"
+    match = TASTE_OUTCOME_RE.fullmatch(first_line.removesuffix("\n"))
+    if not match:
+        return None, "first line does not match the taste outcome format"
+    verdict, confirmed, refuted, diff_lines = match.groups()
+    return {
+        "verdict": verdict,
+        "confirmed": int(confirmed),
+        "refuted": int(refuted),
+        "diff_lines": int(diff_lines),
+    }, None
+
+
 def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
                window_error=None):
     log = os.path.join(job, "job.log")
@@ -167,6 +194,12 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     orchestration, unmeasured = claude_tokens(job, session, until, window_error)
     if orchestration is not None:
         line["claude_tokens"] = orchestration
+    outcome = None
+    outcome_error = None
+    if skill == "taste":
+        outcome, outcome_error = taste_outcome(job)
+        if outcome is not None:
+            line.update(outcome)
     if skill == "simmer":
         if lap is not None:
             line["lap"] = lap
@@ -182,6 +215,8 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     except Exception:
         print(f"ledger-append: cannot write ledger: {ledger}", file=sys.stderr)
         return FATAL
+    if outcome_error:
+        print(f"ledger-append: taste outcome not recorded: {outcome_error}", file=sys.stderr)
 
     marker = os.path.join(job, ".ledgered")
     # The ledger append is already durable here. If this marker write fails, a retry

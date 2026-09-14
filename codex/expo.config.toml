@@ -12,6 +12,14 @@
 # here too (recommended: model = "gpt-5.6-sol", model_reasoning_effort = "high").
 # Per-repo pins belong in a trusted project's .codex/config.toml.
 
+# Keep every delegated request inside the short-context price band. 272,000 is the
+# vendor's own default window and exactly the threshold above which a request bills at
+# 2x input and 1.5x output (skills/receipts/references/prices.md). A larger window in
+# ~/.codex/config.toml would otherwise flow into delegated runs - and did: 18 of the
+# first 104 fire runs crossed it, so their receipts are lower bounds, not prices. The
+# cost of this pin is earlier compaction on very large tasks. Raise it knowingly.
+model_context_window = 272000
+
 # Never pause for approval - a delegated run has no human to answer prompts.
 approval_policy = "never"
 

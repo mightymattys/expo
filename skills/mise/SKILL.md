@@ -56,7 +56,10 @@ cp "${CLAUDE_PLUGIN_ROOT}/codex/expo.config.toml" ~/.codex/expo.config.toml
 If it exists, diff it against the plugin's copy: identical → say so and move on;
 different → show the diff and ask whether to keep theirs or refresh (this is also the
 update path when the plugin ships profile changes). The profile intentionally sets
-only execution-safety settings (approval policy, sandbox mode, network access).
+only execution-safety settings (approval policy, sandbox mode, network access) plus
+`model_context_window = 272000`, which keeps every delegated request in the
+short-context price band regardless of the window their own config sets - a refresh
+from the plugin copy is how an older install picks that pin up.
 Model and effort are normally pinned per fire by the tier flags (fire's tier table);
 the user's `~/.codex/config.toml` governs only their interactive Codex sessions and
 any run that forgot its flags. Read the `model` line there and say what it is: since

@@ -24,6 +24,12 @@
   "improve" adjacent code; never delete code you don't understand - flag it instead.
 - Run the test/typecheck/lint commands above before claiming a task is done, and report
   their actual output.
+- Never weaken, skip, or disable a check to make a task pass. When a requirement
+  conflicts with a check, or with another requirement, stop and report the conflict -
+  the conflict is the finding.
+- Report verification as it actually ran. A test or lint command run with parts skipped
+  or the environment altered is a partial run: say so and say why. Never present it as
+  the full one.
 
 ## Hard constraints
 

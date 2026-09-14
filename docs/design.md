@@ -177,6 +177,11 @@ doc, or a measured comparison - collected via a multi-source research sweep on
 
 ## Why `/taste` validates findings before presenting them
 
+- Taste outcomes make cross-review spend measurable: 86 tastes consumed 11.8M worker
+  tokens plus 2.2M orchestration tokens - about a third of everything the kitchen has
+  spent - while their hit rate was unknown. The serve skip rule now reads the smallest
+  diff with a confirmed finding as a measured floor. The figures are recorded in the
+  [0.17.0 changelog entry](../CHANGELOG.md#0170---2026-09-14---the-kitchen-measures-itself).
 - Field report after ~20 plugin-driven reviews: Codex reviews ran shallower than Opus
   reviews on the same diffs, ~3 of 20 failed silently, and adversarial mode "doesn't
   adjust its expectations based on the scale or criticality of the project" - flagging
@@ -281,6 +286,17 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   expensive than a reviewer's tokens. ultra mode is never enabled on a background run:
   it is a token multiplier, and the [#54143](https://github.com/anthropics/claude-code/issues/54143)
   quota-incident shape is exactly a multiplier running with nobody watching.
+- The shipped profile pins `model_context_window = 272000`. That is the vendor's own
+  default window for every GPT-5.6 and GPT-6 tier (`context_window: 272000` in the Codex
+  model cache) and exactly the threshold above which a request bills at 2x input and 1.5x
+  output ([gpt-6-astra model page](https://developers.openai.com/api/docs/models/gpt-6-astra)).
+  A user's `~/.codex/config.toml` can raise the window, and because `--profile` layers over
+  the base config the raise flows into delegated runs: measured here, 18 of the first 104
+  fire runs crossed 272,000 under a `model_context_window = 1000000` in the user config,
+  and 25% of all worker volume sat in the band where receipts can only state a lower bound.
+  The profile now wins that layering. The cost is earlier compaction on very large tasks;
+  the benefit is that a receipt is a price, not a floor. `check.sh` reads both numbers from
+  their files, so a threshold change in `prices.md` that leaves the profile behind fails.
 - Every delegated invocation pins `-c model=`, and no expo path treats omitting it as a
   neutral choice. `--profile` layers over the base config rather than replacing it
   ([Codex CLI `--profile` help](https://github.com/openai/codex/releases)), so an unpinned

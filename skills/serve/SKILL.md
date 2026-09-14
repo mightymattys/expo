@@ -79,8 +79,11 @@ Claude's validation pass is the only cross-model check in that run.
    `findings.md` path as `findings:`. When taste plates (or is skipped), rewrite
    state.md in full with the current `runs_used`, `findings:`, `stage: taste plated;
    next: refire`, and no cooking `job:`; the stage is not finished until state.md says
-   so. Skip only if the diff is trivial (a few
-   lines); say so in the final report.
+   so. Before deciding to skip, materialise `$JOB/scope.patch` exactly as taste does
+   and count its added and deleted content lines with `grep -cE '^[+-][^+-]'`. Skip
+   only when that count is smaller than this machine's
+   `taste.smallest_hit_diff_lines` from `scripts/tab.sh`; with no measured value,
+   never skip, and report the value read.
 3. **Refire** - per `/expo:refire`: if the `findings:` file lists any CONFIRMED
    findings, one scoped fix run, then re-verify each finding at its cited location.
    When refire plates (or no findings need it), rewrite state.md in full with the

@@ -1,0 +1,6 @@
+{
+  "jobs": 2,
+  "worker_tokens": 300,
+  "orchestration_tokens": 30,
+  "work_split": "10x worker:orchestrator"
+}

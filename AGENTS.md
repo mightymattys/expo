@@ -20,10 +20,22 @@ is `bench/project`, a Python fixture the benchmark edits.
 
 - Keep SKILL.md bodies short and goal-directed; this plugin targets frontier models -
   no step-by-step scaffolding a strong model doesn't need.
-- Every behavioral claim in docs/design.md must carry a source URL. No uncited claims.
+- Every behavioral claim in docs/design.md must carry a source: a URL, or a relative link
+  to an in-repo measured artifact (a benchmark table, a changelog entry that records the
+  figures). No uncited claims.
 - Command examples must use current syntax: file-per-profile Codex config (>= 0.134),
   no `--full-auto`, no `[profiles.*]` tables.
 - Match the kitchen register lightly - names and taglines, not forced metaphors in
   instruction text.
 - `scripts/check.sh` is the executable invariant list - run it before a PR; CI runs
   the same script on every PR and push to main.
+- Never weaken, skip, or blind a check to make a task pass. When a criterion conflicts
+  with a check - or with another criterion - stop and report the conflict; the conflict
+  is the finding. A run once taught the benchmark invariant to ignore dates rather than
+  say the ticket contradicted itself.
+- Report verification as it actually ran. `scripts/check.sh` with parts disabled
+  (`SKIP_LINKS=1`, a stripped PATH, a skipped validator) is a partial run: say so and say
+  why. Never present it as the full run.
+- A new invariant must fail on the violation AND on its own inability to check - a
+  crashed parser, zero rows parsed. An `ok` that can print while nothing ran is worse
+  than no check. Prove both directions by mutation before trusting it.

@@ -61,7 +61,7 @@ update to refresh the installed profile.
 | | |
 |---|---|
 | **`/expo:serve`** | Task-shaped work, done end to end: implement, cross-review, fix the findings, verify. One announcement up front, one report at the end, a hard budget of five runs in between. **The daily driver.** |
-| **`/expo:simmer`** | Goal-shaped work, looped until a command passes: "make the suite green", "get the benchmark under 200ms". A fresh worker run each lap, Claude judging every lap with real command output, on a dedicated branch, with lap caps and no-progress detection. |
+| **`/expo:simmer`** | Goal-shaped work, looped until a command passes: "make the suite green", "get the benchmark under 200ms". A fresh worker run each lap, Claude judging every lap with real command output, on a dedicated branch, with lap caps and no-progress detection. *Exercised once, single lap: the multi-lap paths - no-progress guard, resume, abort - are written and checked but not yet run for real.* |
 
 Rule of thumb: **serve a task, simmer a goal.** If a serve runs out of budget and
 what remains is goal-shaped, it offers to continue as a simmer.
@@ -98,7 +98,9 @@ background runs: it multiplies token spend by design, with nobody watching.
 Two Claude workers need no extra key: `fire --with sonnet` sends the ticket to cheap
 Claude Sonnet 5 headless on your own Anthropic subscription; `fire --with opus`
 sends it to premium Claude Opus 5. Sonnet is the fallback when Codex hits its usage
-limit mid-serve; Opus spends the shared Claude quota faster.
+limit mid-serve; Opus spends the shared Claude quota faster. *Preflight is verified;
+a full ticket has not yet been run end to end through either route
+([#8](https://github.com/mightymattys/expo/issues/8)).*
 
 ## 🧾 Receipts - every number measured, nothing guessed
 
@@ -180,6 +182,8 @@ reason the policy remains operative.
 <br>
 
 **Measured, on four tasks, both arms run cold: $0.95 delegated vs $1.89 direct = 1.99x.**
+Four tasks on one Python fixture is enough to show the shape and not enough to
+generalise - the ratio is evidence for this fixture, not a promise for yours.
 Full table: [bench/RESULTS.md](bench/RESULTS.md); method and what it deliberately does
 not measure: [docs/benchmark.md](docs/benchmark.md).
 
@@ -287,11 +291,11 @@ docs/design.md        the receipts: sources for every design decision
 docs/benchmark.md     how the cost comparison is measured, and what it does not measure
 docs/diffscan.md      what the change scan counts, and the lists it counts with
 bench/                the fixture, task specs and measured arms behind the numbers
-scripts/check.sh      the executable invariant list - CI runs it on every push
+scripts/check.sh      the executable invariant list - CI runs it on every push; `--quiet` prints only FAIL/warn and the summary
 scripts/diffscan.py   counted change facts from a diff, for routing a large review
 scripts/ledger-append.py  measured Codex job ledger lines, singly or by idempotent run/scratchpad sweep
 scripts/orch-tokens.py  orchestration tokens for one window, from the session transcript
-scripts/tab.sh        the running tab across every repo, from ~/.expo/ledger.jsonl
+scripts/tab.sh        the running tab across every repo, from ~/.expo/ledger.jsonl - with taste hit rate and the measured skip floor once tastes carry outcomes
 scripts/bench.sh      renders the benchmark arms into bench/RESULTS.md
 scripts/release.sh    the release gate: check, bump, stamp the changelog, publish
 scripts/stamp-changelog.py  turns the Unreleased heading into a dated one
@@ -316,7 +320,8 @@ you're done with them):
 
 Field reports welcome - especially Windows, and especially receipts that
 contradict [docs/design.md](docs/design.md); it's meant to be corrected.
-`scripts/check.sh` is the executable invariant list - run it before a PR.
+`scripts/check.sh` is the executable invariant list - run it before a PR (`--quiet` for
+just the failures and the summary).
 
 ## 📄 License
 

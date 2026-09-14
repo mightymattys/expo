@@ -3,6 +3,51 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.17.0 - 2026-09-14 - the kitchen measures itself
+
+- **The shipped profile pins `model_context_window = 272000`.** That is the vendor's own
+  default window for every GPT-5.6 and GPT-6 tier and exactly the threshold above which a
+  request bills at 2x input and 1.5x output. `--profile` layers over the user's config, so
+  a larger window there used to flow into delegated runs - and did: 18 of the first 104
+  fire runs crossed 272,000 under a `model_context_window = 1000000` in the user config,
+  and 25% of all worker volume sat where a receipt can only state a lower bound. The
+  profile now wins that layering; the cost is earlier compaction on very large tasks. A
+  new invariant reads both numbers from their files, so a threshold edit in prices.md
+  that leaves the profile behind fails. Re-run `/expo:mise` to refresh an older install.
+- **Worker rules moved from tickets into `AGENTS.md`** - the repo's and the template
+  `/expo:mise` scaffolds into user repos. Two runs in one week optimised for "done" over
+  "honest": one taught the benchmark invariant to ignore dates rather than report that
+  its ticket contradicted itself; another ran `check.sh` with the link sweep skipped and
+  PATH stripped and reported it green. The rules every Codex run now reads: never weaken
+  a check to pass it - the conflict is the finding; report verification as it actually
+  ran; and a new invariant must fail on its own inability to check, not only on a
+  violation. The rule fired on its first outing: the very next ticket carried a
+  contradiction of its own (a dollar figure requested where dollars are forbidden), and
+  the worker stopped and reported it under OPEN instead of picking a side - one sol run
+  spent on zero files changed, which is the cheap outcome.
+- `check.sh --quiet` (or `QUIET=1`) prints only FAIL and warn lines plus a summary with
+  counts. The ok lines are the same 100+ every run, and a head chef re-reading them on
+  every verification was paying orchestration tokens - 36% of all-in to date - for
+  nothing. FAIL and warn are never suppressed.
+- **Taste outcomes reach the ledger.** Cross-review has cost 86 runs, 11.8M worker tokens
+  and 2.2M orchestration tokens - about a third of everything spent - with its hit rate
+  unknown, so serve's "skip taste only if the diff is trivial" had no measured meaning of
+  trivial. taste now writes one machine line first in `findings.md`
+  (`taste: verdict=… confirmed=… refuted=… diff_lines=…`); `ledger-append.py` parses
+  exactly that line, bounded and anchored, for taste jobs only, and a missing or malformed
+  line leaves the row without the fields rather than with zeros - absence stays
+  distinguishable from a clean taste. `tab.sh` reports the hit rate, the smallest diff on
+  which a taste has ever confirmed a finding, and four size buckets; serve's skip rule now
+  reads that floor and never skips without one. Cross-review caught the unit bug before it
+  shipped: `diff_lines` was counted from `git diff --numstat`, which cannot see the untracked
+  files a fire creates, so the change most worth reviewing would have measured as zero.
+  Both sides now count the same artifact - the `scope.patch` taste hands its reviewer.
+- Three claims the README made without evidence now say so in place: `simmer` has run
+  once, single lap, so its multi-lap paths are written and checked but not yet exercised;
+  the Claude worker routes have verified preflight but no ticket run end to end
+  ([#8](https://github.com/mightymattys/expo/issues/8)); and the 1.99x benchmark is four
+  tasks on one fixture - evidence for that fixture, not a promise for yours.
+
 ## 0.16.0 - 2026-09-14 - astra becomes a choice, and never an accident
 
 - **`gpt-6-astra` is a worker tier**, reachable only as `--tier astra`. The task-shape
