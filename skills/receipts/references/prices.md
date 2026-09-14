@@ -1,4 +1,4 @@
-# Rough price table - API list; every row verified 2026-09-04
+# Rough price table - API list; every row verified 2026-09-14
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend
@@ -8,10 +8,18 @@ when list prices move - the as-of date is part of the receipt's honesty. Receipt
 already written carry whatever figures were current when they were written; correcting
 this table does not retroactively correct them.
 
-Every OpenAI figure here is the **short-context** rate. A prompt over 272,000 input
-tokens is billed at 2x input and 1.5x output for that whole request
-(https://openai.com/index/gpt-5-6/); the vendor's own table shows the same arithmetic -
-`gpt-5.6-sol | $4.00 | ... | $8.00 | ... | $30.00`.
+Every OpenAI figure in the five-column receipt-pricing table below is the **short-context** rate. The Astra model page states:
+"Prompts with more than 272K input tokens are priced at 2x input and cache rates and
+1.5x output for the full request" (https://developers.openai.com/api/docs/models/gpt-6-astra).
+The pricing page lists these long-context rates (input/output per MTok;
+https://developers.openai.com/api/docs/pricing):
+
+| Model | In $/MTok | Out $/MTok |
+|---|---|---|
+| gpt-6-astra | 20.00 | 75.00 |
+| gpt-5.6-sol | 8.00 | 30.00 |
+| gpt-5.6-terra | 4.00 | 18.00 |
+| gpt-5.6-luna | 0.40 | 1.80 |
 
 The threshold is per request, and a run makes many. But the run's total is an upper bound
 on any single request inside it, which settles most cases: **a run whose total token count
@@ -29,11 +37,11 @@ unstated.
 
 | Model | In $/MTok | Out $/MTok | 50/50 blend $/MTok | Source |
 |---|---|---|---|---|
-| gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; alias mapping: https://developers.openai.com/api/docs/pricing |
-| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-08-20 |
-| gpt-6-astra | 10.00 | 50.00 | 30.00 | https://developers.openai.com/api/docs/pricing - short-context rates; rolling out to Trusted Access enterprises, not yet in the Codex model list |
+| gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; alias mapping: https://developers.openai.com/api/docs/pricing - promotional, held "at least through November 21, 2026" per the pricing page; re-verify after that date |
+| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-09-14 |
+| gpt-6-astra | 10.00 | 50.00 | 30.00 | https://developers.openai.com/api/docs/models/gpt-6-astra - short-context rates; in the Codex model list as of 2026-09-07 |
 | gpt-5.6-cyber | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing |
-| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-08-20 |
+| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-09-14 |
 | gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models |
 | gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |

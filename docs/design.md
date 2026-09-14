@@ -281,6 +281,28 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   expensive than a reviewer's tokens. ultra mode is never enabled on a background run:
   it is a token multiplier, and the [#54143](https://github.com/anthropics/claude-code/issues/54143)
   quota-incident shape is exactly a multiplier running with nobody watching.
+- Every delegated invocation pins `-c model=`, and no expo path treats omitting it as a
+  neutral choice. `--profile` layers over the base config rather than replacing it
+  ([Codex CLI `--profile` help](https://github.com/openai/codex/releases)), so an unpinned
+  run resolves through `~/.codex/config.toml` to the vendor's current default - and Codex
+  0.154 made that default `gpt-6-astra`
+  ([Codex changelog](https://developers.openai.com/codex/changelog)), the most expensive
+  tier in the table. Verified on this machine: `codex doctor` reported
+  `model  gpt-6-astra · openai` while every expo run in the same week landed on sol or
+  terra, because each one carried its own pin. The pin is what absorbed a vendor default
+  change nobody was told about. mise's smoke test is the deliberate exception: it pins
+  effort only, so its banner reports what an unpinned run would actually use.
+- Astra is available only through explicit `--tier astra`; task shape never selects it.
+  Its 50/50 input/output blend matches the Fable 5.1 orchestrator, while the independent
+  Artificial Analysis Coding Agent Index calls Fable 5, Fable 5.1, and Astra an
+  effectively three-way tie (68.1, 67.2, and 67.0). Auto-selecting Astra would therefore
+  delegate at the orchestrator's own price without measured capability gain - the cost
+  inversion the delegation floor avoids. [Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra)
+  [Independent index and benchmark labels](https://www.vellum.ai/blog/gpt-6-astra-benchmarks-explained)
+- The exception is task shape the heuristic cannot safely infer: long, messy, multi-step
+  work requiring error recovery. There Astra's OpenAI-published Terminal-Bench 4.0 score
+  exceeds sol's (57.7 vs 37.3), so an informed human override can favor it. [Benchmark
+  labels and results](https://www.vellum.ai/blog/gpt-6-astra-benchmarks-explained)
 
 ## Why orchestration cost is measured, not estimated
 

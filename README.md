@@ -4,7 +4,7 @@
 
 # expo
 
-**Fable 5 orchestrates and reviews; GPT-5.6, Sonnet 5, or Opus 5 implements.**
+**Fable 5 orchestrates and reviews; GPT-5.6, GPT-6, Sonnet 5, or Opus 5 implements.**
 
 *Your head chef doesn't chop onions.*
 
@@ -13,7 +13,7 @@
 ![MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-d97757)
 ![Codex CLI ≥ 0.134](https://img.shields.io/badge/Codex_CLI-%E2%89%A50.134-black)
-![Workers](https://img.shields.io/badge/workers-GPT--5.6_·_Sonnet_5_·_Opus_5-4a9eff)
+![Workers: GPT-5.6, GPT-6, Sonnet 5, Opus 5](https://img.shields.io/badge/workers-GPT--5.6_·_GPT--6_·_Sonnet_5_·_Opus_5-4a9eff)
 
 <br>
 
@@ -79,15 +79,17 @@ what remains is goal-shaped, it offers to continue as a simmer.
 ## 🎚️ Model tiers - the right knife for the job
 
 Fire picks a GPT-5.6 tier per task, by shape - the same judgment call that decides
-*whether* to delegate also decides *what it's worth*:
+*whether* to delegate also decides *what it's worth*. Astra is available only by
+explicit override:
 
-| Tier | Effort | Task shape |
-|---|---|---|
-| `gpt-5.6-sol` | high (`max` for the hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
-| `gpt-5.6-terra` | high | standard features, bugfixes, test writing - **the default when unsure** |
-| `gpt-5.6-luna` | medium | mechanical bulk: renames, boilerplate, docs, formatting sweeps |
+| `--tier` | Model | Effort | Task shape |
+|---|---|---|---|
+| `sol` | `gpt-5.6-sol` | high (`max` for the hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
+| `terra` | `gpt-5.6-terra` | high | standard features, bugfixes, test writing - **the default when unsure** |
+| `luna` | `gpt-5.6-luna` | medium | mechanical bulk: renames, boilerplate, docs, formatting sweeps |
+| `astra` | `gpt-6-astra` | high | **override-only**; never selected by task shape; long, messy, multi-step work with error recovery |
 
-Override with `--tier sol\|terra\|luna`. The tier rides the invocation as `-c`
+Override with `--tier sol\|terra\|luna\|astra`. The tier rides the invocation as `-c`
 flags, so it varies per fire; your `~/.codex/config.toml` model applies only when
 those flags are deliberately omitted. **Reviews (`taste`) always pin `sol`** -
 reviewer strength beats reviewer cost. 5.6's ultra mode stays off for delegated

@@ -26,7 +26,7 @@ budget: 5
 runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
 worker: <codex | sonnet | opus>
-tier: <sol | terra | luna, Codex route only>
+tier: <sol | terra | luna | astra, Codex route only>
 security: <yes | no>
 baseline: <abs path to stage 1's pre-fire.patch>
 findings: <abs path to taste's findings.md>
@@ -52,7 +52,7 @@ when the worker is not Codex. Record the selected worker in `state.md` (for exam
 `worker: opus`).
 
 On the Codex route, fire also picks a GPT-5.6 tier by task shape (see fire's tier
-table), or honors an explicit `--tier sol|terra|luna`. Record it in `state.md`
+table), or honors an explicit `--tier sol|terra|luna|astra`. Record it in `state.md`
 (`tier: terra`) so the refire stage fires on the same tier; taste stays on `sol`
 (reviewer strength beats reviewer cost).
 

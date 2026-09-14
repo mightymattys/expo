@@ -1,6 +1,6 @@
 ---
 name: fire
-description: Delegates well-specified implementation tasks to Codex CLI in the background, choosing a GPT-5.6 tier by task shape (--tier overrides; --with sonnet or opus routes to a Claude worker instead). Use for substantial spec-able work - features, refactors, migrations, or boilerplate; not small fixes or ambiguous design; never fire silently.
+description: Delegates well-specified implementation tasks to Codex CLI in the background, choosing a model tier by task shape (--tier overrides; --with sonnet or opus routes to a Claude worker instead). Use for substantial spec-able work - features, refactors, migrations, or boilerplate; not small fixes or ambiguous design; never fire silently.
 ---
 
 # Fire - hand the ticket to the expo
@@ -60,7 +60,7 @@ rest as the task description. Workers:
 
 | `--with` | Worker | Route |
 |---|---|---|
-| *(absent)* / `codex` | Codex CLI, GPT-5.6 tier picked per task (next section) | the default invocation below |
+| *(absent)* / `codex` | Codex CLI, model tier picked per task (next section) | the default invocation below |
 | `sonnet` | Claude Sonnet 5, user's own subscription | `references/worker-routes.md` |
 | `opus` | Claude Opus 5, user's own subscription | `references/worker-routes.md` |
 
@@ -74,26 +74,32 @@ to the Codex route only - the Claude subscription route's preflight is just
 
 ## Choosing the model tier (Codex route)
 
-The Codex route runs GPT-5.6, which ships in three tiers. You already classify every
+The Codex route's GPT-5.6 tiers are chosen by task shape. You already classify every
 task by shape to decide *whether* to fire - the same classification picks the tier,
-for free. Default: pick by task shape and name the tier in the announcement. This
-applies to the Codex route only; the Claude subscription route has no tiers.
+for free. Astra is an explicit, override-only tier: it costs the same blend as the
+orchestrator model and is effectively tied with it on the independent Coding Agent
+Index, so task shape must never select it. This applies to the Codex route only; the
+Claude subscription route has no tiers.
 The table presupposes the fire-vs-cook gate already passed: it decides who gets the
 ticket, never whether to delegate.
 
-| Tier | Effort | Task shape |
-|---|---|---|
-| `gpt-5.6-sol` | high (`max` only for the very hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
-| `gpt-5.6-terra` | high | the daily driver - standard spec-able features, bugfixes, test writing; the default when unsure |
-| `gpt-5.6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
+| `--tier` | Model | Effort | Task shape |
+|---|---|---|---|
+| `sol` | `gpt-5.6-sol` | high (`max` only for the very hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
+| `terra` | `gpt-5.6-terra` | high | the daily driver - standard spec-able features, bugfixes, test writing; the default when unsure |
+| `luna` | `gpt-5.6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
+| `astra` | `gpt-6-astra` | high | override-only, never chosen by task shape: long, messy, multi-step work with error recovery, where Terminal-Bench 4.0 puts it far above sol |
 
-Override: `--tier sol|terra|luna` in the arguments (strip it like `--with`); an
+Override: `--tier sol|terra|luna|astra` in the arguments (strip it like `--with`); an
 explicit tier wins over the shape heuristic. Never enable an `ultra` reasoning level
 on a delegated background run when the chosen model offers it - it multiplies token
 spend by design, with nobody watching.
 The chosen tier and effort ride the invocation as `-c` flags (CLI beats the profile
-and `~/.codex/config.toml`); if you deliberately want the config default instead,
-pass no `-c model` flag.
+and `~/.codex/config.toml`). Always pin them. Dropping the pin does not mean "some
+sensible default" - it inherits whatever the vendor currently defaults to, and that
+moves without warning: Codex made `gpt-6-astra` its bundled default in 0.154, so an
+unpinned run lands on the most expensive model, at whatever effort the user's config
+happens to carry. The pin is what makes the announced tier true.
 
 ## Firing
 
@@ -102,13 +108,13 @@ Run from the repo root (workspace-write scopes writes to the working directory),
 ```
 Bash (run_in_background: true), cwd = repo root:
 env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN codex exec --profile expo \
-  -c model=gpt-5.6-<tier> -c model_reasoning_effort=<effort> \
+  -c model=<model slug for the chosen tier, from fire's tier table> -c model_reasoning_effort=<effort> \
   --output-last-message "$JOB/result.md" \
   - < "$JOB/ticket.md" > "$JOB/job.log" 2>&1
 ```
 
 Notes on the invocation:
-- `--profile expo` loads `~/.codex/expo.config.toml` (workspace-write sandbox, approvals never - it never pauses for input that will never arrive). The `-c model=... -c model_reasoning_effort=...` flags pin the tier chosen above (CLI beats the profile and `~/.codex/config.toml`); drop them to fall through to the user's config defaults.
+- `--profile expo` loads `~/.codex/expo.config.toml` (workspace-write sandbox, approvals never - it never pauses for input that will never arrive). The `-c model=... -c model_reasoning_effort=...` flags pin the tier chosen above (CLI beats the profile and `~/.codex/config.toml`). Never drop them: `--profile expo` layers over the base config without setting a model, so an unpinned run falls through to the vendor's current default - `gpt-6-astra` since Codex 0.154.
 - `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN` pins the run to the user's `codex login` (ChatGPT subscription) auth - those two are the only env vars that override it in `codex exec`, and if either is set the run silently bills per-token instead. (`OPENAI_API_KEY` is NOT read for auth by current Codex, and unsetting it would break custom providers that use it as their `env_key`.)
 - Prompt goes via stdin (`- <`) to avoid shell-quoting damage to the ticket.
 

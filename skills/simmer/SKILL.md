@@ -50,8 +50,8 @@ before lap 1 (simmer creates a branch and makes commits - say so):
 - **Worker** - record a `worker:` line for the whole loop: `codex` by default,
   `sonnet` or `opus` when the corresponding `--with` selected it. Worker choice does
   not change between laps.
-- **Tier** - pick the GPT-5.6 tier once for the whole loop, by the goal's shape
-  (fire's tier table; `--tier sol|terra|luna` overrides), and name it in the
+- **Tier** - pick the Codex tier once for the whole loop, by the goal's shape
+  (fire's tier table; `--tier sol|terra|luna|astra` overrides), and name it in the
   contract confirmation. Every Codex lap fires on the same tier - a loop that
   silently changed models mid-run would make its lap history incomparable. Record
   `tier: n/a` for a Claude worker.
@@ -108,8 +108,8 @@ For each iteration, until the goal passes or the budget is spent:
    Background using fire's rule - no `&`, `nohup`, or `disown` inside the command.
    For `worker: codex`, keep fire's `codex exec` invocation with
    `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN`, `--profile expo`, the flags read
-   from this loop's `tier:` line
-   (`-c model=gpt-5.6-<tier> -c model_reasoning_effort=<effort>`),
+   from fire's tier table for this loop's `tier:` line
+   (`-c model=<model slug for the chosen tier, from fire's tier table> -c model_reasoning_effort=<effort>`),
    `--output-last-message "$JOB/result.md"`, stdin from `$JOB/ticket.md`, and
    stdout/stderr in `$JOB/job.log`. For `worker: sonnet` or `worker: opus`, use the
    matching `claude -p` subscription invocation in

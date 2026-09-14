@@ -58,12 +58,13 @@ different → show the diff and ask whether to keep theirs or refresh (this is a
 update path when the plugin ships profile changes). The profile intentionally sets
 only execution-safety settings (approval policy, sandbox mode, network access).
 Model and effort are normally pinned per fire by the tier flags (fire's tier table);
-the user's `~/.codex/config.toml` governs only runs where those flags are
-deliberately omitted, plus their interactive Codex sessions. If they have no model
-configured there, suggest `model = "gpt-5.6-sol"` and
-`model_reasoning_effort = "high"` as a sane default. If their config enables 5.6's
-ultra mode, warn that it multiplies token spend by design and should stay off for
-delegated background runs.
+the user's `~/.codex/config.toml` governs only their interactive Codex sessions and
+any run that forgot its flags. Read the `model` line there and say what it is: since
+Codex 0.154 the vendor's own default is `gpt-6-astra`, so a config that inherited it
+makes every unpinned run the most expensive one. Suggest `model = "gpt-5.6-sol"` and
+`model_reasoning_effort = "high"` as a sane default to set explicitly. If their config
+enables 5.6's ultra mode, warn that it multiplies token spend by design and should stay
+off for delegated background runs.
 
 Also check `~/.codex/config.toml` for `service_tier = "fast"`. Fast mode flows into
 delegated background runs and burns credits at a documented multiple (2.5x at the
@@ -155,4 +156,4 @@ config enables tools like `web_search`); `--skip-git-repo-check` keeps the test
 working outside a git repo. On failure, show the log tail and the likely cause
 (auth, profile syntax, version).
 
-Finish with a one-screen summary: what passed, what was installed, which model and effort delegated runs will use (the banner's `model:` line is ground truth for the model; effort falls through to `~/.codex/config.toml` - the smoke test pins its own to low), and what the user still needs to do. If `~/.expo/ledger.jsonl` exists, close with the running tab - `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tab.sh"` - delegated jobs to date, worker vs measured orchestration tokens, and the observed work-split ratio (raw token volume, not a cost multiple).
+Finish with a one-screen summary: what passed, what was installed, which model and effort delegated runs will use, and what the user still needs to do. The banner's `model:` line is ground truth: the smoke test pins only effort, so that line reports exactly what an unpinned run on this machine resolves to. If it is not the model their config names, say so - an unset `model` inherits the vendor default, which Codex 0.154 moved to `gpt-6-astra`, the most expensive tier. If `~/.expo/ledger.jsonl` exists, close with the running tab - `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tab.sh"` - delegated jobs to date, worker vs measured orchestration tokens, and the observed work-split ratio (raw token volume, not a cost multiple).

@@ -178,11 +178,125 @@ else
 fi
 
 # The tier names are one vocabulary, spelled identically wherever tiers are chosen.
-for t in sol terra luna; do
+for t in sol terra luna astra; do
   for f in skills/fire/SKILL.md skills/refire/SKILL.md; do
     grep -q "$t" "$f" || err "$f must name tier '$t' - fire's tier table and refire's override share one vocabulary"
   done
 done
+
+# A family-prefix template turns a new model family into a plausible but nonexistent slug.
+bad_model_templates=$(grep -R -nE -- "-c[[:space:]]+['\"]?model=['\"]?gpt-[^[:space:]'\"]*(<[^>]+>|\\\$(\\{[^}]+\\}|[A-Za-z_][A-Za-z0-9_]*))" skills/ || true)
+if [ -z "$bad_model_templates" ]; then
+  ok "skills do not interpolate model slugs from a hardcoded family prefix"
+else
+  while IFS= read -r match; do
+    err "$match - use the model slug from fire's tier table instead"
+  done <<EOF
+$bad_model_templates
+EOF
+fi
+
+# An unpinned run does not fall back to a sensible default - it inherits the vendor's
+# current one, and Codex 0.154 made gpt-6-astra that default. Every real invocation
+# starts `env -u CODEX_API_KEY`; prose that merely names `codex exec` does not.
+# mise's smoke test is the one deliberate exception and is asserted separately below:
+# leaving it unpinned is what makes it report the user's own resolved model.
+unpinned=$(grep -rn -E -- 'env -u CODEX_API_KEY.*\\$' skills/ | grep -v '^skills/mise/' | while IFS=: read -r f n _; do
+  sed -n "${n},$((n + 3))p" "$f" | grep -q -- '-c model=' || printf '%s:%s\n' "$f" "$n"
+done)
+if [ -z "$unpinned" ]; then
+  ok "every documented codex exec invocation pins its model"
+else
+  while IFS= read -r match; do
+    err "$match: codex exec with no -c model= pin - an unpinned run inherits the vendor default"
+  done <<EOF
+$unpinned
+EOF
+fi
+
+# The smoke test's diagnostic IS the absence of a pin: it reports whatever the user's
+# own config resolves to, which is how a vendor default change becomes visible to them.
+smoke=$(grep -n -E -- 'env -u CODEX_API_KEY.*\\$' skills/mise/SKILL.md | cut -d: -f1)
+if [ -z "$smoke" ]; then
+  err "skills/mise/SKILL.md has no smoke-test invocation to check"
+elif sed -n "${smoke},$((smoke + 3))p" skills/mise/SKILL.md | grep -q -- '-c model='; then
+  err "mise's smoke test pins a model - it must stay unpinned to report the user's own resolved model"
+else
+  ok "mise's smoke test stays unpinned so it reports the user's resolved model"
+fi
+
+# Every fire tier must remain receipt-priceable when the table gains a new model family.
+if tier_price_errors=$(python3 - "skills/receipts/references/prices.md" 2>&1 <<'PY'
+import re
+import sys
+from pathlib import Path
+
+def read_lines(path):
+    try:
+        return Path(path).read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        print(f"{path}: cannot read: {exc}")
+        raise SystemExit(1)
+
+def split_cells(line):
+    return [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip())[1:-1]]
+
+price_rows = set()
+for line in read_lines(sys.argv[1]):
+    if not line.startswith("|"):
+        continue
+    cells = split_cells(line)
+    if len(cells) == 5 and re.fullmatch(r"gpt-[a-z0-9.-]+", cells[0]):
+        price_rows.add(cells[0])
+lines = read_lines("skills/fire/SKILL.md")
+header = "| `--tier` | Model | Effort | Task shape |"
+try:
+    start = lines.index(header) + 2
+except ValueError:
+    print("skills/fire/SKILL.md has no tier table with --tier and Model columns")
+    raise SystemExit
+
+parsed_tiers = 0
+for line in lines[start:]:
+    line = line.strip()
+    if not line.startswith("|"):
+        break
+    cells = split_cells(line)
+    if len(cells) != 4:
+        print(f"skills/fire/SKILL.md has malformed tier-table row: {line}")
+        continue
+    tier = re.fullmatch(r"`([a-z0-9-]+)`", cells[0])
+    model = re.fullmatch(r"`(gpt-[a-z0-9.-]+)`", cells[1])
+    if not tier or not model:
+        print(f"skills/fire/SKILL.md has unparseable tier-table row: {line}")
+        continue
+    parsed_tiers += 1
+    if model.group(1) not in price_rows:
+        print(f"fire tier '{tier.group(1)}' model '{model.group(1)}' has no matching prices.md row")
+if parsed_tiers == 0:
+    print("skills/fire/SKILL.md parsed zero tier rows")
+PY
+) ; then
+  tier_price_status=0
+else
+  tier_price_status=$?
+fi
+if [ "$tier_price_status" -ne 0 ]; then
+  err "tier-price parser failed with exit status $tier_price_status"
+  [ -z "$tier_price_errors" ] || while IFS= read -r problem; do
+    err "$problem"
+  done <<EOF
+$tier_price_errors
+EOF
+elif [ -z "$tier_price_errors" ]; then
+  ok "every fire tier has a matching prices.md model row"
+else
+  while IFS= read -r problem; do
+    err "$problem"
+  done <<EOF
+$tier_price_errors
+EOF
+fi
 
 # Ledger claude_tokens windows are per-job: every job-dir mint stamps $JOB/started.
 for f in skills/fire/SKILL.md skills/taste/SKILL.md skills/refire/SKILL.md skills/simmer/SKILL.md; do

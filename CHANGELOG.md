@@ -3,6 +3,44 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## 0.16.0 - 2026-09-14 - astra becomes a choice, and never an accident
+
+- **`gpt-6-astra` is a worker tier**, reachable only as `--tier astra`. The task-shape
+  heuristic never selects it: its 50/50 blend equals the orchestrator model's, and the
+  independent Artificial Analysis Coding Agent Index calls Fable 5, Fable 5.1 and astra an
+  effectively three-way tie (68.1 / 67.2 / 67.0), so a shape-default would delegate at the
+  orchestrator's own price for no measured gain. Where the evidence does favour it is
+  OpenAI-published Terminal-Bench 4.0 - 57.7 against sol's 37.3 - the long, messy,
+  multi-step shape, not the one-ticket shape. sol, terra and luna are unchanged.
+- Adding a fourth tier first required deleting a latent bug: fire and simmer built the
+  invocation as `-c model=gpt-5.6-<tier>`, which would have turned `astra` into the
+  nonexistent `gpt-5.6-astra`. The tier table now carries the full model slug and the
+  invocation reads it instead of concatenating a family prefix.
+- **Dropping the model pin is no longer described as a neutral choice anywhere**, because
+  it stopped being one. `--profile` layers over the base config rather than replacing it,
+  so an unpinned run resolves through `~/.codex/config.toml` to whatever the vendor
+  currently defaults to - and Codex 0.154 made that default `gpt-6-astra`, the most
+  expensive tier. Verified here: `codex doctor` reported `model  gpt-6-astra - openai`
+  while all 26 expo runs that week landed on sol or terra, because each carried its own
+  pin. Nothing was overspent; the documentation was simply describing a fallback that had
+  moved. fire, refire, mise and the shipped profile now say what omitting the pin costs.
+- mise's smoke test stays deliberately unpinned - that is its diagnostic. It reports the
+  `model:` line an unpinned run on that machine actually resolves to, which is how a user
+  finds out their config inherited the vendor's default. check.sh asserts both halves:
+  every other documented invocation must pin, and this one must not.
+- Two invariants from the astra work were found by cross-review to **print `ok` while
+  checking nothing** - a crashed parser's empty stdout read as an empty error list, and one
+  leading space ended the tier-table loop before the first row. Both now fail loudly, and
+  the model-slug matcher went from catching one spelling of the defect to all of them
+  (quoted forms and `$tier` included). The lesson is recorded because the head chef's own
+  mutation tests missed it: they proved the checks fail when violated, and never asked
+  whether they run when not violated.
+- Prices re-verified 2026-09-14 against both vendors: every figure unchanged. One dated
+  fact is now recorded - `gpt-5.6-sol`'s $4/$20 is promotional, held "at least through
+  November 21, 2026", so the table says to re-verify after that date. Long-context rates
+  for all four OpenAI tiers are listed, and the 272,000-token threshold is quoted verbatim
+  from the astra model page rather than inferred from an arithmetic pattern.
+
 ## 0.15.6 - 2026-09-04
 
 - The long-context question from 0.15.5 is closed with a measurement rather than a

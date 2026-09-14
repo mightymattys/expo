@@ -4,11 +4,13 @@
 #
 # Used as: codex exec --profile expo ...
 #
-# Deliberately minimal: only execution safety lives here. Fire normally pins the
-# model tier per task via -c flags; your ~/.codex/config.toml governs only runs
-# where those flags are deliberately omitted (recommended default there:
-# model = "gpt-5.6-sol", model_reasoning_effort = "high"). Per-repo pins belong
-# in a trusted project's .codex/config.toml.
+# Deliberately minimal: only execution safety lives here, and NO model - --profile
+# layers over your base config rather than replacing it, so an unpinned run inherits
+# whatever ~/.codex/config.toml says, and that inherits the vendor default when unset.
+# Codex 0.154 made gpt-6-astra its bundled default, so "unset" now means the most
+# expensive model. Fire pins the tier per task via -c flags; set an explicit default
+# here too (recommended: model = "gpt-5.6-sol", model_reasoning_effort = "high").
+# Per-repo pins belong in a trusted project's .codex/config.toml.
 
 # Never pause for approval - a delegated run has no human to answer prompts.
 approval_policy = "never"
