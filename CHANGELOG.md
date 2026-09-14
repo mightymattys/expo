@@ -3,6 +3,17 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **`check.sh` validates link fragments against target headings.** The relative-link
+  sweep proved only that the file existed; `docs/design.md` briefly shipped
+  `../CHANGELOG.md#0170`, an anchor no heading slugs to, and the check passed. A new
+  invariant computes GitHub heading slugs for every target of a fragment link across
+  `skills/`, `docs/`, `templates/`, README, CHANGELOG and AGENTS and fails on any
+  fragment that matches none. It also fails on its own inability to check - an
+  unreadable source or target, or a scan that finds zero fragment links - rather than
+  printing ok while checking nothing.
+
 ## 0.17.0 - 2026-09-14 - the kitchen measures itself
 
 - **The shipped profile pins `model_context_window = 272000`.** That is the vendor's own

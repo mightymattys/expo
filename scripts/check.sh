@@ -463,6 +463,82 @@ for f in $(find skills docs -name '*.md') README.md AGENTS.md; do
     [ -e "$(dirname "$f")/${l%%#*}" ] || err "$f links $l which does not exist"
   done
 done
+
+# ...and every fragment on a relative link names a heading in its target. The loop
+# above proves the file; a `#0170` that no heading slugs to passes it and 404s on
+# GitHub (0.17.0 shipped one briefly). Slugs follow GitHub's rule: lowercase, keep
+# only letters, digits, spaces and hyphens, spaces to hyphens, repeats get -1, -2.
+# Headings and links inside fenced code are neither - a `# comment` in a bash block
+# must not mint an anchor. Zero links found means the scan broke, not that all pass.
+fragment_errors=$(python3 - README.md CHANGELOG.md AGENTS.md skills docs templates <<'PY'
+import os, re, sys
+
+heading = re.compile(r"^#{1,6}\s+(.*?)\s*#*\s*$")
+link = re.compile(r"\]\(([^)\s]*?)#([^)\s]+)\)")
+
+def body_lines(path):  # lines outside code fences
+    fenced = False
+    for line in open(path, encoding="utf-8"):
+        if line.startswith(chr(96) * 3):
+            fenced = not fenced
+            continue
+        if not fenced:
+            yield line
+
+def slugs(path):
+    seen, out = {}, set()
+    for line in body_lines(path):
+        m = heading.match(line)
+        if not m:
+            continue
+        text = re.sub(r"[^a-z0-9 -]", "", m.group(1).lower()).replace(" ", "-")
+        n = seen.get(text, 0)
+        seen[text] = n + 1
+        out.add(text if n == 0 else f"{text}-{n}")
+    return out
+
+files = []
+for arg in sys.argv[1:]:
+    if os.path.isdir(arg):
+        for root, _, names in os.walk(arg):
+            files += [os.path.join(root, n) for n in names if n.endswith(".md")]
+    else:
+        files.append(arg)
+
+checked, cache = 0, {}
+for f in sorted(files):
+    try:
+        lines = list(body_lines(f))
+    except OSError as e:
+        print(f"{f} cannot be scanned for links: {e}")
+        continue
+    for line in lines:
+        for target, frag in link.findall(line):
+            if target.startswith(("http://", "https://")) or target.startswith("../../issues/"):
+                continue
+            path = os.path.normpath(os.path.join(os.path.dirname(f), target)) if target else f
+            checked += 1
+            if path not in cache:
+                try:
+                    cache[path] = slugs(path)
+                except OSError as e:
+                    cache[path] = None
+                    print(f"{f} links {target}#{frag} but the target cannot be read: {e}")
+            if cache[path] is None:
+                continue
+            if frag not in cache[path]:
+                print(f"{f} links {target}#{frag} but {path} has no heading with that slug")
+if checked == 0:
+    print("found no relative links with a fragment - the anchor scan itself is broken")
+PY
+)
+if [ "$?" -ne 0 ]; then
+  err "anchor check failed to run"
+elif [ -z "$fragment_errors" ]; then
+  ok "every relative link's fragment names a heading in its target"
+else
+  err "$fragment_errors"
+fi
 section_ok "cross-file invariants"
 
 # 3b. Pricing freshness ---------------------------------------------------------
