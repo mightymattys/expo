@@ -1,4 +1,4 @@
-# Claude subscription route - Sonnet 5 and Opus 5
+# Claude subscription route - Sonnet 5 and Opus 5.5
 
 The default worker is Codex (`codex exec --profile expo`). The Claude subscription
 route has two models on the user's own Anthropic subscription - no extra key, no
@@ -13,9 +13,11 @@ completion while the worker keeps running.
 ## Two models, one route
 
 `sonnet` is the cheap fallback when Codex hits its usage limit mid-serve ("try again
-at HH:MM"); `opus` is the premium keyless worker. Claude Opus 5 is near Fable coding
-ability - SWE-bench Pro 79.2 vs Fable's 80.0
-([benchmark](https://codersera.com/blog/claude-opus-5-vs-fable-5-2026/)). Opus drains
+at HH:MM"); `opus` is the premium keyless worker. Claude Opus 5.5 is the vendor's
+recommended starting model for long-running agentic coding, with Fable named as the
+escalation for work where Opus 5.5 at higher effort still falls short
+([models overview](https://platform.claude.com/docs/en/about-claude/models/overview)).
+Opus drains
 the shared Anthropic quota faster than Sonnet, so use that premium deliberately. For
 current figures, see [prices.md](../../receipts/references/prices.md).
 Mise and taste still need Codex, so this is not a Codex-free configuration on its
@@ -59,7 +61,7 @@ claude -p --model claude-sonnet-5 --dangerously-skip-permissions --strict-mcp-co
 
 ```
 Bash (run_in_background: true), cwd = repo root:
-claude -p --model claude-opus-5 --dangerously-skip-permissions --strict-mcp-config \
+claude -p --model claude-opus-5-5 --dangerously-skip-permissions --strict-mcp-config \
   < "$JOB/ticket.md" > "$JOB/result.md" 2> "$JOB/job.log"
 ```
 

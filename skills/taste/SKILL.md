@@ -40,7 +40,7 @@ Mint a job dir (`JOB=$(mktemp -d "$SCRATCHPAD/taste-<label>-XXXXXX")`, where `$S
 ```
 Bash (run_in_background: true), cwd = repo root:
 env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN codex exec --profile expo --sandbox read-only \
-  -c model=gpt-5.6-sol -c model_reasoning_effort=high \
+  -c model=gpt-6-sol -c model_reasoning_effort=high \
   --output-last-message "$JOB/result.md" \
   - < "$JOB/review-prompt.md" > "$JOB/job.log" 2>&1
 ```

@@ -51,7 +51,7 @@ before lap 1 (simmer creates a branch and makes commits - say so):
   `sonnet` or `opus` when the corresponding `--with` selected it. Worker choice does
   not change between laps.
 - **Tier** - pick the Codex tier once for the whole loop, by the goal's shape
-  (fire's tier table; `--tier sol|terra|luna|astra` overrides), and name it in the
+  (fire's tier table; `--tier sol|luna|astra` overrides), and name it in the
   contract confirmation. Every Codex lap fires on the same tier - a loop that
   silently changed models mid-run would make its lap history incomparable. Record
   `tier: n/a` for a Claude worker.

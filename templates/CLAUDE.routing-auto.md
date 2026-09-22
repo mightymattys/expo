@@ -15,7 +15,7 @@
 - Keep cooking yourself: one-file surgical fixes, unresolved design questions, work
   that needs conversation context a ticket can't carry.
 - expo:simmer stays explicit-ask only - it creates a branch and makes commits.
-- The GPT-5.6 tier (sol/terra/luna) is picked per task by fire's tier table - the
+- The GPT-6 tier (sol/luna) is picked per task by fire's tier table - the
   same shape call that decides whether to delegate; `--tier` overrides. The
   announcement names the model and tier; taste always reviews on sol.
 - Never fire silently - the one-line announcement is the safety valve autonomy keeps.

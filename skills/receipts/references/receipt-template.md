@@ -25,9 +25,9 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   was reached against. A verdict is only true of a tree; without this, a receipt read
   weeks later still reads "verified" over code that has since moved.
 - worker: <model(s) from the log banners>, <N> runs, <total>k tokens
-  (a run that mixed tiers/models - e.g. a terra fire and a sol taste - prices each
+  (a run that mixed tiers/models - e.g. a luna fire and a sol taste - prices each
   job at its own banner model's blend before summing, and lists per-model subtotals:
-  `terra <a>k ~$<b> · sol <c>k ~$<d>` - one blend applied to combined tokens would
+  `luna <a>k ~$<b> · sol <c>k ~$<d>` - one blend applied to combined tokens would
   misprice both)
 - cost: ~$<X> API-list terms - add "(lower bound)" when the run's worker total
   crosses 272,000 tokens, per prices.md's long-context note (per-model blends per prices.md; subscription quota =

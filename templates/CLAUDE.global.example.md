@@ -21,7 +21,7 @@
   multi-file features, mechanical refactors, migrations, bulk boilerplate. Announce
   every delegation in one line first: what's being handed off, to which model and
   tier, expected wait.
-- The GPT-5.6 tier (sol/terra/luna) is picked per task by fire's tier table;
+- The GPT-6 tier (sol/luna) is picked per task by fire's tier table;
   `--tier` overrides. taste always reviews on sol.
 - For tasks the user wants done end to end without stops (implement, cross-review,
   fix, verify), prefer /expo:serve - one announcement, one report.
