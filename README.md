@@ -17,7 +17,7 @@
 
 <br>
 
-![expo flow: you hand the order to Claude, the head chef (Fable 5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-5.6 sol/terra/luna, Sonnet 5, or Opus 5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
+![expo flow: you hand the order to Claude, the head chef (Fable 5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-6 sol/luna, Sonnet 5, or Opus 5.5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
 
 <sub>expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr (MIT) - the expediter who calls the orders and checks every plate at the pass. Same two-model kitchen; this line is actively developed here.</sub>
 

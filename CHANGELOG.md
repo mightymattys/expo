@@ -18,8 +18,11 @@ expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas C
   repo's bar is sources, not vendor copy: the prices are verified, but the capability
   ordering behind the shape column is OpenAI's own positioning - no independent
   benchmark covering the GPT-6 worker tiers was found on 2026-09-22, where the old
-  table could cite the Coding Agent Index. `docs/expo-flow.png` still depicts the
-  retired tier names and Opus 5, and needs regenerating.
+  table could cite the Coding Agent Index. `docs/expo-flow.png` was redrawn for the
+  new names and now has a source: `docs/expo-flow.html`, rendered with headless
+  Chrome (the title's colour emoji renders as a blank box under librsvg). The diagram
+  had no source at all before, which is how its worker box came to omit Opus entirely
+  while the README's alt text claimed otherwise; the alt text is back in step.
 - **The premium Claude worker is Claude Opus 5.5.** Opus 5.5 (`claude-opus-5-5`) shipped
   at $4/$20 per MTok against the $5/$25 of the Opus 5 it replaces, and the vendor now
   names it the starting model for long-running agentic coding, with Fable reserved for
