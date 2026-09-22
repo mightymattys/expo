@@ -1,0 +1,156 @@
+<!-- Source for docs/expo-flow.png. Edit here, never the PNG, then re-render:
+     /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --headless \
+       --disable-gpu --hide-scrollbars --window-size=1774,887 \
+       --screenshot=docs/expo-flow.png docs/expo-flow.html
+     Chrome is used rather than rsvg-convert because the title carries a colour emoji,
+     which librsvg renders as a blank box. Keep the model names in step with fire's
+     tier table (skills/fire/SKILL.md) and worker-routes.md - a diagram that names a
+     retired tier is a claim the repo no longer backs. -->
+<meta charset="utf-8">
+<title>expo flow</title>
+<style>
+  :root {
+    --bg: #020409;
+    --ink: #ffffff;
+    --orange: #f97538;
+    --blue: #4a9eff;
+    --green: #66e98c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body {
+    width: 1774px; height: 887px; position: relative; overflow: hidden;
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .title {
+    position: absolute; top: 44px; left: 0; width: 100%; text-align: center;
+    font-size: 76px; font-weight: 700; letter-spacing: -1.5px; line-height: 1;
+  }
+  .title .emoji { font-size: 62px; vertical-align: 6px; margin-left: 14px; }
+  .sub {
+    position: absolute; top: 142px; left: 0; width: 100%; text-align: center;
+    font-size: 33px; font-weight: 400; color: #f2f3f5;
+  }
+  .box {
+    position: absolute; border: 3px solid var(--ink); border-radius: 18px;
+    display: flex; align-items: center; justify-content: center; gap: 22px;
+  }
+  .box.orange { border-color: var(--orange); border-width: 4px; }
+  .box.blue   { border-color: var(--blue);   border-width: 4px; }
+  .lead { font-size: 31px; font-weight: 600; letter-spacing: -0.3px; white-space: nowrap; }
+  .note { font-size: 22px; font-weight: 400; color: #eceef1; line-height: 1.34; white-space: nowrap; }
+
+  #you       { left: 45px;   top: 274px; width: 236px; height: 176px; }
+  #chef      { left: 410px;  top: 250px; width: 592px; height: 202px; flex-direction: row; gap: 26px; }
+  #review    { left: 1110px; top: 274px; width: 222px; height: 190px; flex-direction: column; gap: 10px; }
+  #served    { left: 1415px; top: 274px; width: 330px; height: 196px; flex-direction: column; gap: 0; }
+  #worker    { left: 360px;  top: 568px; width: 686px; height: 166px; flex-direction: row; gap: 26px; }
+
+  .stack { display: flex; flex-direction: column; align-items: flex-start; }
+  .served-row { display: flex; align-items: center; gap: 15px; width: 100%; padding: 0 20px; }
+  .rule { width: 272px; height: 2px; background: #d8dade; margin: 15px 0; }
+  svg { display: block; flex: none; }
+  .diff { position: absolute; font-size: 28px; font-weight: 600; }
+</style>
+
+<div class="title">expo<span class="emoji">&#128104;&#8205;&#127859;</span></div>
+<div class="sub">the head chef doesn't chop onions</div>
+
+<!-- You -->
+<div class="box" id="you">
+  <svg width="52" height="62" viewBox="0 0 26 31" fill="none" stroke="#fff" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 1.4h20v28.2l-3.3-2.2-3.4 2.2-3.3-2.2-3.3 2.2-3.4-2.2L3 29.6z"/>
+    <path d="M8 8.6h10M8 13.4h10M8 18.2h6"/>
+  </svg>
+  <span class="lead" style="font-size:38px">You</span>
+</div>
+
+<!-- Claude, head chef -->
+<div class="box orange" id="chef">
+  <svg width="92" height="92" viewBox="0 0 46 46" fill="none" stroke="var(--orange)" stroke-width="2.4"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 26c-4 0-7-3.1-7-7 0-3.4 2.4-6.2 5.6-6.9C10.2 8.4 13.3 5.7 17 5.7c2.5 0 4.7 1.2 6 3
+             1.3-1.8 3.5-3 6-3 3.7 0 6.8 2.7 7.4 6.4 3.2.7 5.6 3.5 5.6 6.9 0 3.9-3 7-7 7z"/>
+    <path d="M11 26v11.5h24V26"/>
+    <path d="M11 32.5h24"/>
+  </svg>
+  <div class="stack">
+    <div class="lead">CLAUDE, head chef (Fable 5)</div>
+    <div class="note" style="margin-top:12px">
+      plans &middot; writes the ticket &middot; reviews every line &middot;<br>re-runs the checks
+    </div>
+  </div>
+</div>
+
+<!-- cross-review -->
+<div class="box blue" id="review">
+  <svg width="62" height="50" viewBox="0 0 31 25" fill="none" stroke="#fff" stroke-width="1.9"
+       stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="7.5" r="4.6"/>
+    <path d="M3 22c0-4.4 3.6-7.2 8-7.2s8 2.8 8 7.2"/>
+    <path d="M21.5 3.4a4.6 4.6 0 0 1 0 8.6"/>
+    <path d="M23 15.2c3.3.6 5.6 3.2 5.6 6.8"/>
+  </svg>
+  <div class="note" style="text-align:center;font-size:25px;color:#fff;line-height:1.3">
+    cross-review,<br>pinned to sol
+  </div>
+</div>
+
+<!-- verified &amp; served -->
+<div class="box" id="served">
+  <div class="served-row">
+    <svg width="50" height="50" viewBox="0 0 25 25" fill="none" stroke="var(--green)" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12.5" cy="12.5" r="10.4"/>
+      <path d="M7.4 12.9l3.6 3.5 6.6-7.2"/>
+    </svg>
+    <span class="lead" style="font-size:26px">verified &amp; served</span>
+  </div>
+  <div class="rule"></div>
+  <div class="served-row">
+    <svg width="38" height="46" viewBox="0 0 26 31" fill="none" stroke="#fff" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 1.4h20v28.2l-3.3-2.2-3.4 2.2-3.3-2.2-3.3 2.2-3.4-2.2L3 29.6z"/>
+      <path d="M8 8.6h10M8 13.4h10M8 18.2h6"/>
+    </svg>
+    <span class="note" style="font-size:20px">measured cost receipt</span>
+  </div>
+</div>
+
+<!-- worker -->
+<div class="box blue" id="worker">
+  <svg width="84" height="84" viewBox="0 0 42 42" fill="none" stroke="var(--blue)" stroke-width="2.1"
+       stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13 12.5c-2.4 0-4.3-1.9-4.3-4.3 0-2 1.4-3.7 3.3-4.2C12.6 2 14.6.7 16.8.7c1.6 0 3 .7 4 1.8
+             1-1.1 2.4-1.8 4-1.8 2.2 0 4.2 1.3 4.8 3.3 1.9.5 3.3 2.2 3.3 4.2 0 2.4-1.9 4.3-4.3 4.3z"/>
+    <path d="M13 12.5v4.2h15.6v-4.2"/>
+    <path d="M16.6 16.7v2.9a4.2 4.2 0 0 0 8.4 0v-2.9"/>
+    <path d="M20.8 23.8c-4.3 0-7.8 2.9-8.7 7l-1.6 10.5h20.6l-1.6-10.5c-.9-4.1-4.4-7-8.7-7z"/>
+  </svg>
+  <div class="stack">
+    <div class="lead" style="font-size:34px;font-weight:700">WORKER
+      <span style="font-size:26px;font-weight:400">(GPT-6 <span style="font-size:23px">sol/luna</span>, Sonnet 5, or Opus 5.5)</span>
+    </div>
+    <div class="note" style="margin-top:11px;font-size:23px">implements in a sandbox, no say over what ships</div>
+  </div>
+</div>
+
+<!-- arrows -->
+<svg style="position:absolute;inset:0" width="1774" height="887">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#fff"/>
+    </marker>
+  </defs>
+  <g stroke="#fff" stroke-width="4" marker-end="url(#a)">
+    <line x1="291"  y1="362" x2="392"  y2="362"/>
+    <line x1="1012" y1="362" x2="1092" y2="362"/>
+    <line x1="1342" y1="362" x2="1397" y2="362"/>
+    <line x1="580"  y1="462" x2="580"  y2="556"/>
+    <line x1="828"  y1="556" x2="828"  y2="462"/>
+  </g>
+</svg>
+<div class="diff" style="left:852px; top:494px;">diff</div>
