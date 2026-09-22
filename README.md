@@ -30,8 +30,10 @@ kitchen splits work. **Opus 5.5 plans, writes the ticket, reviews every diff lin
 line, and re-runs the checks itself. Codex (or a Claude worker) does the implementation,
 with no say over what ships.**
 
-The split is economic: the most expensive model on the line spends its tokens on
-judgment, the worker's tokens go to bulk. Everything runs on subscriptions you
+The split is economic: the model that costs more per token spends those tokens on
+judgment, and the worker's cheaper tokens go to bulk. Opus 5.5 blends at $12 per MTok
+against `gpt-6-sol`'s $6; astra, the override-only tier, is the one rung above the chef
+and never gets picked by task shape. Everything runs on subscriptions you
 already have - no API keys.
 
 > Codex saying "tests pass" is a sentence; `pnpm test` output is a fact.
@@ -91,13 +93,15 @@ explicit override:
 Override with `--tier sol\|luna\|astra`. The tier rides the invocation as `-c`
 flags, so it varies per fire; your `~/.codex/config.toml` model applies only when
 those flags are deliberately omitted. **Reviews (`taste`) always pin `sol`** -
-reviewer strength beats reviewer cost. 5.6's ultra mode stays off for delegated
-background runs: it multiplies token spend by design, with nobody watching.
+reviewer strength beats reviewer cost. An `ultra` reasoning level stays off for
+delegated background runs wherever the chosen model offers one: it multiplies token
+spend by design, with nobody watching.
 
 Two Claude workers need no extra key: `fire --with sonnet` sends the ticket to cheap
 Claude Sonnet 5 headless on your own Anthropic subscription; `fire --with opus`
-sends it to premium Claude Opus 5.5. Sonnet is the fallback when Codex hits its usage
-limit mid-serve; Opus spends the shared Claude quota faster. *Preflight is verified;
+sends it to the head chef's own Opus 5.5, running headless in its own context - a
+second pair of keyless hands, not a step up in capability. Sonnet is the fallback when
+Codex hits its usage limit mid-serve; Opus spends the shared Claude quota faster. *Preflight is verified;
 a full ticket has not yet been run end to end through either route
 ([#8](https://github.com/mightymattys/expo/issues/8)).*
 
@@ -203,7 +207,9 @@ case for the delegation floor is therefore weaker than the old table implied; th
 rests on round-trip overhead - ticket writing, plating, and orchestration tokens spent
 supervising - rather than a measured tie.
 
-Honest limits: four tasks on one fixture, all in Python. The multi-file task ran on
+Honest limits: four tasks on one fixture, all in Python. `terra` was retired in the
+GPT-6 migration; these rows keep the tier they actually ran on rather than being
+relabelled to a tier that did not measure them. The multi-file task ran on
 terra to keep the tier constant against the smaller ones; fire's own table would
 arguably route it to sol at the [current blend](skills/receipts/references/prices.md),
 and this benchmark does not model what that would have cost.

@@ -66,8 +66,8 @@ any run that forgot its flags. Read the `model` line there and say what it is: s
 Codex 0.154 the vendor's own default is `gpt-6-astra`, so a config that inherited it
 makes every unpinned run the most expensive one. Suggest `model = "gpt-6-sol"` and
 `model_reasoning_effort = "high"` as a sane default to set explicitly. If their config
-enables 5.6's ultra mode, warn that it multiplies token spend by design and should stay
-off for delegated background runs.
+enables an `ultra` reasoning level, warn that it multiplies token spend by design and
+should stay off for delegated background runs.
 
 Also check `~/.codex/config.toml` for `service_tier = "fast"`. Fast mode flows into
 delegated background runs and burns credits at a documented multiple (2.5x at the
