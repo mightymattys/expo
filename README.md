@@ -4,7 +4,7 @@
 
 # expo
 
-**Fable 5 orchestrates and reviews; GPT-6, Sonnet 5, or Opus 5.5 implements.**
+**Opus 5.5 orchestrates and reviews; GPT-6 implements.**
 
 *Your head chef doesn't chop onions.*
 
@@ -17,7 +17,7 @@
 
 <br>
 
-![expo flow: you hand the order to Claude, the head chef (Fable 5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-6 sol/luna, Sonnet 5, or Opus 5.5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
+![expo flow: you hand the order to Claude, the head chef (Opus 5.5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-6 sol/luna, Sonnet 5, or Opus 5.5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
 
 <sub>expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr (MIT) - the expediter who calls the orders and checks every plate at the pass. Same two-model kitchen; this line is actively developed here.</sub>
 
@@ -26,7 +26,7 @@
 ---
 
 A Claude Code plugin that splits coding between two frontier models the way a
-kitchen splits work. **Fable plans, writes the ticket, reviews every diff line by
+kitchen splits work. **Opus 5.5 plans, writes the ticket, reviews every diff line by
 line, and re-runs the checks itself. Codex (or a Claude worker) does the implementation,
 with no say over what ships.**
 

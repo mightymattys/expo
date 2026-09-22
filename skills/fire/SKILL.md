@@ -76,9 +76,9 @@ to the Codex route only - the Claude subscription route's preflight is just
 
 The Codex route's GPT-6 tiers are chosen by task shape. You already classify every
 task by shape to decide *whether* to fire - the same classification picks the tier,
-for free. Astra is an explicit, override-only tier: it costs the same blend as the
-orchestrator model and is effectively tied with it on the independent Coding Agent
-Index, so task shape must never select it. This applies to the Codex route only; the
+for free. Astra is an explicit, override-only tier: its $30 blend is 2.5x the Opus 5.5
+orchestrator's $12, so delegating there pays a premium per token over work the chef
+could do itself, and task shape must never select it. This applies to the Codex route only; the
 Claude subscription route has no tiers.
 The table presupposes the fire-vs-cook gate already passed: it decides who gets the
 ticket, never whether to delegate.

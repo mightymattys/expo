@@ -5,6 +5,26 @@ expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas C
 
 ## Unreleased
 
+- **The head chef is Claude Opus 5.5.** The docs had said Fable 5 orchestrates while
+  every one of the eight measured benchmark rows recorded `orchestrator:
+  claude-opus-5`, so this also closes a gap between the claim and the evidence. Astra's
+  override-only rationale had to be restated rather than carried over: it rested on
+  astra's $30 blend *matching* the Fable orchestrator's, and against a $12 Opus 5.5 chef
+  astra now costs 2.5x, which makes the same conclusion follow from a wider margin. No
+  Coding Agent Index figure for Opus 5.5 was published as of 2026-09-22, so the price gap
+  carries that argument alone now, and the old three-way-tie citation is kept as history
+  rather than restated about a model it never measured. `--with opus` is no longer
+  described as the premium worker: it runs the chef's own model headless, which is a
+  second pair of keyless hands and not a capability step up. The vendor's escalation
+  above Opus 5.5 is Fable, for which expo exposes no worker route.
+- **The receipt's reference blend deliberately did not move.** Orchestration is still
+  priced at Fable's $30, not the chef's $12. The reference is the most expensive
+  orchestrator the kitchen can run, not the one it usually runs: pricing orchestration
+  high overstates the all-in and understates the equal-volume delta, which is what makes
+  that delta a floor. Repricing it at Opus 5.5 would have shrunk the all-in and inflated
+  the delta - the one error direction that flatters expo - so "update everything to the
+  new chef" stops deliberately at this line, and the files now say why.
+
 - **Fire's tier table moved to GPT-6 and lost terra.** `gpt-6-sol` lists at $2/$10
   against `gpt-5.6-sol`'s $4/$20, and undercuts `gpt-5.6-terra`'s $2/$12 on output too;
   `gpt-6-luna` lists at $0.10/$0.50 against $0.20/$1.20. A middle tier cheaper than

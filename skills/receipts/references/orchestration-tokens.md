@@ -47,7 +47,8 @@ Honesty rules, same as everywhere else:
 - **It measures token volume, not a cost multiple.** Worker tokens and orchestrator
   tokens are different models with different tokenizers and $/token, so the honest
   derived figure is the API-list **dollar** split (worker tokens × worker blend vs
-  orchestration tokens × Fable blend, both from prices.md), not a raw token ratio
+  orchestration tokens × Fable blend - the conservative reference, not the Opus 5.5
+  chef's own cheaper blend - both from prices.md), not a raw token ratio
   dressed up as savings (the only permitted derived figure is the equal-volume delta, floor,
   per receipt-template.md).
 - **A compacted session still works**: the transcript is append-only and the

@@ -13,10 +13,12 @@ completion while the worker keeps running.
 ## Two models, one route
 
 `sonnet` is the cheap fallback when Codex hits its usage limit mid-serve ("try again
-at HH:MM"); `opus` is the premium keyless worker. Claude Opus 5.5 is the vendor's
-recommended starting model for long-running agentic coding, with Fable named as the
-escalation for work where Opus 5.5 at higher effort still falls short
+at HH:MM"); `opus` runs the same Claude Opus 5.5 the head chef runs, in a separate
+headless process with its own context. That is not a capability step up over the chef -
+the vendor's escalation above Opus 5.5 is Fable, and expo exposes no Fable worker route,
+so that escalation stays a manual choice rather than a `--with` flag
 ([models overview](https://platform.claude.com/docs/en/about-claude/models/overview)).
+What the route buys is a second pair of hands that needs no API key.
 Opus drains
 the shared Anthropic quota faster than Sonnet, so use that premium deliberately. For
 current figures, see [prices.md](../../receipts/references/prices.md).

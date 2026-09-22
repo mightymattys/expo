@@ -1,6 +1,6 @@
 # expo
 
-A Claude Code plugin: Claude (Fable 5) orchestrates and reviews; GPT-6 (Codex CLI)
+A Claude Code plugin: Claude (Opus 5.5) orchestrates and reviews; GPT-6 (Codex CLI)
 or a Claude worker (Sonnet 5 / Opus 5.5) implements. This repo is the plugin itself - there is no build
 step and nothing to compile; the plugin is markdown, JSON, and TOML. The one exception
 is `bench/project`, a Python fixture the benchmark edits.

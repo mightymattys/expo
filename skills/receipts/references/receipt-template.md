@@ -13,9 +13,13 @@ or budget spent - write one file to `.expo/receipts/` in the repo root:
   session transcript per [orchestration-tokens.md](orchestration-tokens.md) - not
   the old 5-7k estimate. Dollar figures come from the [prices.md](prices.md)
   blends and get a `~`. A number you don't have is a line you drop - never a
-  guess. Orchestration is priced at the Fable blend (the reference orchestrator); if
-  the session actually ran a cheaper orchestrator, the all-in is overstated and the
-  equal-volume delta understated - the floor stays a floor.
+  guess. Orchestration is priced at the Fable blend - deliberately the most expensive
+  orchestrator the kitchen can run, not the one it usually runs. The chef is normally
+  Opus 5.5 at a $12 blend, so pricing orchestration at Fable's $30 overstates the all-in
+  and understates the equal-volume delta, which is exactly what keeps the floor a floor.
+  Repricing it at the chef's own blend would shrink the all-in and inflate the delta -
+  the one error direction that flatters expo, so the reference stays where it is even
+  though the chef moved.
 
 ```markdown
 # serve: <task one-liner>
