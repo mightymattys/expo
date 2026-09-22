@@ -58,8 +58,10 @@ unstated.
 
 Only models the kitchen actually runs, plus known banner aliases whose logged names
 need receipt pricing, belong in this table (GPT-6 tiers as workers, Sonnet 5 and
-Opus 5.5 as Claude subscription workers, Fable 5 and Opus 5 for pricing orchestration
-tokens). The GPT-5.6 rows outlive their routes on purpose: `gpt-daybreak-blue-latest`
+Opus 5.5 as Claude subscription workers, Opus 5.5 again as the orchestrator whose own
+tokens a receipt prices, Fable 5 as the deliberately conservative reference blend that
+keeps the equal-volume delta a floor, and Opus 5 because existing ledger rows name it
+as orchestrator). The GPT-5.6 rows outlive their routes on purpose: `gpt-daybreak-blue-latest`
 aliases `gpt-5.6-sol`, and the checked-in benchmark measured terra and luna, so
 dropping them would make committed evidence unpriceable. Otherwise a
 retired generation is a stale row waiting to misprice something. An alias row's Source

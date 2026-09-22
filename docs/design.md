@@ -255,7 +255,7 @@ doc, or a measured comparison - collected via a multi-source research sweep on
 ## Why the alternate workers are Claude Sonnet 5 and Opus 5.5
 
 - Three workers earn their place: Codex (default, sandboxed, subscription-billed), a
-  Claude Sonnet 5 fallback, and a Claude Opus 5.5 premium worker on the user's own
+  Claude Sonnet 5 fallback, and a headless Claude Opus 5.5 worker on the user's own
   Anthropic plan - no extra key, no provider config, keyless like the rest of the
   two-subscription setup.
 - **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
@@ -263,11 +263,12 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   default config dir with zero setup. The honest caveat is that it has no OS sandbox
   underneath (unlike Codex's `workspace-write`), so it is for trusted repos or a
   branch/worktree only.
-- **Opus 5.5 is the premium Claude worker**: it runs through the same keyless route
-  and is the vendor's recommended starting model for long-running agentic coding, with
-  Fable named as the escalation for work where Opus 5.5 at higher effort still falls
-  short, at a $4/$20 per-MTok API list price ($12 50/50 blend) - under the $5/$25 of
-  the Opus 5 it replaces.
+- **The Opus route runs the head chef's own model, headless**: `--with opus` sends the
+  ticket to the same Opus 5.5 that orchestrates, in a separate process with its own
+  context, through the same keyless route, at a $4/$20 per-MTok API list price ($12
+  50/50 blend) - under the $5/$25 of the Opus 5 it replaces. It is deliberately not sold
+  as a capability step up: the vendor's escalation above Opus 5.5 is Fable, for which
+  expo exposes no worker route.
   [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
   [Pricing](https://platform.claude.com/docs/en/about-claude/pricing) It drains the
   shared Anthropic quota faster than Sonnet, so Sonnet remains the cheap fallback
@@ -324,11 +325,13 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   change nobody was told about. mise's smoke test is the deliberate exception: it pins
   effort only, so its banner reports what an unpinned run would actually use.
 - Astra is available only through explicit `--tier astra`; task shape never selects it.
-  Its 50/50 input/output blend matches the Fable 5.1 orchestrator, while the independent
-  Artificial Analysis Coding Agent Index calls Fable 5, Fable 5.1, and Astra an
-  effectively three-way tie (68.1, 67.2, and 67.0). Auto-selecting Astra would therefore
-  delegate at the orchestrator's own price without measured capability gain - the cost
-  inversion the delegation floor avoids. [Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra)
+  Its $30 50/50 blend is 2.5x the Opus 5.5 orchestrator's $12, so auto-selecting Astra
+  would pay a per-token premium to delegate work the chef could do itself - a sharper
+  form of the cost inversion the delegation floor avoids. Under the previous Fable
+  orchestrator the two blends merely matched, and the argument rested on the independent
+  Artificial Analysis Coding Agent Index calling Fable 5, Fable 5.1 and Astra an
+  effectively three-way tie (68.1, 67.2, and 67.0); no index figure for Opus 5.5 was
+  published as of 2026-09-22, so the price gap now carries the argument alone. [Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra)
   [Independent index and benchmark labels](https://www.vellum.ai/blog/gpt-6-astra-benchmarks-explained)
 - The exception is task shape the heuristic cannot safely infer: long, messy, multi-step
   work requiring error recovery. There Astra's OpenAI-published Terminal-Bench 4.0 score
@@ -355,7 +358,8 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   another session is active. Unset id, no transcript, or an empty window → drop the
   line, never guess.
 - This makes the run's cost fully measured on both sides - a real API-list dollar split
-  (worker tokens x worker blend vs orchestration tokens x Fable blend) - rather than a
+  (worker tokens x worker blend vs orchestration tokens x Fable blend, Fable being the
+  conservative reference rather than the Opus 5.5 chef's own cheaper rate) - rather than a
   worker figure next to a cited counterfactual. The vs-Claude-only "10-20x" claim stays
   a citation, because that counterfactual genuinely isn't run per-fire.
 
