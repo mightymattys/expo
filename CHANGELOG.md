@@ -5,6 +5,32 @@ expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas C
 
 ## Unreleased
 
+- **Fire's tier table moved to GPT-6 and lost terra.** `gpt-6-sol` lists at $2/$10
+  against `gpt-5.6-sol`'s $4/$20, and undercuts `gpt-5.6-terra`'s $2/$12 on output too;
+  `gpt-6-luna` lists at $0.10/$0.50 against $0.20/$1.20. A middle tier cheaper than
+  neither neighbour has no shape left to own, so terra retired and sol absorbed the
+  daily-driver role. taste's pin follows to `gpt-6-sol`; the 272,000 context pin is
+  unchanged, because the gpt-6-sol page states the same threshold verbatim. The
+  GPT-5.6 price rows stay: `gpt-daybreak-blue-latest` aliases `gpt-5.6-sol`, and the
+  checked-in benchmark measured terra and luna, so dropping them would make committed
+  evidence unpriceable. The tier-vocabulary invariant now also fails when a retired
+  name reappears, proved in both directions by mutation. Stated plainly because the
+  repo's bar is sources, not vendor copy: the prices are verified, but the capability
+  ordering behind the shape column is OpenAI's own positioning - no independent
+  benchmark covering the GPT-6 worker tiers was found on 2026-09-22, where the old
+  table could cite the Coding Agent Index. `docs/expo-flow.png` still depicts the
+  retired tier names and Opus 5, and needs regenerating.
+- **The premium Claude worker is Claude Opus 5.5.** Opus 5.5 (`claude-opus-5-5`) shipped
+  at $4/$20 per MTok against the $5/$25 of the Opus 5 it replaces, and the vendor now
+  names it the starting model for long-running agentic coding, with Fable reserved for
+  work where Opus 5.5 at higher effort still falls short. `--with opus` routes there;
+  every price row was re-verified against both vendors' pages the same day and none had
+  drifted. The Opus 5 row stays in the table because it still orchestrates and appears
+  as `orchestrator` on existing ledger rows - removing it would have made the checked-in
+  benchmark unpriceable. The SWE-bench Pro comparison that justified Opus 5 is gone
+  rather than transferred: it measured Opus 5, and no equivalent independent figure for
+  Opus 5.5 was found.
+
 - **`check.sh` validates link fragments against target headings.** The relative-link
   sweep proved only that the file existed; `docs/design.md` briefly shipped
   `../CHANGELOG.md#0170`, an anchor no heading slugs to, and the check passed. A new

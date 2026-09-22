@@ -252,10 +252,10 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   the user explicitly ordered, under a hard run budget - what this project rejects is
   review firing on every stop, unbounded, not review inside an ordered pipeline.)
 
-## Why the alternate workers are Claude Sonnet 5 and Opus 5
+## Why the alternate workers are Claude Sonnet 5 and Opus 5.5
 
 - Three workers earn their place: Codex (default, sandboxed, subscription-billed), a
-  Claude Sonnet 5 fallback, and a Claude Opus 5 premium worker on the user's own
+  Claude Sonnet 5 fallback, and a Claude Opus 5.5 premium worker on the user's own
   Anthropic plan - no extra key, no provider config, keyless like the rest of the
   two-subscription setup.
 - **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
@@ -263,18 +263,33 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   default config dir with zero setup. The honest caveat is that it has no OS sandbox
   underneath (unlike Codex's `workspace-write`), so it is for trusted repos or a
   branch/worktree only.
-- **Opus 5 is the premium Claude worker**: it runs through the same keyless route and
-  is near Fable on coding benchmarks - SWE-bench Pro 79.2 versus Fable's 80.0 - at a
-  $5/$25 per-MTok API list price ($15 50/50 blend).
-  [Benchmark](https://codersera.com/blog/claude-opus-5-vs-fable-5-2026/)
+- **Opus 5.5 is the premium Claude worker**: it runs through the same keyless route
+  and is the vendor's recommended starting model for long-running agentic coding, with
+  Fable named as the escalation for work where Opus 5.5 at higher effort still falls
+  short, at a $4/$20 per-MTok API list price ($12 50/50 blend) - under the $5/$25 of
+  the Opus 5 it replaces.
+  [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
   [Pricing](https://platform.claude.com/docs/en/about-claude/pricing) It drains the
   shared Anthropic quota faster than Sonnet, so Sonnet remains the cheap fallback
   when quota conservation matters.
 
-## Why fire picks a GPT-5.6 tier by task shape
+## Why fire picks a GPT-6 tier by task shape
 
-- GPT-5.6 ships three tiers (sol/terra/luna); their current blends live in
-  [`prices.md`](../skills/receipts/references/prices.md). The head chef already
+- GPT-6 ships three tiers (astra/sol/luna); their current blends live in
+  [`prices.md`](../skills/receipts/references/prices.md). Two are shape-selected -
+  astra stays override-only. The table moved off GPT-5.6 on 2026-09-22 because the
+  GPT-6 tiers price-dominate it outright: `gpt-6-sol` lists at $2/$10 against
+  `gpt-5.6-sol`'s $4/$20, and undercuts even `gpt-5.6-terra`'s $2/$12 on output, which
+  is what retired terra - a middle tier cheaper than neither neighbour has no shape to
+  own. `gpt-6-luna` lists at $0.10/$0.50 against `gpt-5.6-luna`'s $0.20/$1.20.
+  [Pricing](https://developers.openai.com/api/docs/pricing)
+  [gpt-6-sol](https://developers.openai.com/api/docs/models/gpt-6-sol) The honest limit
+  of this evidence: the prices are vendor-published and verified, but the capability
+  ordering behind the shape column is OpenAI's own positioning ("built to power complex
+  coding and agentic workflows"), not an independent benchmark - none covering the
+  GPT-6 worker tiers was found on 2026-09-22, where the retired GPT-5.6 table could
+  cite the Coding Agent Index. Treat the shape column as provisional until `bench/`
+  measures it. The head chef already
   classifies every task by shape to decide *whether* to delegate; the same
   classification picks the tier, so tier selection is free judgment already being
   spent - a mechanical rename doesn't need sol's ceiling, an architectural change

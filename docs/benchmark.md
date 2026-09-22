@@ -86,7 +86,7 @@ The JSON above is illustrative sample data, not a measurement or benchmark resul
 Append real, independently run arms to your own ledger, for example:
 
 ```sh
-printf '%s\n' '{"task":"my-task","arm":"delegated","model":"gpt-5.6-terra","orchestrator":"claude-opus-5","worker_tokens":123,"claude_tokens":45,"verified":true,"wallclock_s":60}' >> bench.jsonl
+printf '%s\n' '{"task":"my-task","arm":"delegated","model":"gpt-6-sol","orchestrator":"claude-opus-5","worker_tokens":123,"claude_tokens":45,"verified":true,"wallclock_s":60}' >> bench.jsonl
 ```
 
 ## Reading the report honestly

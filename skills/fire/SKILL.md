@@ -62,7 +62,7 @@ rest as the task description. Workers:
 |---|---|---|
 | *(absent)* / `codex` | Codex CLI, model tier picked per task (next section) | the default invocation below |
 | `sonnet` | Claude Sonnet 5, user's own subscription | `references/worker-routes.md` |
-| `opus` | Claude Opus 5, user's own subscription | `references/worker-routes.md` |
+| `opus` | Claude Opus 5.5, user's own subscription | `references/worker-routes.md` |
 
 Loose phrases ("fire with sonnet" or "fire with opus") mean the same thing - `--with`
 is just the unambiguous spelling, immune to task text that happens to mention a model
@@ -74,7 +74,7 @@ to the Codex route only - the Claude subscription route's preflight is just
 
 ## Choosing the model tier (Codex route)
 
-The Codex route's GPT-5.6 tiers are chosen by task shape. You already classify every
+The Codex route's GPT-6 tiers are chosen by task shape. You already classify every
 task by shape to decide *whether* to fire - the same classification picks the tier,
 for free. Astra is an explicit, override-only tier: it costs the same blend as the
 orchestrator model and is effectively tied with it on the independent Coding Agent
@@ -85,12 +85,11 @@ ticket, never whether to delegate.
 
 | `--tier` | Model | Effort | Task shape |
 |---|---|---|---|
-| `sol` | `gpt-5.6-sol` | high (`max` only for the very hardest) | architectural or multi-file complex features, parser-class work, security-sensitive changes |
-| `terra` | `gpt-5.6-terra` | high | the daily driver - standard spec-able features, bugfixes, test writing; the default when unsure |
-| `luna` | `gpt-5.6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
+| `sol` | `gpt-6-sol` | high (`max` only for the very hardest) | the daily driver - standard spec-able features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes; the default when unsure |
+| `luna` | `gpt-6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
 | `astra` | `gpt-6-astra` | high | override-only, never chosen by task shape: long, messy, multi-step work with error recovery, where Terminal-Bench 4.0 puts it far above sol |
 
-Override: `--tier sol|terra|luna|astra` in the arguments (strip it like `--with`); an
+Override: `--tier sol|luna|astra` in the arguments (strip it like `--with`); an
 explicit tier wins over the shape heuristic. Never enable an `ultra` reasoning level
 on a delegated background run when the chosen model offers it - it multiplies token
 spend by design, with nobody watching.
@@ -118,9 +117,9 @@ Notes on the invocation:
 - `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN` pins the run to the user's `codex login` (ChatGPT subscription) auth - those two are the only env vars that override it in `codex exec`, and if either is set the run silently bills per-token instead. (`OPENAI_API_KEY` is NOT read for auth by current Codex, and unsetting it would break custom providers that use it as their `env_key`.)
 - Prompt goes via stdin (`- <`) to avoid shell-quoting damage to the ticket.
 
-**Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-5.6-terra`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
+**Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-6-sol`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
-To route the ticket to Claude Sonnet 5 or Opus 5 on the user's own subscription (no
+To route the ticket to Claude Sonnet 5 or Opus 5.5 on the user's own subscription (no
 extra key), see [references/worker-routes.md](references/worker-routes.md) - same
 ticket, different worker invocation.
 

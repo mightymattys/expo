@@ -1,6 +1,6 @@
 # expo benchmark report
 
-Price table as of: 2026-09-14.
+Price table as of: 2026-09-22.
 
 Pricing is in API-list terms, using the 50/50 blend in `skills/receipts/references/prices.md`.
 

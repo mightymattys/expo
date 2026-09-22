@@ -26,7 +26,7 @@ budget: 5
 runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
 worker: <codex | sonnet | opus>
-tier: <sol | terra | luna | astra, Codex route only>
+tier: <sol | luna | astra, Codex route only>
 security: <yes | no>
 baseline: <abs path to stage 1's pre-fire.patch>
 findings: <abs path to taste's findings.md>
@@ -51,9 +51,9 @@ taste stays on Codex read-only when available, which makes the review cross-mode
 when the worker is not Codex. Record the selected worker in `state.md` (for example,
 `worker: opus`).
 
-On the Codex route, fire also picks a GPT-5.6 tier by task shape (see fire's tier
-table), or honors an explicit `--tier sol|terra|luna|astra`. Record it in `state.md`
-(`tier: terra`) so the refire stage fires on the same tier; taste stays on `sol`
+On the Codex route, fire also picks a GPT-6 tier by task shape (see fire's tier
+table), or honors an explicit `--tier sol|luna|astra`. Record it in `state.md`
+(`tier: sol`) so the refire stage fires on the same tier; taste stays on `sol`
 (reviewer strength beats reviewer cost).
 
 Whenever implementer and reviewer share a lineage, say so in the final report.

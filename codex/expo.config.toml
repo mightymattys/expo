@@ -9,7 +9,7 @@
 # whatever ~/.codex/config.toml says, and that inherits the vendor default when unset.
 # Codex 0.154 made gpt-6-astra its bundled default, so "unset" now means the most
 # expensive model. Fire pins the tier per task via -c flags; set an explicit default
-# here too (recommended: model = "gpt-5.6-sol", model_reasoning_effort = "high").
+# here too (recommended: model = "gpt-6-sol", model_reasoning_effort = "high").
 # Per-repo pins belong in a trusted project's .codex/config.toml.
 
 # Keep every delegated request inside the short-context price band. 272,000 is the

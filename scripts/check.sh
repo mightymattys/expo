@@ -185,10 +185,16 @@ else
 fi
 
 # The tier names are one vocabulary, spelled identically wherever tiers are chosen.
-for t in sol terra luna astra; do
+# terra retired with the 2026-09-22 GPT-6 migration: gpt-6-sol undercut gpt-5.6-terra
+# on both axes, so the middle tier had no shape left to own. A retired name must also
+# stay gone - a stale `--tier terra` would pin a model the table no longer routes to.
+for t in sol luna astra; do
   for f in skills/fire/SKILL.md skills/refire/SKILL.md; do
     grep -q "$t" "$f" || err "$f must name tier '$t' - fire's tier table and refire's override share one vocabulary"
   done
+done
+for f in skills/fire/SKILL.md skills/refire/SKILL.md skills/serve/SKILL.md skills/simmer/SKILL.md; do
+  grep -q 'terra' "$f" && err "$f still names the retired tier 'terra' - it routes to no model since the GPT-6 migration"
 done
 
 # A family-prefix template turns a new model family into a plausible but nonexistent slug.
@@ -358,7 +364,7 @@ for s in fire taste refire; do
 done
 
 # taste's reviewer pin is real, not a hope about the user's config.
-must_contain skills/taste/SKILL.md '-c model=gpt-5.6-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
+must_contain skills/taste/SKILL.md '-c model=gpt-6-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
 must_contain skills/taste/SKILL.md '--security' "taste must expose the focused security lens"
 must_contain skills/taste/references/review-prompt.md '## Security prompt' "taste's security lens needs its own reviewer prompt"
 must_contain skills/taste/SKILL.md 'reviewed, not audited' "security findings and the user report must state the review limit"

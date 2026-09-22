@@ -32,8 +32,8 @@ Two ways the worker is set:
   tier (taste stays Codex/sol). No `worker:` line means the default Codex route.
 - **Standalone `/expo:refire --with <worker>` / `--tier <tier>`:** strip both flags
   from the args first, same convention as fire (`sonnet`/`opus` = the Claude
-  subscription route; `sol`/`terra`/`luna`/`astra` = the Codex tier). Absent means the
-  default Codex route - pin `terra` rather than falling through to the user's config
+  subscription route; `sol`/`luna`/`astra` = the Codex tier). Absent means the
+  default Codex route - pin `sol` rather than falling through to the user's config
   default, which the vendor now points at `gpt-6-astra`.
 
 The findings handoff, the tree anchor, and plating are worker-agnostic: they read the
