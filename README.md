@@ -13,11 +13,11 @@
 ![MIT](https://img.shields.io/badge/license-MIT-blue)
 ![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-d97757)
 ![Codex CLI ≥ 0.134](https://img.shields.io/badge/Codex_CLI-%E2%89%A50.134-black)
-![Workers: GPT-6, Sonnet 5, Opus 5.5](https://img.shields.io/badge/workers-GPT--6_·_Sonnet_5_·_Opus_5.5-4a9eff)
+![Worker: GPT-6](https://img.shields.io/badge/worker-GPT--6-4a9eff)
 
 <br>
 
-![expo flow: you hand the order to Claude, the head chef (Opus 5.5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-6 sol/luna, Sonnet 5, or Opus 5.5) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
+![expo flow: you hand the order to Claude, the head chef (Opus 5.5), who plans, writes the ticket, reviews every line, and re-runs the checks; the worker (GPT-6) implements in a sandbox with no say over what ships; a cross-review pinned to sol checks the diff; the run ends verified and served, with a measured cost receipt.](docs/expo-flow.png)
 
 <sub>expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr (MIT) - the expediter who calls the orders and checks every plate at the pass. Same two-model kitchen; this line is actively developed here.</sub>
 

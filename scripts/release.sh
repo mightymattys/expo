@@ -206,7 +206,7 @@ PY
     err "git add failed"
     exit 1
   fi
-  if ! git commit -m "$message"$'\n\nCo-Authored-By: Claude Fable 5 <noreply@anthropic.com>'; then
+  if ! git commit -m "$message"$'\n\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>'; then
     err "git commit failed"
     exit 1
   fi
