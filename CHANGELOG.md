@@ -3,7 +3,13 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.18.0 - 2026-09-23 - the chef changes, the floor does not
+
+- **The flow diagram names one worker: GPT-6.** The box had been carrying the whole
+  roster (`GPT-6 sol/luna, Sonnet 5, or Opus 5.5`), which is the tier table's job, not a
+  diagram's. The README's worker badge collapsed the same way. The Claude subscription
+  routes are unchanged and still documented in the body and in worker-routes.md - they
+  simply stopped being advertised in a picture whose point is the handoff, not the menu.
 
 - **The head chef is Claude Opus 5.5.** The docs had said Fable 5 orchestrates while
   every one of the eight measured benchmark rows recorded `orchestrator:
