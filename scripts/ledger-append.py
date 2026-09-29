@@ -17,6 +17,12 @@ TASTE_OUTCOME_RE = re.compile(
     r"^taste: verdict=(ship|fix-first) confirmed=([0-9]{1,7}) "
     r"refuted=([0-9]{1,7}) diff_lines=([0-9]{1,7})$"
 )
+# Syntax only, never routing policy: `tier: sol shape=mechanical override=no` is recorded
+# as declared, because that mismatch is the misroute this field exists to count (#11).
+# Rejecting it would make a misroute indistinguishable from a missing tier record.
+TIER_RE = re.compile(
+    r"^tier: (sol|luna|astra) shape=(mechanical|standard|complex) override=(yes|no)$"
+)
 SKILLS = ("fire", "taste", "refire", "simmer")
 APPENDED = "appended"
 PER_DIR_ERROR = "per-dir-error"
@@ -161,6 +167,26 @@ def taste_outcome(job):
     }, None
 
 
+def tier_record(job):
+    tier_file = os.path.join(job, "tier")
+    if not os.path.isfile(tier_file):
+        return None, "tier file missing"
+    try:
+        with open(tier_file, encoding="utf-8") as source:
+            first_line = source.readline(256)
+    except Exception as error:
+        return None, f"cannot read tier file: {error}"
+    match = TIER_RE.fullmatch(first_line.removesuffix("\n"))
+    if not match:
+        return None, "first line does not match the tier format"
+    tier, shape, override = match.groups()
+    return {
+        "tier": tier,
+        "shape": shape,
+        "override": override == "yes",
+    }, None
+
+
 def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
                window_error=None):
     log = os.path.join(job, "job.log")
@@ -194,6 +220,11 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     orchestration, unmeasured = claude_tokens(job, session, until, window_error)
     if orchestration is not None:
         line["claude_tokens"] = orchestration
+    tier_error = None
+    if skill == "fire":
+        tier, tier_error = tier_record(job)
+        if tier is not None:
+            line.update(tier)
     outcome = None
     outcome_error = None
     if skill == "taste":
@@ -217,6 +248,8 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
         return FATAL
     if outcome_error:
         print(f"ledger-append: taste outcome not recorded: {outcome_error}", file=sys.stderr)
+    if tier_error:
+        print(f"ledger-append: tier not recorded: {tier_error}", file=sys.stderr)
 
     marker = os.path.join(job, ".ledgered")
     # The ledger append is already durable here. If this marker write fails, a retry

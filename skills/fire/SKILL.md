@@ -82,6 +82,10 @@ could do itself, and task shape must never select it. This applies to the Codex 
 Claude subscription route has no tiers.
 The table presupposes the fire-vs-cook gate already passed: it decides who gets the
 ticket, never whether to delegate.
+First ask: is this mechanical work above the delegation floor - renames, boilerplate,
+docs, formatting sweeps, or bulk edits? If yes, choose luna. If no, choose sol,
+whether the remaining work is standard or complex. Consider an explicit override
+only after this shape choice; astra remains override-only.
 
 | `--tier` | Model | Effort | Task shape |
 |---|---|---|---|
@@ -93,6 +97,10 @@ Override: `--tier sol|luna|astra` in the arguments (strip it like `--with`); an
 explicit tier wins over the shape heuristic. Never enable an `ultra` reasoning level
 on a delegated background run when the chosen model offers it - it multiplies token
 spend by design, with nobody watching.
+After choosing and before firing, write `$JOB/tier`. Its first line must be exactly
+`tier: <sol|luna|astra> shape=<mechanical|standard|complex> override=<yes|no>`.
+Record the task's shape even when an explicit `--tier` overrides the chosen tier;
+set `override=yes` only for an explicit override.
 The chosen tier and effort ride the invocation as `-c` flags (CLI beats the profile
 and `~/.codex/config.toml`). Always pin them. Dropping the pin does not mean "some
 sensible default" - it inherits whatever the vendor currently defaults to, and that
