@@ -1,6 +1,6 @@
 ---
 name: fire
-description: Delegates well-specified implementation tasks to Codex CLI in the background, choosing a model tier by task shape (--tier overrides; --with sonnet or opus routes to a Claude worker instead). Use for substantial spec-able work - features, refactors, migrations, or boilerplate; not small fixes or ambiguous design; never fire silently.
+description: Delegates well-specified implementation tasks to Codex CLI in the background, choosing a model tier by task shape (--tier overrides). Use for substantial spec-able work - features, refactors, migrations, or boilerplate; not small fixes or ambiguous design; never fire silently.
 ---
 
 # Fire - hand the ticket to the expo
@@ -53,33 +53,13 @@ Write the ticket to `$JOB/ticket.md` using the template in [references/ticket-te
 
 Repo-level standards (build commands, conventions, do-not-touch areas) belong in the repo's `AGENTS.md`, which Codex reads automatically on every run - don't duplicate them on the ticket. Run `/expo:mise` once per repo to set that up.
 
-## Choosing the worker - `--with`
+## Choosing the model tier
 
-The arguments may begin with `--with <worker>`; strip it before treating the
-rest as the task description. Workers:
-
-| `--with` | Worker | Route |
-|---|---|---|
-| *(absent)* / `codex` | Codex CLI, model tier picked per task (next section) | the default invocation below |
-| `sonnet` | Claude Sonnet 5.5, user's own subscription | `references/worker-routes.md` |
-| `opus` | Claude Opus 5.5, user's own subscription | `references/worker-routes.md` |
-
-Loose phrases ("fire with sonnet" or "fire with opus") mean the same thing - `--with`
-is just the unambiguous spelling, immune to task text that happens to mention a model
-name. The ticket, job dir, and plating are identical for every worker; only the
-invocation changes. Preflight differs per worker: step 2's Codex-profile stop applies
-to the Codex route only - the Claude subscription route's preflight is just
-`command -v claude` AND a proof it can actually run non-interactively - see
-`references/worker-routes.md`, which names the check and the `claude setup-token` remedy.
-
-## Choosing the model tier (Codex route)
-
-The Codex route's GPT-6 tiers are chosen by task shape. You already classify every
+The GPT-6 tiers are chosen by task shape. You already classify every
 task by shape to decide *whether* to fire - the same classification picks the tier,
 for free. Astra is an explicit, override-only tier: its $30 blend is 2.5x the Opus 5.5
 orchestrator's $12, so delegating there pays a premium per token over work the chef
-could do itself, and task shape must never select it. This applies to the Codex route only; the
-Claude subscription route has no tiers.
+could do itself, and task shape must never select it.
 The table presupposes the fire-vs-cook gate already passed: it decides who gets the
 ticket, never whether to delegate.
 First ask: is this mechanical work above the delegation floor - renames, boilerplate,
@@ -93,7 +73,7 @@ only after this shape choice; astra remains override-only.
 | `luna` | `gpt-6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
 | `astra` | `gpt-6-astra` | high | override-only, never chosen by task shape: long, messy, multi-step work with error recovery, where Terminal-Bench 4.0 puts it far above sol |
 
-Override: `--tier sol|luna|astra` in the arguments (strip it like `--with`); an
+Override: `--tier sol|luna|astra` in the arguments (strip it from the task text); an
 explicit tier wins over the shape heuristic. Never enable an `ultra` reasoning level
 on a delegated background run when the chosen model offers it - it multiplies token
 spend by design, with nobody watching.
@@ -127,10 +107,6 @@ Notes on the invocation:
 
 **Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-6-sol`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
-To route the ticket to Claude Sonnet 5.5 or Opus 5.5 on the user's own subscription (no
-extra key), see [references/worker-routes.md](references/worker-routes.md) - same
-ticket, different worker invocation.
-
 ## While it cooks
 
 Do NOT poll - polling loops against a running Codex job are the documented way to incinerate quota while producing nothing. Work on something else or end your turn; the backgrounded job re-invokes you when it exits. If you must watch for a condition, arm a single Monitor with an until-loop on `$JOB/job.log` matching terminal states (completion AND error signatures like `ERROR:`, `stream disconnected`), not a poll loop.
@@ -141,7 +117,7 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
 
 ## Plating - when the job exits
 
-1. **Check the outcome before trusting the plate.** If the job exited non-zero, or `$JOB/result.md` is missing or empty, the run failed - read the tail of `$JOB/job.log`, show the user the error verbatim, and offer one rerun or taking over yourself. Two errors worth naming for the user: "You've hit your usage limit" means wait for the plan's 5-hour window to reset (or escalate plans) - or offer to continue now with `--with sonnet`; a persistent `401` means their `codex login` needs redoing. Never present a missing result as a clean outcome. (MCP transport errors near the top of the log are usually harmless noise from the user's Codex-side MCP servers - the real signal is the last lines.)
+1. **Check the outcome before trusting the plate.** If the job exited non-zero, or `$JOB/result.md` is missing or empty, the run failed - read the tail of `$JOB/job.log`, show the user the error verbatim, and offer one rerun or taking over yourself. Two errors worth naming for the user: "You've hit your usage limit" means wait for the plan's 5-hour window to reset (or escalate plans), or take the work over yourself; a persistent `401` means their `codex login` needs redoing. Never present a missing result as a clean outcome. (MCP transport errors near the top of the log are usually harmless noise from the user's Codex-side MCP servers - the real signal is the last lines.)
 2. Glance at the log's opening banner: its `sandbox:` line is ground truth for what actually ran. If it isn't `workspace-write`, say so.
 3. Read `$JOB/result.md`, then compare the post-baseline changed file set (`git status`/`git diff` minus `$JOB/pre-fire.*`) to the ticket's `<files>` Touch list. Outside-list paths are unresolved until classified: paths confirmed as another session's concurrent edits must be named with the warning `concurrent edit detected - these changes are NOT part of this run's review` and excluded from the worker-attributed delta, while paths that are the worker's own out-of-scope changes must be reverted or explicitly flagged to the user before the run can be accepted. This is a path-level check: it cannot catch a concurrent session editing a file that *is* on the Touch list - those edits merge into the same file's diff and only the line-by-line read in step 4 will separate them, so treat a Touch-listed file that changed more than the ticket asked as suspect too. Then review Codex's actual delta against `$JOB/pre-fire.patch` - don't attribute the user's own WIP to Codex.
 4. Before reading the diff line by line, save the delta isolated against `$JOB/pre-fire.patch` as `$JOB/post-fire.patch`, then run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/diffscan.py" "$JOB/post-fire.patch"` and read its output first. Then review the diff carefully, line by line. Codex is a competent implementer that makes wrong assumptions without checking - that is exactly the failure mode you're here to catch.
@@ -149,8 +125,8 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
 6. Then either:
    - Accept - summarize what shipped and what you verified, plus the token usage
      from the log's closing summary when the log carries one (the `tokens used`
-     block near the end of job.log; Claude-worker routes emit none - say token
-     usage is unavailable) - quota spend is otherwise invisible to the user. Then add the job
+     block near the end of job.log when present) - quota spend is otherwise
+     invisible to the user. Then add the job
      to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`. The ledger is
      the running tab; its worker and orchestration counts are measured from this job's
      log and `$JOB/started`, and a run whose tokens cannot be read leaves no line. This

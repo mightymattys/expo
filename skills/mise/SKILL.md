@@ -94,15 +94,7 @@ nature: the skills still run, they just run the old text, and the first visible 
 is usually a receipt that cannot price a model the run just used. Offer
 `claude plugin update expo@expo`, which either updates or confirms the copy is current.
 
-## 5. Alternate worker (optional)
-
-**Claude subscription route (no setup):** nothing to install - `claude -p --model
-claude-sonnet-5-5` (or `claude-opus-5-5` for the premium worker) on the user's own
-subscription is always available as a fallback worker (see fire's
-`references/worker-routes.md`). Mention it only if the user asks, or when Codex
-auth/quota is the reason mise was re-run.
-
-## 6. Routing policy (pick a mode, once per machine)
+## 5. Routing policy (pick a mode, once per machine)
 
 Detection first: if `~/.claude/CLAUDE.md` exists, grep it for
 `Division of labor (expo`. A heading with `manual routing` is manual, a heading
@@ -141,7 +133,7 @@ If their `CLAUDE.md` already mandates a pre-commit review or commit gate, point 
 that simmer makes per-lap checkpoint commits and taste is a second review layer - let
 them decide how the pieces stack before they collide mid-loop.
 
-## 7. Smoke test
+## 6. Smoke test
 
 ```bash
 SMOKE="$SCRATCHPAD/mise-smoke.log"  # $SCRATCHPAD = your session scratchpad directory - substitute its absolute path

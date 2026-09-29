@@ -21,35 +21,26 @@ actually gone.
   confirmed yourself.
 - No findings available? Say so and stop. Refire without a review is just a fire.
 
-## Choosing the worker
+## Choosing the tier
 
-Refire runs on the same worker as the fire it corrects - see fire's `--with` table.
-Two ways the worker is set:
+Refire runs on Codex. Two ways its tier is set:
 
-- **Inside a serve:** the worker is already chosen; serve records it on state.md's
-  `worker:` line (and the Codex tier on the `tier:` line). Read them, don't re-parse
-  the task text - serve's contract is that fire and refire run on the same worker and
-  tier (taste stays Codex/sol). No `worker:` line means the default Codex route.
-- **Standalone `/expo:refire --with <worker>` / `--tier <tier>`:** strip both flags
-  from the args first, same convention as fire (`sonnet`/`opus` = the Claude
-  subscription route; `sol`/`luna`/`astra` = the Codex tier). Absent means the
-  default Codex route - pin `sol` rather than falling through to the user's config
-  default, which the vendor now points at `gpt-6-astra`.
+- **Inside a serve:** read state.md's `tier:` line; refire uses the tier fire
+  recorded there. Taste stays on Codex/sol.
+- **Standalone `/expo:refire --tier <tier>`:** strip the flag from the task text
+  and pin `sol`, `luna`, or `astra` as requested. Absent an override, pin `sol`
+  rather than falling through to the user's config default, which the vendor now
+  points at `gpt-6-astra`.
 
-The findings handoff, the tree anchor, and plating are worker-agnostic: they read the
-working tree via git, blind to which worker produced the fix.
+The findings handoff, the tree anchor, and plating read the working tree via git.
 
 ## Preflight
 
 Same as fire, and for the same reasons:
 
 1. Git repo with at least one commit (`git rev-parse HEAD`).
-2. Worker preflight, per the chosen route: default/`codex` needs
-   `test -f ~/.codex/expo.config.toml` (missing means stop and offer `/expo:mise` -
-   Codex silently ignores a missing profile); the Claude subscription route
-   (`sonnet`/`opus`) needs the Claude-route preflight in `references/worker-routes.md` -
-   `command -v claude` alone passes while the route cannot run.
-   The Codex-profile stop applies to the Codex route only.
+2. Codex profile: `test -f ~/.codex/expo.config.toml` (missing means stop and
+   offer `/expo:mise` - Codex silently ignores a missing profile).
 3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-<label>-XXXXXX")`; a
    short descriptive label is welcome. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`
    (`$SCRATCHPAD` is your session scratchpad directory; substitute its absolute path).
@@ -86,11 +77,9 @@ Write `$JOB/ticket.md` with the fire template's XML blocks, specialized:
 ## Firing and plating
 
 Identical to fire, backgrounding rule included: a backgrounded run from the repo root
-using the chosen worker's invocation - the default `codex exec --profile expo` for
-the Codex route, or the Claude subscription invocation from
-`references/worker-routes.md` when `--with sonnet` or `--with opus` (or serve's
-recorded `worker:`) selected it. No `&`, `nohup`, or `disown` inside the command.
-Announce it in one line (what, which worker, expected minutes, log path, cancel
+using fire's `codex exec --profile expo` invocation with the chosen tier pinned.
+No `&`, `nohup`, or `disown` inside the command.
+Announce it in one line (what, which tier, expected minutes, log path, cancel
 offer), no polling.
 
 At plating, in addition to fire's outcome checks (exit code, result file present,
@@ -106,8 +95,7 @@ sandbox banner):
    out-of-scope changes.
 4. For risky diffs, offer a confirmation `/expo:taste`; two clean models in a row
    is the strongest ship signal this kitchen produces.
-5. Add the measured run to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`; a Claude worker emits no token summary,
-   so the script leaves no line, same as on a fire.
+5. Add the measured run to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`.
 
 Report resolved security findings separately from other resolved findings, and retain
 the limit: security findings were reviewed, not audited.

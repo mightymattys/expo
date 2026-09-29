@@ -27,7 +27,7 @@
 
 A Claude Code plugin that splits coding between two frontier models the way a
 kitchen splits work. **Opus 5.5 plans, writes the ticket, reviews every diff line by
-line, and re-runs the checks itself. Codex (or a Claude worker) does the implementation,
+line, and re-runs the checks itself. Codex does the implementation,
 with no say over what ships.**
 
 The split is economic: the model that costs more per token spends those tokens on
@@ -97,14 +97,6 @@ reviewer strength beats reviewer cost. An `ultra` reasoning level stays off for
 delegated background runs wherever the chosen model offers one: it multiplies token
 spend by design, with nobody watching.
 
-Two Claude workers need no extra key: `fire --with sonnet` sends the ticket to cheap
-Claude Sonnet 5.5 headless on your own Anthropic subscription; `fire --with opus`
-sends it to the head chef's own Opus 5.5, running headless in its own context - a
-second pair of keyless hands, not a step up in capability. Sonnet is the fallback when
-Codex hits its usage limit mid-serve; Opus spends the shared Claude quota faster. *Preflight is verified;
-a full ticket has not yet been run end to end through either route
-([#8](https://github.com/mightymattys/expo/issues/8)).*
-
 ## 🧾 Receipts - every number measured, nothing guessed
 
 - **Ledger** (`~/.expo/ledger.jsonl`): every Codex-route run appends one line -
@@ -125,9 +117,7 @@ for small surgical fixes - hard-blocking Edit/Write provably makes agents route
 around the block. Choose manual or autonomous routing in `/mise`.
 
 **The boundary that IS hard:** delegated Codex runs execute in a
-`workspace-write` sandbox with approvals off, and reviews run `read-only`. (The
-optional Claude Sonnet and Opus worker routes have no OS sandbox underneath - trusted
-repos or a branch/worktree only.)
+`workspace-write` sandbox with approvals off, and reviews run `read-only`.
 
 **One source of truth for standards.** Repo conventions live in `AGENTS.md`,
 which the worker re-reads on every run. Claude reads the same file via an
@@ -285,7 +275,7 @@ is dogfooded on macOS.
 ```text
 skills/serve/         the autonomous pipeline: fire, taste, refire, verify, report
 skills/simmer/        the loop: the worker cooks, Claude judges, until the goal passes
-skills/fire/          delegation skill + ticket template + Claude worker routes
+skills/fire/          delegation skill + ticket template
 skills/taste/         cross-review skill + review prompt template
 skills/refire/        fix skill: confirmed findings become a scoped fix run
 skills/mise/          setup skill

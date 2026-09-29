@@ -6,19 +6,14 @@ description: Runs a goal loop - Codex implements fresh laps while Claude verifie
 # Simmer - reduce until done
 
 A loop is: check state → decide → act → **verify** → repeat, with a stop condition and
-a budget. In this kitchen, the selected worker implements inside the loop and you are
+a budget. In this kitchen, Codex implements inside the loop and you are
 the loop's author and judge. The worker never grades its own homework - you run the
 checks. And because each lap is a fresh context while your own conversation can be
 compacted or restarted mid-loop, neither of you is the loop's memory: the repo is.
 
-Parse `--with <worker>` exactly as fire does: absent or `codex` selects Codex;
-`--with sonnet` or `--with opus` selects a Claude worker. For Codex, if `codex` is
-missing or
-`~/.codex/expo.config.toml` doesn't exist, stop and offer `/expo:mise` first
-(Codex silently ignores a missing profile - `test -f`). For a Claude worker, require
-the Claude-route preflight in fire's `references/worker-routes.md` - `command -v claude`
-alone passes while the route cannot run. The repo must have at least one commit (the no-progress guard
-needs `HEAD`).
+If `codex` is missing or `~/.codex/expo.config.toml` doesn't exist, stop and offer
+`/expo:mise` first (Codex silently ignores a missing profile - `test -f`). The repo
+must have at least one commit (the no-progress guard needs `HEAD`).
 
 ## 1. Write the loop contract first - and get it confirmed
 
@@ -47,20 +42,16 @@ before lap 1 (simmer creates a branch and makes commits - say so):
   If the repo or user config has commit hooks/gates (pre-commit reviews, staged-tree
   checks), resolve how per-lap checkpoints interact with them BEFORE lap 1 - ask the
   user rather than fighting the gate lap after lap.
-- **Worker** - record a `worker:` line for the whole loop: `codex` by default,
-  `sonnet` or `opus` when the corresponding `--with` selected it. Worker choice does
-  not change between laps.
 - **Tier** - pick the Codex tier once for the whole loop, by the goal's shape
   (fire's tier table; `--tier sol|luna|astra` overrides), and name it in the
   contract confirmation. Every Codex lap fires on the same tier - a loop that
-  silently changed models mid-run would make its lap history incomparable. Record
-  `tier: n/a` for a Claude worker.
+  silently changed models mid-run would make its lap history incomparable.
 
 ## 2. Loop state - in the repo, out of git
 
 Add `.expo/` to `$(git rev-parse --git-path info/exclude)` if it isn't there
 yet, then write the contract (goal, check commands, budget, branch with its base
-commit, `worker:`, `tier:`, `shared_tree: yes` when applicable, and the UTC start
+commit, `tier:`, `shared_tree: yes` when applicable, and the UTC start
 time as a `started:` line - the receipt reads it back for wallclock, same field
 name as serve's state.md) to `.expo/loop-<branch-slug>.md` and create
 `.expo/progress-<branch-slug>.md`. Derive `<branch-slug>` from the branch name with
@@ -83,8 +74,8 @@ is stale - surface it. Then start where the loop definition starts - check state
 the check commands, and if the goal already passes, that's a done report, not a lap.
 Otherwise count the budget from the `## Laps` lines - and prove the fate of any
 `fired` line with no verdict via its recorded job dir before counting it. A result
-file present means the run landed unjudged (judge it now and rewrite the line). For
-Codex, a log still growing means the worker is still cooking. Liveness is never
+file present means the run landed unjudged (judge it now and rewrite the line). A
+log still growing means the worker is still cooking. Liveness is never
 inferred from log growth alone: `no-result + quiet log = INDETERMINATE` -
 surface it to the user and never auto-relaunch into the same tree. Lines before the
 most recent `pass` belong to a finished episode, so a regression after a pass counts
@@ -106,16 +97,12 @@ For each iteration, until the goal passes or the budget is spent:
    judge's), and stop.
 
    Background using fire's rule - no `&`, `nohup`, or `disown` inside the command.
-   For `worker: codex`, keep fire's `codex exec` invocation with
+   Keep fire's `codex exec` invocation with
    `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN`, `--profile expo`, the flags read
    from fire's tier table for this loop's `tier:` line
    (`-c model=<model slug for the chosen tier, from fire's tier table> -c model_reasoning_effort=<effort>`),
    `--output-last-message "$JOB/result.md"`, stdin from `$JOB/ticket.md`, and
-   stdout/stderr in `$JOB/job.log`. For `worker: sonnet` or `worker: opus`, use the
-   matching `claude -p` subscription invocation in
-   [../fire/references/worker-routes.md](../fire/references/worker-routes.md), reading
-   the same `$JOB/ticket.md` and writing the same `$JOB/result.md` and
-   `$JOB/job.log`.
+   stdout/stderr in `$JOB/job.log`.
 
    When you launch, append `lap N: fired <abs job dir>` under `## Laps` - the
    budget counts launches, not landings, so a crash mid-lap can't un-spend a lap,
@@ -152,8 +139,7 @@ For each iteration, until the goal passes or the budget is spent:
 4. **Judge, decide, and say so** - give the user a one-line lap report (lap N of M:
    what changed, check result) and add a Codex lap to the running tab, pass or fail:
    `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --job "$JOB" --skill simmer
-   --lap N --branch "$branch" --session "${CLAUDE_CODE_SESSION_ID:-}"`. Claude worker
-   laps emit no token summary, so the script leaves no line. Then:
+   --lap N --branch "$branch" --session "${CLAUDE_CODE_SESSION_ID:-}"`. Then:
    - Checks pass → done. Report laps used, final check output, the commits made, and
      **the branch name** - merging (or deleting) it is the user's call. Mention that
      `.expo/loop-<branch-slug>.md` and `.expo/progress-<branch-slug>.md` are loop
