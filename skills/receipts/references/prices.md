@@ -34,8 +34,9 @@ only the requests that actually exceeded 272,000 input tokens are repriced, not 
 Nothing on disk records which requests those were: the closing summary is a run total and
 the banner does not say.
 
-Say "lower bound" on a receipt whose run total crosses 272,000, and nothing extra below
-it. This is the one error direction that would flatter expo - an understated worker cost
+Say "lower bound" on a receipt when any single Codex job's total crosses 272,000, and
+nothing extra below it. The bound is per job: a serve's jobs summing past 272,000 does not
+trigger it. This is the one error direction that would flatter expo - an understated worker cost
 overstates the equal-volume delta - which is why it is bounded here rather than left
 unstated.
 
