@@ -3,6 +3,21 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **Review stays on every diff it runs on (#13).** Across the 13 reviews recorded since
+  0.17.0, 10 returned fix-first, and validation held 33 findings as confirmed against 6
+  refuted, 85%. The size half of #13 was already answered: serve skips review below the
+  smallest diff that ever produced a confirmed finding, 195 lines on 2026-09-29, and
+  every recorded review sits at or above it. No mechanical, luna-routed fire has a
+  recorded review yet, so the rule for that split is fixed in advance in design.md: a
+  lighter review only if at most 1 of its first 10 reviews returns fix-first.
+- **Skill bodies are not trimmed (#14).** fire's SKILL.md is about 3,800 tokens by a
+  chars/4 estimate, about 8% of a median fire's orchestration of 45,000 tokens across
+  83 measured fires, so a tenth off saves under 1% of a fire. A cut large enough to
+  matter would remove rules that each have a recorded cause, and simmer ran once across
+  every recorded run. Measured, then left alone.
+
 ## 0.20.0 - 2026-09-29 - one knife on the line
 
 - **Claude worker routes retired.** Removed `--with sonnet` and `--with opus` after

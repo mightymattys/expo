@@ -206,6 +206,21 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   prompt can't guarantee), and the review-to-fix boundary is exactly where a human can
   step in à la carte - or not, inside a `/serve` they ordered.
 
+## Why review stays on every diff it runs on
+
+- Taste spends nearly as much Codex volume as the fire it reviews, so whether it earns
+  that was an open question ([#13](https://github.com/mightymattys/expo/issues/13)). Its outcomes are recorded since 0.17.0.
+  Across the first 13 recorded reviews, 10 returned fix-first, and validation held 33
+  findings as confirmed against 6 refuted, 85%. [CHANGELOG](../CHANGELOG.md)
+- Review is already lighter where the data allows: serve skips it for a diff smaller
+  than the smallest one that ever produced a confirmed finding
+  (`taste.smallest_hit_diff_lines` from `scripts/tab.sh`, 195 lines on 2026-09-29).
+  Every recorded review sits at or above that line, and most of them found something.
+- The split not yet measurable is by fire shape: no mechanical, luna-routed fire has a
+  recorded review. The rule for it is fixed now, before any data, so the cutoff cannot
+  be chosen after seeing the answer: mechanical work may take a lighter review only if
+  at most 1 of its first 10 recorded reviews returns fix-first. [#13](https://github.com/mightymattys/expo/issues/13)
+
 ## Why fast mode is surfaced, not inherited silently
 
 - Codex fast mode ("Fast mode increases supported model speed by 1.5x and consumes
@@ -467,6 +482,17 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   compare post-baseline paths to the ticket's `<files>` list and exclude outside paths
   from worker attribution.
   Source: [sous-chef#5](https://github.com/tomascupr/sous-chef/issues/5).
+
+## Why the skill bodies are not trimmed further
+
+- fire's SKILL.md is about 3,800 tokens by a chars/4 estimate - about 8% of a median
+  fire's orchestration, which is 45,000 tokens across 83 measured fires. Cutting a
+  tenth of it would save under 1% of a fire. [CHANGELOG](../CHANGELOG.md)
+- A cut large enough to matter would have to remove rules, and the long passages are
+  rules with a recorded cause: no `&` inside a backgrounded command, always pin the
+  tier, classify concurrent edits before accepting a plate, never resume a Codex
+  session. simmer ran once across every recorded run, so its size costs almost
+  nothing. [#14](https://github.com/mightymattys/expo/issues/14)
 
 ## The Karpathy grounding
 
