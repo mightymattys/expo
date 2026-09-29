@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.19.0 - 2026-09-29 - the ledger learns why
 
 - Fire asks whether work is mechanical before choosing its Codex tier, records the
   decision in the job dir, and adds valid tier, shape, and override fields to fire
