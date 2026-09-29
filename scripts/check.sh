@@ -21,9 +21,30 @@ section_ok() { [ "$fail" -eq "$mark" ] && ok "$1"; mark=$fail; }
 mark=0
 
 # 1. Manifest sanity ----------------------------------------------------------
+# Validation takes about a second, but inside Codex's network-less sandbox it hangs
+# indefinitely: one fire spent hours there before its worker stripped claude from PATH.
+# So the call is bounded. A timeout is a skipped check, never a pass - it warns where
+# CI will run the check again, and fails on CI, which is the run that counts.
 if command -v claude >/dev/null 2>&1; then
-  if out=$(claude plugin validate . 2>&1); then
+  validate_timeout=${EXPO_VALIDATE_TIMEOUT:-30}
+  out=$(python3 - "$validate_timeout" <<'PY' 2>&1
+import subprocess, sys
+try:
+    run = subprocess.run(["claude", "plugin", "validate", "."], capture_output=True,
+                         text=True, timeout=float(sys.argv[1]))
+except subprocess.TimeoutExpired:
+    raise SystemExit(124)
+sys.stdout.write(run.stdout + run.stderr)
+raise SystemExit(run.returncode)
+PY
+)
+  rc=$?
+  if [ "$rc" -eq 0 ]; then
     ok "claude plugin validate"
+  elif [ "$rc" -eq 124 ] && [ "${CI:-}" != true ]; then
+    warn "claude plugin validate timed out after ${validate_timeout}s - skipped, not passed (CI runs it)"
+  elif [ "$rc" -eq 124 ]; then
+    err "claude plugin validate timed out after ${validate_timeout}s on CI"
   else
     err "claude plugin validate:"; printf '%s\n' "$out"
   fi
@@ -52,6 +73,11 @@ else
 fi
 # gh's {owner}/{repo} placeholder resolves to the UPSTREAM repo on a fork - verified
 # here, where it pointed at tomascupr/sous-chef. A release must never be aimed there.
+if grep -Eq 'Co-Authored-By: Claude (Fable|Opus|Sonnet|Haiku|Mythos)' scripts/release.sh; then
+  err "release.sh hardcodes a model in its co-author trailer - it goes stale on every chef change; use EXPO_CO_AUTHOR"
+else
+  ok "release.sh names no model in its co-author trailer"
+fi
 if grep -q 'repos/{owner}/{repo}' scripts/release.sh; then
   err "release.sh uses gh's {owner}/{repo} placeholder - on a fork that targets upstream; derive the slug from origin"
 else
@@ -1159,6 +1185,36 @@ if [ "$rc" -eq 0 ] && [ -s "$LEDGER_FIX/tier-taste.jsonl" ] &&
 else
   err "ledger-append.py added tier fields to a taste row (rc $rc): $out"
 fi
+
+# A worktree's directory is named for the session that made it; the ledger must name
+# the repo instead, or every session scatters one repo's rows under a new name. The
+# worktree is built for real - a fixture that only faked one would prove nothing.
+WT_BASE=$(mktemp -d)
+wt_ready=0
+if git -C "$WT_BASE" init -q mainrepo 2>/dev/null &&
+  git -C "$WT_BASE/mainrepo" -c user.name=fixture -c user.email=fixture@local \
+    commit -q --allow-empty -m base 2>/dev/null &&
+  git -C "$WT_BASE/mainrepo" worktree add -q "$WT_BASE/session-wt-x7Qa" 2>/dev/null; then
+  wt_ready=1
+fi
+mkdir "$LEDGER_FIX/worktree-repo"
+if [ "$wt_ready" -eq 1 ] && fixture_nonempty scripts/fixtures/ledger-complete.log; then
+  sed "s#^workdir: .*#workdir: $WT_BASE/session-wt-x7Qa#" scripts/fixtures/ledger-complete.log \
+    > "$LEDGER_FIX/worktree-repo/job.log"
+  cp scripts/fixtures/ledger-complete.result "$LEDGER_FIX/worktree-repo/result.md"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/worktree-repo" --skill fire \
+    --ledger "$LEDGER_FIX/worktree-repo.jsonl" 2>/dev/null)
+  rc=$?
+else
+  out='worktree fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] && jq -e '.repo == "mainrepo"' "$LEDGER_FIX/worktree-repo.jsonl" >/dev/null 2>&1; then
+  ok "ledger-append.py names a worktree run after its repo, not the worktree directory"
+else
+  err "ledger-append.py worktree repo name is wrong (rc $rc): $out"
+fi
+rm -rf "$WT_BASE"
 
 tab_fixture_ready=1
 for path in scripts/fixtures/tab-taste-outcomes.{jsonl,golden}; do

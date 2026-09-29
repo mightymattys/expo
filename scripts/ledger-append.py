@@ -187,6 +187,27 @@ def tier_record(job):
     }, None
 
 
+def repo_name(workdir):
+    # A worktree's own directory is named for the session that made it, so its basename
+    # scattered one repo's rows across a new name per session. Name the repo after the
+    # directory holding the shared .git instead. Anything that is not a plain checkout
+    # or worktree - a vanished path, a submodule, no git - keeps the basename.
+    if not workdir:
+        return None
+    try:
+        common = subprocess.run(
+            ["git", "-C", workdir, "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=10,
+        )
+    except Exception:
+        common = None
+    if common is not None and common.returncode == 0:
+        shared = common.stdout.strip()
+        if os.path.basename(shared) == ".git":
+            return os.path.basename(os.path.dirname(shared))
+    return os.path.basename(os.path.normpath(workdir))
+
+
 def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
                window_error=None):
     log = os.path.join(job, "job.log")
@@ -205,7 +226,7 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     if measured is None:
         return SKIPPED
     model, tokens, workdir = measured
-    repo = repo_value or (os.path.basename(os.path.normpath(workdir)) if workdir else None)
+    repo = repo_value or repo_name(workdir)
     if not repo:
         print(f"ledger-append: job log has no workdir: {log} - cannot resolve repo name",
               file=sys.stderr)

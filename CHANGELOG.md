@@ -3,6 +3,39 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **`gpt-6-luna` can do the work luna is routed.** Benchmark task 03, the mechanical
+  rename, ran on `gpt-6-luna` at medium effort in a clean copy of the fixture and passed
+  both check commands on an independent re-run: twelve tests before and after, zero
+  remaining `label` matches, and every edited test line a pure rename, with eighteen
+  assertions before and after. Worker tokens 27,557 in 45s, against `gpt-5.6-luna`'s
+  24,217 in 67s on the same task. Every piece of evidence for luna had come from the
+  retired 5.6 model; this is the first on the model routing actually uses. It is a
+  spot check, not a benchmark row - no direct arm ran, so it carries no cost delta, and
+  it stays out of `bench/results.jsonl`.
+- **`check.sh` no longer hangs inside Codex's sandbox.** `claude plugin validate` takes
+  about a second, but with no network it hung indefinitely, and one fire on this repo
+  ran for 2h49m before its worker stripped `claude` from PATH. The call is now bounded
+  at 30 seconds. A timeout is a skipped check, never a pass: it warns locally, where CI
+  runs it again, and fails on CI. Proved in four cases - hang locally, hang on CI, an
+  invalid manifest, the real CLI.
+- **Worktree runs are recorded under their repo.** The ledger named a run after its
+  working directory, and a worktree's directory is named for the session that made it,
+  so each session scattered one repo's rows under a new name. It now names the repo
+  after the directory holding the shared `.git`, falling back to the old basename for
+  anything else. A new test builds a real repo and worktree; it fails if the name
+  regresses and if the worktree cannot be built. Two rows already written under a
+  worktree name stay as recorded: the ledger is append-only.
+- **`release.sh` runs from a worktree.** It refused anything but `main`, which cannot
+  be checked out twice, so the last two releases were run by hand. It now also accepts
+  a checkout whose HEAD is exactly `origin/main`, or that plus the one release commit a
+  resumed run is pushing, and pushes `HEAD:main`. A branch carrying anything main lacks
+  is still refused, as is a HEAD behind main - both proved. Its co-author trailer names
+  no model by default, after the hardcoded one went stale in two consecutive releases;
+  `EXPO_CO_AUTHOR` names one, and a new invariant fails if a model name is hardcoded
+  again.
+
 ## 0.19.0 - 2026-09-29 - the ledger learns why
 
 - Fire asks whether work is mechanical before choosing its Codex tier, records the

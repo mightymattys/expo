@@ -290,7 +290,12 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   coding and agentic workflows"), not an independent benchmark - none covering the
   GPT-6 worker tiers was found on 2026-09-22, where the retired GPT-5.6 table could
   cite the Coding Agent Index. Treat the shape column as provisional until `bench/`
-  measures it. The head chef already
+  measures it. One point is measured since: on 2026-09-29 `gpt-6-luna` completed
+  benchmark task 03, the mechanical rename, and passed both of its check commands on an
+  independent re-run - same twelve tests, zero remaining matches, test edits a pure
+  rename - on 27,557 worker tokens against `gpt-5.6-luna`'s 24,217
+  ([CHANGELOG](../CHANGELOG.md), 0.20.0). One run on one fixture shows luna can do the
+  shape it is routed; it is not a cost comparison, because no direct arm ran. The head chef already
   classifies every task by shape to decide *whether* to delegate; the same
   classification picks the tier, so tier selection is free judgment already being
   spent - a mechanical rename doesn't need sol's ceiling, an architectural change
