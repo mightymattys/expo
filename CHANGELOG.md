@@ -3,6 +3,16 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **A receipt's "lower bound" is judged per job, not per serve.** prices.md bounds
+  long-context exposure by one Codex job's total: a job under 272,000 tokens cannot
+  contain a request over the threshold. The receipt template summed a serve's jobs
+  instead, so the #8 serve - four jobs of 48k to 145k tokens, 323k combined - was
+  labelled a lower bound although its price was exact. Both files now say per job. The
+  receipt already written keeps its label, because receipts are not corrected
+  retroactively.
+
 ## 0.20.1 - 2026-09-29 - two questions the ledger answered
 
 - **Review stays on every diff it runs on (#13).** Across the 13 reviews recorded since
