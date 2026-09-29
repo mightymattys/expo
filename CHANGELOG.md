@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.20.2 - 2026-09-29 - a bound is per job
 
 - **A receipt's "lower bound" is judged per job, not per serve.** prices.md bounds
   long-context exposure by one Codex job's total: a job under 272,000 tokens cannot
