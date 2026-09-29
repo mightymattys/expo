@@ -98,7 +98,7 @@ delegated background runs wherever the chosen model offers one: it multiplies to
 spend by design, with nobody watching.
 
 Two Claude workers need no extra key: `fire --with sonnet` sends the ticket to cheap
-Claude Sonnet 5 headless on your own Anthropic subscription; `fire --with opus`
+Claude Sonnet 5.5 headless on your own Anthropic subscription; `fire --with opus`
 sends it to the head chef's own Opus 5.5, running headless in its own context - a
 second pair of keyless hands, not a step up in capability. Sonnet is the fallback when
 Codex hits its usage limit mid-serve; Opus spends the shared Claude quota faster. *Preflight is verified;

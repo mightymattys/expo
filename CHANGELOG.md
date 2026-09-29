@@ -12,6 +12,16 @@ expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas C
   work as declared: that mismatch is the misroute #11 exists to count, and rejecting it
   would make it look like a missing record. Review flagged this as a defect; it was
   refuted, and the comment above `TIER_RE` now says why.
+- **The Sonnet worker is Claude Sonnet 5.5.** `claude-sonnet-5-5` shipped on 2026-09-28
+  at $2/$10, the same list price as the Sonnet 5 it replaces, which the vendor now lists
+  as legacy. `--with sonnet` routes there. The Sonnet 5 row left the price table rather
+  than staying as a legacy row the way Opus 5 did: Opus 5 is still named on ledger and
+  benchmark rows, while nothing on disk ever priced Sonnet 5, because the Claude worker
+  routes have never produced a ledger row (#8).
+- **Every price re-verified on 2026-09-29, and none had moved.** All five Claude rows,
+  all seven GPT rows, the long-context rates and the 272K threshold sentence on both
+  GPT-6 model pages, the daybreak alias mappings, and the sol promotion's end date. No
+  OpenAI model newer than the GPT-6 family exists.
 
 ## 0.18.0 - 2026-09-23 - the chef changes, the floor does not
 

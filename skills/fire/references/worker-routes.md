@@ -1,4 +1,4 @@
-# Claude subscription route - Sonnet 5 and Opus 5.5
+# Claude subscription route - Sonnet 5.5 and Opus 5.5
 
 The default worker is Codex (`codex exec --profile expo`). The Claude subscription
 route has two models on the user's own Anthropic subscription - no extra key, no
@@ -57,7 +57,7 @@ hard stop applies to the default Codex route only.
 
 ```
 Bash (run_in_background: true), cwd = repo root:
-claude -p --model claude-sonnet-5 --dangerously-skip-permissions --strict-mcp-config \
+claude -p --model claude-sonnet-5-5 --dangerously-skip-permissions --strict-mcp-config \
   < "$JOB/ticket.md" > "$JOB/result.md" 2> "$JOB/job.log"
 ```
 

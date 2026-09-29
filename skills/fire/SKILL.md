@@ -61,7 +61,7 @@ rest as the task description. Workers:
 | `--with` | Worker | Route |
 |---|---|---|
 | *(absent)* / `codex` | Codex CLI, model tier picked per task (next section) | the default invocation below |
-| `sonnet` | Claude Sonnet 5, user's own subscription | `references/worker-routes.md` |
+| `sonnet` | Claude Sonnet 5.5, user's own subscription | `references/worker-routes.md` |
 | `opus` | Claude Opus 5.5, user's own subscription | `references/worker-routes.md` |
 
 Loose phrases ("fire with sonnet" or "fire with opus") mean the same thing - `--with`
@@ -127,7 +127,7 @@ Notes on the invocation:
 
 **Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-6-sol`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
-To route the ticket to Claude Sonnet 5 or Opus 5.5 on the user's own subscription (no
+To route the ticket to Claude Sonnet 5.5 or Opus 5.5 on the user's own subscription (no
 extra key), see [references/worker-routes.md](references/worker-routes.md) - same
 ticket, different worker invocation.
 

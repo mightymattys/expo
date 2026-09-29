@@ -252,10 +252,10 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   the user explicitly ordered, under a hard run budget - what this project rejects is
   review firing on every stop, unbounded, not review inside an ordered pipeline.)
 
-## Why the alternate workers are Claude Sonnet 5 and Opus 5.5
+## Why the alternate workers are Claude Sonnet 5.5 and Opus 5.5
 
 - Three workers earn their place: Codex (default, sandboxed, subscription-billed), a
-  Claude Sonnet 5 fallback, and a headless Claude Opus 5.5 worker on the user's own
+  Claude Sonnet 5.5 fallback, and a headless Claude Opus 5.5 worker on the user's own
   Anthropic plan - no extra key, no provider config, keyless like the rest of the
   two-subscription setup.
 - **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
