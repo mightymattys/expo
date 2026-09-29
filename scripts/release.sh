@@ -51,10 +51,6 @@ esac
 cd "$(dirname "$0")/.." || { err "cannot find repo root"; exit 1; }
 
 branch=$(git branch --show-current 2>/dev/null || true)
-if [ "$branch" != main ]; then
-  err "current branch is not main"
-  exit 1
-fi
 
 if ! git fetch origin main:refs/remotes/origin/main; then
   err "cannot fetch origin/main"
@@ -65,8 +61,23 @@ if ! behind=$(git rev-list --count HEAD..origin/main 2>/dev/null); then
   exit 1
 fi
 if [ "$behind" -ne 0 ]; then
-  err "local main is behind origin/main - pull/rebase first"
+  err "HEAD is behind origin/main - pull/rebase first"
   exit 1
+fi
+# Off main - usually a worktree, because main is checked out somewhere else - the
+# release must be exactly what main already holds: HEAD at origin/main, or origin/main
+# plus the one release commit a resumed run is pushing. Anything more would reach main
+# without ever having been on it.
+if [ "$branch" != main ]; then
+  if ! off_ahead=$(git rev-list --count origin/main..HEAD 2>/dev/null); then
+    err "cannot compare HEAD to origin/main"
+    exit 1
+  fi
+  if [ "$off_ahead" -gt 1 ] || { [ "$off_ahead" -eq 1 ] &&
+      ! git show --format= --name-only HEAD | grep -qx '.claude-plugin/plugin.json'; }; then
+    err "not on main, and HEAD carries commits origin/main lacks - release from main or from a checkout of origin/main"
+    exit 1
+  fi
 fi
 
 installed_user_sha() { # installed_plugins.json
@@ -206,14 +217,16 @@ PY
     err "git add failed"
     exit 1
   fi
-  if ! git commit -m "$message"$'\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'; then
+  # No model name by default: a hardcoded one had to be rewritten in two consecutive
+  # releases as the head chef changed. EXPO_CO_AUTHOR names one when it matters.
+  if ! git commit -m "$message"$'\n\n'"Co-Authored-By: ${EXPO_CO_AUTHOR:-Claude} <noreply@anthropic.com>"; then
     err "git commit failed"
     exit 1
   fi
   bump_in_progress=false
 fi
 
-if [ "$resume_refresh" = false ] && ! git push origin main; then
+if [ "$resume_refresh" = false ] && ! git push origin HEAD:main; then
   err "git push failed"
   exit 1
 fi
