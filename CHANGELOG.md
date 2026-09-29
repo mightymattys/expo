@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.20.0 - 2026-09-29 - one knife on the line
 
 - **Claude worker routes retired.** Removed `--with sonnet` and `--with opus` after
   266 ledger runs used neither route and the required headless credential remained
