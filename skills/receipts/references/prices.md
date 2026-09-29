@@ -52,22 +52,22 @@ unstated.
 | gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 | claude-fable-5-1 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing - same blend as Fable 5; its cheaper cache-read multiplier does not affect a 50/50 in/out blend |
-| claude-sonnet-5-5 | 2.00 | 10.00 | 6.00 | https://platform.claude.com/docs/en/about-claude/pricing - same list price as the Sonnet 5 it replaces |
 | claude-opus-5-5 | 4.00 | 20.00 | 12.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 | claude-opus-5 | 5.00 | 25.00 | 15.00 | https://platform.claude.com/docs/en/about-claude/pricing - legacy but still served; kept because it orchestrates and appears as `orchestrator` on existing ledger rows |
 
 Only models the kitchen actually runs, plus known banner aliases whose logged names
-need receipt pricing, belong in this table (GPT-6 tiers as workers, Sonnet 5.5 and
-Opus 5.5 as Claude subscription workers, Opus 5.5 again as the orchestrator whose own
-tokens a receipt prices, Fable 5 as the deliberately conservative reference blend that
-keeps the equal-volume delta a floor, and Opus 5 because existing ledger rows name it
-as orchestrator). The GPT-5.6 rows outlive their routes on purpose: `gpt-daybreak-blue-latest`
+need receipt pricing, belong in this table (GPT-6 tiers as workers, Opus 5.5 as the
+orchestrator whose own tokens a receipt prices, Fable 5 as the deliberately
+conservative reference blend that keeps the equal-volume delta a floor, and Opus 5
+because existing ledger rows name it as orchestrator). The GPT-5.6 rows outlive
+their routes on purpose: `gpt-daybreak-blue-latest`
 aliases `gpt-5.6-sol`, and the checked-in benchmark measured terra and luna, so
 dropping them would make committed evidence unpriceable. Otherwise a
 retired generation is a stale row waiting to misprice something. An alias row's Source
 is a dated mapping, not a claim that the alias is a fixed model: it can be repointed.
-Subscription workers (ChatGPT plan, Claude plan) have $0 marginal cost - receipts
-therefore always say "API-list terms", never "you paid". The only derived figure
+Subscription runs (the ChatGPT plan for the worker, the Claude plan for the
+orchestrator) have $0 marginal cost - receipts therefore always say "API-list terms",
+never "you paid". The only derived figure
 a receipt may carry is the measured equal-volume delta, labeled "(floor)", dollars
 only, computed purely from measured tokens and this table's blends - never a
 cross-model multiple or a claim presented as a bound.

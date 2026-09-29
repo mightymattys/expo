@@ -23,6 +23,23 @@ task spec, and are judged by the same check command.
   with no prior knowledge of the repository. Its tokens come from the returned
   `usage` object.
 
+### Running the direct arm
+
+`claude -p` needs its own non-interactive credential; signing in to the interactive
+app is not enough. Check first with `claude auth status`: it returns JSON and costs
+nothing. Require `.loggedIn` to be true.
+
+If it is false, run `claude setup-token`, then export the printed token as
+`CLAUDE_CODE_OAUTH_TOKEN` in the environment where the benchmark runs. The first
+step alone can look like success. The printed token wraps across two lines;
+pasting the wrapped text sets only half of it. Confirm the full value with
+`echo -n "$CLAUDE_CODE_OAUTH_TOKEN" | wc -c` and `claude auth status`. The token is a
+credential: keep it only in your own environment and never paste it into a
+conversation.
+
+If probing with `claude -p --output-format json`, read `is_error`, never `subtype`:
+a failed run has returned `subtype: "success"` alongside `is_error: true`.
+
 Cold start on both sides is the whole point. An earlier attempt measured the direct
 arm as work done inside the session that had just authored the codebase and the spec;
 it needed to read nothing and came out roughly ten times cheaper, which measured warm

@@ -25,8 +25,7 @@ started: <contents of $RUN/started>
 budget: 5
 runs_used: 2 (fire, taste)
 stage: taste plated; next: refire
-worker: <codex | sonnet | opus>
-tier: <sol | luna | astra, Codex route only>
+tier: <sol | luna | astra>
 security: <yes | no>
 baseline: <abs path to stage 1's pre-fire.patch>
 findings: <abs path to taste's findings.md>
@@ -41,17 +40,13 @@ is a single-session promise and does not survive that; the working tree and job
 dirs still hold the work.) Read `started:` from `$RUN/started`; never type it from
 memory or estimate it.
 
-## Choosing the worker and tier
+## Choosing the tier
 
-If the arguments include `--security`, strip it with the routing flags, record
+If the arguments include `--security`, strip it from the task text, record
 `security: yes` in `state.md`, and pass `--security` to taste; otherwise record
-`security: no`. If the arguments begin with `--with <worker>` (see fire's worker
-table), the choice applies to the whole line: fire and refire run on that worker;
-taste stays on Codex read-only when available, which makes the review cross-model
-when the worker is not Codex. Record the selected worker in `state.md` (for example,
-`worker: opus`).
+`security: no`.
 
-On the Codex route, fire also picks a GPT-6 tier by task shape (see fire's tier
+Fire picks a GPT-6 tier by task shape (see fire's tier
 table), or honors an explicit `--tier sol|luna|astra`. Record it in `state.md`
 (`tier: sol`) so the refire stage fires on the same tier; taste stays on `sol`
 (reviewer strength beats reviewer cost).

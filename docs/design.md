@@ -252,27 +252,19 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   the user explicitly ordered, under a hard run budget - what this project rejects is
   review firing on every stop, unbounded, not review inside an ordered pipeline.)
 
-## Why the alternate workers are Claude Sonnet 5.5 and Opus 5.5
+## Why there is no Claude worker route
 
-- Three workers earn their place: Codex (default, sandboxed, subscription-billed), a
-  Claude Sonnet 5.5 fallback, and a headless Claude Opus 5.5 worker on the user's own
-  Anthropic plan - no extra key, no provider config, keyless like the rest of the
-  two-subscription setup.
-- **The Sonnet route is headless `claude -p`** with `--strict-mcp-config` and
-  `--dangerously-skip-permissions`: it inherits the user's subscription auth from the
-  default config dir with zero setup. The honest caveat is that it has no OS sandbox
-  underneath (unlike Codex's `workspace-write`), so it is for trusted repos or a
-  branch/worktree only.
-- **The Opus route runs the head chef's own model, headless**: `--with opus` sends the
-  ticket to the same Opus 5.5 that orchestrates, in a separate process with its own
-  context, through the same keyless route, at a $4/$20 per-MTok API list price ($12
-  50/50 blend) - under the $5/$25 of the Opus 5 it replaces. It is deliberately not sold
-  as a capability step up: the vendor's escalation above Opus 5.5 is Fable, for which
-  expo exposes no worker route.
-  [Models overview](https://platform.claude.com/docs/en/about-claude/models/overview)
-  [Pricing](https://platform.claude.com/docs/en/about-claude/pricing) It drains the
-  shared Anthropic quota faster than Sonnet, so Sonnet remains the cheap fallback
-  when quota conservation matters.
+- expo shipped `--with sonnet` and `--with opus` as keyless headless `claude -p`
+  workers, then removed them on 2026-09-29. [CHANGELOG](../CHANGELOG.md)
+- Across all 266 recorded ledger runs, neither route was used. The route needed a
+  non-interactive credential that was never set up on the maintainer's machine:
+  `claude auth status` reported `loggedIn: false`.
+  [#8](https://github.com/mightymattys/expo/issues/8)
+- The routes were re-edited at both model changes that week, maintenance for a
+  feature that never ran. [CHANGELOG](../CHANGELOG.md)
+- When Codex hits its usage limit, the head chef waits for the reset or cooks the
+  task directly; a second, headless copy of the chef's own model added no capability.
+  [#8](https://github.com/mightymattys/expo/issues/8)
 
 ## Why fire picks a GPT-6 tier by task shape
 
@@ -380,17 +372,15 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   Calling it a guaranteed saving would present an extrapolation as a bound, which this
   repo forbids.
 
-## Why refire inherits the worker instead of re-choosing it
+## Why refire inherits the tier instead of re-choosing it
 
-- `serve` promises `--with <worker>` "applies to the whole line: fire and refire run
-  on that worker" - but refire is a separately-invocable skill, so it needs its own
-  worker-selection rule or it would silently fall back to the Codex profile mid-line.
-  The fix mirrors fire: standalone refire parses `--with`; inside a serve it reads the
-  worker off state.md's `worker:` line rather than re-parsing the task, because the
-  worker is a run-level fact the orchestrator already fixed, not a per-stage choice.
-  taste deliberately stays on Codex regardless (cross-lineage review), so a
-  Sonnet-implemented, Codex-reviewed, Sonnet-refired line keeps its one cross-model
-  check. Source: [sous-chef#9](https://github.com/tomascupr/sous-chef/issues/9) item 4.
+- Refire is separately invocable, so it needs its own tier rule. Inside a serve it
+  reads state.md's `tier:` line rather than re-parsing the task: the tier is a
+  run-level fact the orchestrator already fixed. Standalone refire takes `--tier`;
+  absent an override, it pins `sol`. Taste stays on Codex/sol. Source:
+  [sous-chef#9](https://github.com/tomascupr/sous-chef/issues/9) item 4. The worker
+  selection this rule first covered was retired on 2026-09-29
+  ([#8](https://github.com/mightymattys/expo/issues/8)).
 
 ## Why `/simmer` is shaped the way it is (loop engineering)
 

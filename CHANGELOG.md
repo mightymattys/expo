@@ -5,6 +5,10 @@ expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas C
 
 ## Unreleased
 
+- **Claude worker routes retired.** Removed `--with sonnet` and `--with opus` after
+  266 ledger runs used neither route and the required headless credential remained
+  unset ([#8](https://github.com/mightymattys/expo/issues/8)). Codex remains the
+  implementation worker; the benchmark's direct `claude -p` arm remains available.
 - **`gpt-6-luna` can do the work luna is routed.** Benchmark task 03, the mechanical
   rename, ran on `gpt-6-luna` at medium effort in a clean copy of the fixture and passed
   both check commands on an independent re-run: twelve tests before and after, zero

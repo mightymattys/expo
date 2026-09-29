@@ -120,17 +120,11 @@ must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findin
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
 must_contain skills/simmer/SKILL.md 'tier:'     "every Codex lap's invocation reads the branch-scoped loop file's tier: line"
-must_contain skills/simmer/SKILL.md 'tier: n/a' "Sonnet loops record the tier field receipts and resumes expect"
-must_contain skills/simmer/SKILL.md 'record a `worker:` line' "the loop contract fixes one worker route for every lap"
-must_contain skills/fire/SKILL.md '| `opus` |' "fire's worker table names the Opus route"
 must_contain skills/fire/SKILL.md 'tier: <sol|luna|astra> shape=<mechanical|standard|complex> override=<yes|no>' "fire's tier record format matches the ledger parser"
-must_contain skills/serve/SKILL.md 'worker: <codex | sonnet | opus>' "serve's state schema must be able to record every fire worker"
-must_contain skills/fire/references/worker-routes.md 'claude-opus-5' "Opus's model id is available to the route-must-be-priceable check"
 must_contain scripts/bench.sh 'observed difference on this measured task set' "both benchmark arms are measured, so the delta is a sample and must never be worded as a bound"
 must_contain docs/benchmark.md 'not a bound, guarantee, or general cross-model' "the methodology has to say what the delta is not"
 must_contain skills/simmer/SKILL.md 'loop-<branch-slug>' "simultaneous branches need branch-scoped loop state"
 must_contain skills/simmer/SKILL.md '`/` replaced by `-` plus a 6-char suffix from a stable hash' "branch-scoped loop files cannot collide after slash replacement"
-must_contain skills/simmer/SKILL.md '[../fire/references/worker-routes.md](../fire/references/worker-routes.md)' "Sonnet laps use fire's subscription invocation"
 must_contain skills/simmer/SKILL.md 'git merge-base --is-ancestor' "recreated branches must not inherit stale loop state"
 must_contain skills/receipts/references/receipt-template.md '.expo/loop-<branch-slug>.md' "simmer receipts read branch-scoped loop state"
 # A verdict is only true of the tree it was reached against, and a receipt outlives it.
@@ -223,6 +217,38 @@ done
 for f in skills/fire/SKILL.md skills/refire/SKILL.md skills/serve/SKILL.md skills/simmer/SKILL.md; do
   grep -q 'terra' "$f" && err "$f still names the retired tier 'terra' - it routes to no model since the GPT-6 migration"
 done
+
+# Retired Claude worker routes must stay gone from the shipped surfaces.
+route_scan=$(python3 - <<'PY'
+from pathlib import Path
+import re
+
+files = sorted([*Path("skills").rglob("*.md"), *Path("templates").rglob("*.md"),
+                *Path(".claude-plugin").glob("*.json"), Path("README.md"), Path("AGENTS.md")])
+errors = []
+if Path("skills/fire/references/worker-routes.md").exists():
+    errors.append("skills/fire/references/worker-routes.md exists")
+pattern = re.compile(r"--with sonnet|--with opus|worker-routes|claude-sonnet-|\bsonnet\b", re.I)
+for sentinel in (Path("skills/fire/SKILL.md"), Path(".claude-plugin/plugin.json")):
+    if sentinel not in files:
+        errors.append(f"retired Claude worker route scan missing sentinel {sentinel}")
+for file in files:
+    lines = file.read_text(encoding="utf-8").splitlines()
+    for number, line in enumerate(lines, 1):
+        for match in pattern.finditer(line):
+            errors.append(f"{file}:{number}: retired Claude worker route reference '{match.group()}'")
+print("\n".join(errors))
+raise SystemExit(bool(errors))
+PY
+)
+route_rc=$?
+if [ "$route_rc" -eq 0 ]; then
+  ok "retired Claude worker routes stay absent from shipped surfaces"
+elif [ -n "$route_scan" ]; then
+  while IFS= read -r issue; do err "$issue"; done <<< "$route_scan"
+else
+  err "retired Claude worker route scan could not run"
+fi
 
 # A family-prefix template turns a new model family into a plausible but nonexistent slug.
 bad_model_templates=$(grep -R -nE -- "-c[[:space:]]+['\"]?model=['\"]?gpt-[^[:space:]'\"]*(<[^>]+>|\\\$(\\{[^}]+\\}|[A-Za-z_][A-Za-z0-9_]*))" skills/ || true)
@@ -579,15 +605,6 @@ section_ok "cross-file invariants"
 # Thresholds match observed drift, not a guess: sol moved inside five days, and three
 # verification passes found four wrong rows (terra, luna, sonnet, sol). 14 warns, 30 fails.
 PRICES=skills/receipts/references/prices.md
-# Every Claude subscription model this plugin can fire has a price-table row. Without
-# that row, receipts would silently be unable to price a route the plugin advertises.
-models=$(grep -oE -- '--model[= ]+claude-[a-z0-9-]+-5' skills/fire/references/worker-routes.md | grep -oE 'claude-[a-z0-9-]+-5' | sort -u || true)
-if [ -z "$models" ]; then
-  err "worker-routes.md names no Claude worker models - extraction pattern broken?"
-fi
-for model in $models; do
-  grep -qF "| $model |" "$PRICES" || err "Claude worker route '$model' has no matching prices.md row"
-done
 # Alias banners are priceable only through their current, dated target mapping. The
 # Model cell is the logged lookup key; the target row's cited URLs establish which
 # sources are acceptable without assuming a particular vendor or URL. An alias can only
