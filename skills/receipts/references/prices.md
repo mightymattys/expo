@@ -1,4 +1,4 @@
-# Rough price table - API list; every row verified 2026-09-22
+# Rough price table - API list; every row verified 2026-09-29
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend
@@ -42,22 +42,22 @@ unstated.
 | Model | In $/MTok | Out $/MTok | 50/50 blend $/MTok | Source |
 |---|---|---|---|---|
 | gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; alias mapping: https://developers.openai.com/api/docs/pricing - promotional, held "at least through November 21, 2026" per the pricing page; re-verify after that date |
-| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-09-14 |
+| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-09-29 |
 | gpt-6-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6-sol - short-context rates |
 | gpt-6-luna | 0.10 | 0.50 | 0.30 | https://developers.openai.com/api/docs/pricing - short-context rates |
 | gpt-6-astra | 10.00 | 50.00 | 30.00 | https://developers.openai.com/api/docs/models/gpt-6-astra - short-context rates; in the Codex model list as of 2026-09-07 |
 | gpt-5.6-cyber | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing |
-| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-09-14 |
+| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-09-29 |
 | gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models |
 | gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 | claude-fable-5-1 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing - same blend as Fable 5; its cheaper cache-read multiplier does not affect a 50/50 in/out blend |
-| claude-sonnet-5 | 2.00 | 10.00 | 6.00 | https://platform.claude.com/docs/en/about-claude/pricing - the launch introductory 2.00/10.00 became the standard price; the scheduled 3.00/15.00 increase was cancelled |
+| claude-sonnet-5-5 | 2.00 | 10.00 | 6.00 | https://platform.claude.com/docs/en/about-claude/pricing - same list price as the Sonnet 5 it replaces |
 | claude-opus-5-5 | 4.00 | 20.00 | 12.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 | claude-opus-5 | 5.00 | 25.00 | 15.00 | https://platform.claude.com/docs/en/about-claude/pricing - legacy but still served; kept because it orchestrates and appears as `orchestrator` on existing ledger rows |
 
 Only models the kitchen actually runs, plus known banner aliases whose logged names
-need receipt pricing, belong in this table (GPT-6 tiers as workers, Sonnet 5 and
+need receipt pricing, belong in this table (GPT-6 tiers as workers, Sonnet 5.5 and
 Opus 5.5 as Claude subscription workers, Opus 5.5 again as the orchestrator whose own
 tokens a receipt prices, Fable 5 as the deliberately conservative reference blend that
 keeps the equal-volume delta a floor, and Opus 5 because existing ledger rows name it

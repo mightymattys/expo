@@ -97,7 +97,7 @@ is usually a receipt that cannot price a model the run just used. Offer
 ## 5. Alternate worker (optional)
 
 **Claude subscription route (no setup):** nothing to install - `claude -p --model
-claude-sonnet-5` (or `claude-opus-5-5` for the premium worker) on the user's own
+claude-sonnet-5-5` (or `claude-opus-5-5` for the premium worker) on the user's own
 subscription is always available as a fallback worker (see fire's
 `references/worker-routes.md`). Mention it only if the user asks, or when Codex
 auth/quota is the reason mise was re-run.
