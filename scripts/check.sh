@@ -97,6 +97,7 @@ must_contain skills/simmer/SKILL.md 'tier:'     "every Codex lap's invocation re
 must_contain skills/simmer/SKILL.md 'tier: n/a' "Sonnet loops record the tier field receipts and resumes expect"
 must_contain skills/simmer/SKILL.md 'record a `worker:` line' "the loop contract fixes one worker route for every lap"
 must_contain skills/fire/SKILL.md '| `opus` |' "fire's worker table names the Opus route"
+must_contain skills/fire/SKILL.md 'tier: <sol|luna|astra> shape=<mechanical|standard|complex> override=<yes|no>' "fire's tier record format matches the ledger parser"
 must_contain skills/serve/SKILL.md 'worker: <codex | sonnet | opus>' "serve's state schema must be able to record every fire worker"
 must_contain skills/fire/references/worker-routes.md 'claude-opus-5' "Opus's model id is available to the route-must-be-priceable check"
 must_contain scripts/bench.sh 'observed difference on this measured task set' "both benchmark arms are measured, so the delta is a sample and must never be worded as a bound"
@@ -1051,6 +1052,112 @@ if [ "$rc" -eq 0 ] &&
   ok "ledger-append.py ignores findings.md outside taste jobs"
 else
   err "ledger-append.py added taste fields to a fire row (rc $rc): $out"
+fi
+
+for fixture in tier-valid tier-override tier-policy-mismatch; do
+  tier_ready=1
+  for path in "scripts/fixtures/$fixture.log" "scripts/fixtures/$fixture.result" \
+    "scripts/fixtures/$fixture.tier" "scripts/fixtures/$fixture.expected"; do
+    fixture_nonempty "$path" || tier_ready=0
+  done
+  mkdir "$LEDGER_FIX/$fixture"
+  if [ "$tier_ready" -eq 1 ]; then
+    seed_job "$LEDGER_FIX/$fixture" "$fixture"
+    cp "scripts/fixtures/$fixture.tier" "$LEDGER_FIX/$fixture/tier"
+    printf '%s\n' '2026-01-02T00:00:00Z' > "$LEDGER_FIX/$fixture/started"
+    out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
+      --job "$LEDGER_FIX/$fixture" --skill fire --session aaaa-bbbb --repo fixture \
+      --ledger "$LEDGER_FIX/$fixture.jsonl" 2>"$LEDGER_FIX/$fixture.stderr")
+    rc=$?
+    normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
+  else
+    out='fixture unavailable'
+    normal=$out
+    rc=1
+  fi
+  if [ "$rc" -eq 0 ] && [ -s "$LEDGER_FIX/$fixture.jsonl" ] &&
+    [ "$(wc -l < "$LEDGER_FIX/$fixture.jsonl")" -eq 1 ] &&
+    [ ! -s "$LEDGER_FIX/$fixture.stderr" ] &&
+    printf '%s\n' "$normal" | diff -q "scripts/fixtures/$fixture.expected" - >/dev/null; then
+    ok "ledger-append.py records $fixture in exact field order"
+  else
+    err "ledger-append.py $fixture differs from its golden (rc $rc): $out"
+  fi
+done
+
+tier_missing_ready=1
+for path in scripts/fixtures/tier-missing.{log,result,expected,stderr}; do
+  fixture_nonempty "$path" || tier_missing_ready=0
+done
+mkdir "$LEDGER_FIX/tier-missing"
+if [ "$tier_missing_ready" -eq 1 ]; then
+  seed_job "$LEDGER_FIX/tier-missing" tier-missing
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/tier-missing" --skill fire \
+    --repo fixture --ledger "$LEDGER_FIX/tier-missing.jsonl" \
+    2>"$LEDGER_FIX/tier-missing.stderr")
+  rc=$?
+  normal=$(printf '%s\n' "$out" | sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/')
+else
+  out='fixture unavailable'
+  normal=$out
+  rc=1
+fi
+if [ "$rc" -eq 0 ] && [ -s "$LEDGER_FIX/tier-missing.jsonl" ] &&
+  [ "$(wc -l < "$LEDGER_FIX/tier-missing.jsonl")" -eq 1 ] &&
+  printf '%s\n' "$normal" | diff -q scripts/fixtures/tier-missing.expected - >/dev/null &&
+  diff -q scripts/fixtures/tier-missing.stderr "$LEDGER_FIX/tier-missing.stderr" >/dev/null; then
+  ok "ledger-append.py appends a fire row and reports its missing tier"
+else
+  err "ledger-append.py missing tier behavior is wrong (rc $rc): $out"
+fi
+
+for fixture in tier-trailing-junk tier-overlong tier-unknown-shape; do
+  tier_file="scripts/fixtures/$fixture.tier"
+  if ! fixture_nonempty "$tier_file"; then
+    err "ledger-append.py must omit the $fixture fields (fixture unavailable)"
+    continue
+  fi
+  mkdir "$LEDGER_FIX/$fixture"
+  seed_job "$LEDGER_FIX/$fixture" ledger-complete
+  cp "$tier_file" "$LEDGER_FIX/$fixture/tier"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/$fixture" --skill fire \
+    --repo fixture --ledger "$LEDGER_FIX/$fixture.jsonl" \
+    2>"$LEDGER_FIX/$fixture.stderr")
+  rc=$?
+  if [ "$rc" -eq 0 ] && [ -s "$LEDGER_FIX/$fixture.jsonl" ] &&
+    [ "$(wc -l < "$LEDGER_FIX/$fixture.jsonl")" -eq 1 ] &&
+    jq -e '[has("tier"), has("shape"), has("override")] | any | not' \
+      "$LEDGER_FIX/$fixture.jsonl" >/dev/null &&
+    grep -Fxq 'ledger-append: tier not recorded: first line does not match the tier format' \
+      "$LEDGER_FIX/$fixture.stderr"; then
+    ok "ledger-append.py rejects the $fixture record"
+  else
+    err "ledger-append.py must omit the $fixture fields (rc $rc): $out"
+  fi
+done
+
+fixture_nonempty scripts/fixtures/tier-taste.tier
+tier_taste_ready=$?
+mkdir "$LEDGER_FIX/tier-taste"
+if [ "$tier_taste_ready" -eq 0 ]; then
+  seed_job "$LEDGER_FIX/tier-taste" ledger-complete
+  cp scripts/fixtures/tier-taste.tier "$LEDGER_FIX/tier-taste/tier"
+  out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/tier-taste" --skill taste \
+    --repo fixture --ledger "$LEDGER_FIX/tier-taste.jsonl" \
+    2>"$LEDGER_FIX/tier-taste.stderr")
+  rc=$?
+else
+  out='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] && [ -s "$LEDGER_FIX/tier-taste.jsonl" ] &&
+  [ "$(wc -l < "$LEDGER_FIX/tier-taste.jsonl")" -eq 1 ] &&
+  jq -e '[has("tier"), has("shape"), has("override")] | any | not' \
+    "$LEDGER_FIX/tier-taste.jsonl" >/dev/null &&
+  ! grep -q 'tier not recorded' "$LEDGER_FIX/tier-taste.stderr"; then
+  ok "ledger-append.py ignores a tier file outside fire jobs"
+else
+  err "ledger-append.py added tier fields to a taste row (rc $rc): $out"
 fi
 
 tab_fixture_ready=1

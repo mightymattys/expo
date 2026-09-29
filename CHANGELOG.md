@@ -3,6 +3,16 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- Fire asks whether work is mechanical before choosing its Codex tier, records the
+  decision in the job dir, and adds valid tier, shape, and override fields to fire
+  ledger rows with a reason when the record is missing or malformed. The parser checks
+  syntax only and deliberately records a policy mismatch such as `sol` for mechanical
+  work as declared: that mismatch is the misroute #11 exists to count, and rejecting it
+  would make it look like a missing record. Review flagged this as a defect; it was
+  refuted, and the comment above `TIER_RE` now says why.
+
 ## 0.18.0 - 2026-09-23 - the chef changes, the floor does not
 
 - **The flow diagram names one worker: GPT-6.** The box had been carrying the whole
