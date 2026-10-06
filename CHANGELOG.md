@@ -3,6 +3,18 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **release.sh resumes only a real release.** After a PR merged, a clean checkout of
+  origin/main still had its install behind HEAD, so release.sh took the resume branch
+  for an interrupted release. It printed "resuming: refreshing install", refreshed the
+  plugin to the version already installed and stopped, although nothing had been
+  released (seen while shipping 0.21.0). The resume branch now requires HEAD to be a
+  release commit, which is the same test the push-resume branch already used. Anything
+  else reports "nothing to release". check.sh builds a real origin and a stale install
+  and checks both cases: a release commit still resumes, and a merged feature commit
+  does not. Mutation-proved: putting the old condition back fails the check.
+
 ## 0.21.0 - 2026-10-06 - sol runs on gpt-6.1-sol
 
 - **The `sol` tier runs on `gpt-6.1-sol` (#21).** OpenAI released it on 2026-09-29 at

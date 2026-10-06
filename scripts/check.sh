@@ -90,6 +90,56 @@ if [ "$undated" -eq 0 ] && [ "$unreleased" -le 1 ]; then
 else
   err "CHANGELOG.md has $undated undated heading(s) and $unreleased Unreleased heading(s) - a shipped version must carry its date"
 fi
+# A clean checkout of origin/main whose HEAD is a merged feature commit, not a release,
+# once printed "resuming: refreshing install" and refreshed a release that never
+# happened (0.21.0). Built for real: a bare origin, a stale install, a fake claude that
+# records any call. The release-commit case must still resume, or the guard proves nothing.
+RS_BASE=$(mktemp -d)
+rs_ready=0
+mkdir -p "$RS_BASE/bin" "$RS_BASE/home/.claude/plugins"
+printf '#!/bin/sh\necho "$@" >> "%s/claude.calls"\n' "$RS_BASE" > "$RS_BASE/bin/claude"
+printf '#!/bin/sh\nexit 1\n' > "$RS_BASE/bin/gh"
+chmod +x "$RS_BASE/bin/claude" "$RS_BASE/bin/gh"
+printf '{"plugins":{"expo@expo":[{"scope":"user","gitCommitSha":"0000000"}]}}\n' \
+  > "$RS_BASE/home/.claude/plugins/installed_plugins.json"
+rs_git() { git -C "$RS_BASE/work" -c user.name=fixture -c user.email=fixture@local "$@"; }
+if git init -q --bare "$RS_BASE/origin.git" 2>/dev/null &&
+  git init -q -b main "$RS_BASE/work" 2>/dev/null &&
+  mkdir -p "$RS_BASE/work/scripts" "$RS_BASE/work/.claude-plugin" &&
+  cp scripts/release.sh "$RS_BASE/work/scripts/" &&
+  printf '{"version": "1.0.0"}\n' > "$RS_BASE/work/.claude-plugin/plugin.json" &&
+  rs_git add -A && rs_git commit -q -m '1.0.0 - release' &&
+  rs_git remote add origin "$RS_BASE/origin.git" &&
+  rs_git push -q origin main 2>/dev/null; then
+  rs_ready=1
+fi
+rs_run() {
+  (cd "$RS_BASE/work" && HOME="$RS_BASE/home" PATH="$RS_BASE/bin:$PATH" \
+    bash scripts/release.sh minor 'must not release' 2>&1)
+}
+rs_release=''
+rs_feature=''
+rs_feature_calls=1
+if [ "$rs_ready" = 1 ]; then
+  rs_release=$(rs_run)
+  rm -f "$RS_BASE/claude.calls"
+  if echo feature > "$RS_BASE/work/feature.txt" && rs_git add -A &&
+    rs_git commit -q -m feature && rs_git push -q origin main 2>/dev/null; then
+    rs_feature=$(rs_run)
+    if [ -e "$RS_BASE/claude.calls" ]; then rs_feature_calls=1; else rs_feature_calls=0; fi
+  fi
+fi
+if [ "$rs_ready" != 1 ]; then
+  err "release.sh resume fixture could not be built - the resume guard went unchecked"
+elif ! grep -q 'resuming: refreshing install' <<<"$rs_release"; then
+  err "release.sh no longer resumes a pushed release commit whose install is stale: $rs_release"
+elif grep -q 'resuming' <<<"$rs_feature" || ! grep -q 'nothing to release' <<<"$rs_feature" ||
+  [ "$rs_feature_calls" != 0 ]; then
+  err "release.sh treats a merged feature commit as a release to resume: $rs_feature"
+else
+  ok "release.sh resumes only a release commit, never a merged feature commit"
+fi
+rm -rf "$RS_BASE"
 mark=$fail
 
 # 2. Skill frontmatter --------------------------------------------------------
