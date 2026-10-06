@@ -3,6 +3,22 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased - 0.21.0 - sol is gpt-6.1-sol
+
+- **The `sol` tier runs on `gpt-6.1-sol` (#21).** OpenAI released it on 2026-09-29 at
+  the same list price as `gpt-6-sol`: $2 in and $10 out per MTok, a $6 blend, with the
+  same 272K long-context rule. Codex's model page now lists it in place of `gpt-6-sol`.
+  fire's tier table, taste's reviewer pin, mise's suggested default, the codex profile
+  comment and the README follow it, and check.sh guards the new taste pin.
+  prices.md adds both rows and keeps the `gpt-6-sol` rows, because existing ledger rows
+  name that model. Every price row was re-verified on 2026-10-06, and nothing else moved.
+- **Serve no longer loses fire's tier record (#22).** On 2026-10-05 a serve read
+  fire's skill only in part, never wrote `$JOB/tier`, and its fire row in the ledger
+  lost its tier. Serve's fire stage now names `$JOB/tier` next to `pre-fire.patch`, and
+  check.sh fails if it stops doing so (mutation-proved). A `tier not recorded` line from
+  the ledger sweep must be named in serve's final report instead of disappearing into a
+  piped tail.
+
 ## 0.20.2 - 2026-09-29 - a bound is per job
 
 - **A receipt's "lower bound" is judged per job, not per serve.** prices.md bounds

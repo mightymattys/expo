@@ -116,6 +116,26 @@ must_contain skills/serve/SKILL.md  'started:'  "the receipt template reads stat
 must_contain skills/simmer/SKILL.md 'started:'  "the receipt template reads the branch-scoped loop file's started: for wallclock"
 must_contain skills/serve/SKILL.md  'findings:' "refire (via serve) reads state.md's findings: line"
 must_contain skills/serve/SKILL.md  'baseline:' "taste's post-fire scope reads state.md's baseline: line"
+if serve_stage1_errors=$(python3 - <<'PY' 2>&1
+from pathlib import Path
+
+text = Path("skills/serve/SKILL.md").read_text(encoding="utf-8")
+start = text.find("## The pipeline\n")
+end = text.find("## Autonomy contract\n", start)
+if start < 0 or end < 0:
+    raise SystemExit("serve pipeline section is missing")
+stages = text[start:end].split("2. **Taste**", 1)
+if len(stages) != 2:
+    raise SystemExit("serve stage 1 boundary is missing")
+stage1 = stages[0]
+if "1. **Fire**" not in stage1 or "`$JOB/tier`" not in stage1:
+    raise SystemExit("serve stage 1 must name `$JOB/tier` before launch")
+PY
+); then
+  ok 'serve stage 1 requires the $JOB/tier artifact'
+else
+  err "serve stage-1 tier invariant failed: $serve_stage1_errors"
+fi
 must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findings.md's tree: anchor"
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
@@ -417,7 +437,7 @@ for s in fire taste refire; do
 done
 
 # taste's reviewer pin is real, not a hope about the user's config.
-must_contain skills/taste/SKILL.md '-c model=gpt-6-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
+must_contain skills/taste/SKILL.md '-c model=gpt-6.1-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
 must_contain skills/taste/SKILL.md '--security' "taste must expose the focused security lens"
 must_contain skills/taste/references/review-prompt.md '## Security prompt' "taste's security lens needs its own reviewer prompt"
 must_contain skills/taste/SKILL.md 'reviewed, not audited' "security findings and the user report must state the review limit"

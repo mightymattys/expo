@@ -32,7 +32,7 @@ with no say over what ships.**
 
 The split is economic: the model that costs more per token spends those tokens on
 judgment, and the worker's cheaper tokens go to bulk. Opus 5.5 blends at $12 per MTok
-against `gpt-6-sol`'s $6; astra, the override-only tier, is the one rung above the chef
+against `gpt-6.1-sol`'s $6; astra, the override-only tier, is the one rung above the chef
 and never gets picked by task shape. Everything runs on subscriptions you
 already have - no API keys.
 
@@ -86,7 +86,7 @@ explicit override:
 
 | `--tier` | Model | Effort | Task shape |
 |---|---|---|---|
-| `sol` | `gpt-6-sol` | high (`max` for the hardest) | standard features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes - **the default when unsure** |
+| `sol` | `gpt-6.1-sol` | high (`max` for the hardest) | standard features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes - **the default when unsure** |
 | `luna` | `gpt-6-luna` | medium | mechanical bulk: renames, boilerplate, docs, formatting sweeps |
 | `astra` | `gpt-6-astra` | high | **override-only**; never selected by task shape; long, messy, multi-step work with error recovery |
 

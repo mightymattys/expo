@@ -1,4 +1,4 @@
-# Rough price table - API list; every row verified 2026-09-29
+# Rough price table - API list; every row verified 2026-10-06
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend
@@ -11,14 +11,16 @@ this table does not retroactively correct them.
 Every OpenAI figure in the five-column receipt-pricing table below is the **short-context** rate. The Astra model page states:
 "Prompts with more than 272K input tokens are priced at 2x input and cache rates and
 1.5x output for the full request" (https://developers.openai.com/api/docs/models/gpt-6-astra);
-the gpt-6-sol page states the same 272K threshold verbatim
-(https://developers.openai.com/api/docs/models/gpt-6-sol).
+the gpt-6-sol and gpt-6.1-sol pages state the same 272K threshold verbatim
+(https://developers.openai.com/api/docs/models/gpt-6-sol;
+https://developers.openai.com/api/docs/models/gpt-6.1-sol).
 The pricing page lists these long-context rates (input/output per MTok;
 https://developers.openai.com/api/docs/pricing):
 
 | Model | In $/MTok | Out $/MTok |
 |---|---|---|
 | gpt-6-astra | 20.00 | 75.00 |
+| gpt-6.1-sol | 4.00 | 15.00 |
 | gpt-6-sol | 4.00 | 15.00 |
 | gpt-6-luna | 0.20 | 0.75 |
 | gpt-5.6-sol | 8.00 | 30.00 |
@@ -43,12 +45,13 @@ unstated.
 | Model | In $/MTok | Out $/MTok | 50/50 blend $/MTok | Source |
 |---|---|---|---|---|
 | gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; alias mapping: https://developers.openai.com/api/docs/pricing - promotional, held "at least through November 21, 2026" per the pricing page; re-verify after that date |
-| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-09-29 |
+| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-10-06 |
+| gpt-6.1-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6.1-sol - short-context rates |
 | gpt-6-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6-sol - short-context rates |
 | gpt-6-luna | 0.10 | 0.50 | 0.30 | https://developers.openai.com/api/docs/pricing - short-context rates |
 | gpt-6-astra | 10.00 | 50.00 | 30.00 | https://developers.openai.com/api/docs/models/gpt-6-astra - short-context rates; in the Codex model list as of 2026-09-07 |
 | gpt-5.6-cyber | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing |
-| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-09-29 |
+| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-10-06 |
 | gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models |
 | gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
@@ -60,7 +63,8 @@ Only models the kitchen actually runs, plus known banner aliases whose logged na
 need receipt pricing, belong in this table (GPT-6 tiers as workers, Opus 5.5 as the
 orchestrator whose own tokens a receipt prices, Fable 5 as the deliberately
 conservative reference blend that keeps the equal-volume delta a floor, and Opus 5
-because existing ledger rows name it as orchestrator). The GPT-5.6 rows outlive
+because existing ledger rows name it as orchestrator). The `gpt-6-sol` rows remain
+because existing ledger rows name it. The GPT-5.6 rows outlive
 their routes on purpose: `gpt-daybreak-blue-latest`
 aliases `gpt-5.6-sol`, and the checked-in benchmark measured terra and luna, so
 dropping them would make committed evidence unpriceable. Otherwise a
