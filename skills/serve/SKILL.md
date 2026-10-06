@@ -59,7 +59,9 @@ Claude's validation pass is the only cross-model check in that run.
 ## The pipeline
 
 1. **Fire** - per `/expo:fire`: preflight, ticket, backgrounded run, plating with
-   your own verification. Record the job's `pre-fire.patch` path as `baseline:` in
+   your own verification. Before launching, fire must leave `$JOB/tier` per its
+   "Choosing the model tier" section, alongside `pre-fire.patch`. Record the job's
+   `pre-fire.patch` path as `baseline:` in
    state.md - later stages scope against it. When fire plates, rewrite state.md in
    full with its current `runs_used`, `baseline:`, `stage: fire plated; next: taste`,
    and no cooking `job:`; the stage is not finished until state.md says so. If plating fails verification, one delta
@@ -126,6 +128,8 @@ Before writing the receipt, sweep the run into the running tab:
 "${CLAUDE_CODE_SESSION_ID:-}"`.
 This write heals only while the job dirs survive, so a session that ends before later
 plating is never counted.
+If the sweep prints `ledger-append: tier not recorded`, name that line in the final
+report; do not let a piped tail hide it.
 
 Then write the run's receipt to `.expo/receipts/` per
 [../receipts/references/receipt-template.md](../receipts/references/receipt-template.md).

@@ -64,7 +64,7 @@ Model and effort are normally pinned per fire by the tier flags (fire's tier tab
 the user's `~/.codex/config.toml` governs only their interactive Codex sessions and
 any run that forgot its flags. Read the `model` line there and say what it is: since
 Codex 0.154 the vendor's own default is `gpt-6-astra`, so a config that inherited it
-makes every unpinned run the most expensive one. Suggest `model = "gpt-6-sol"` and
+makes every unpinned run the most expensive one. Suggest `model = "gpt-6.1-sol"` and
 `model_reasoning_effort = "high"` as a sane default to set explicitly. If their config
 enables an `ultra` reasoning level, warn that it multiplies token spend by design and
 should stay off for delegated background runs.

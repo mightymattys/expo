@@ -291,7 +291,12 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   is what retired terra - a middle tier cheaper than neither neighbour has no shape to
   own. `gpt-6-luna` lists at $0.10/$0.50 against `gpt-5.6-luna`'s $0.20/$1.20.
   [Pricing](https://developers.openai.com/api/docs/pricing)
-  [gpt-6-sol](https://developers.openai.com/api/docs/models/gpt-6-sol) The honest limit
+  [gpt-6-sol](https://developers.openai.com/api/docs/models/gpt-6-sol). On 2026-10-06,
+  the current `sol` route moved to `gpt-6.1-sol`, released September 29 at the same
+  $2/$10 short-context list price.
+  [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
+  [Pricing](https://developers.openai.com/api/docs/pricing)
+  [Changelog](https://developers.openai.com/api/docs/changelog). The honest limit
   of this evidence: the prices are vendor-published and verified, but the capability
   ordering behind the shape column is OpenAI's own positioning ("built to power complex
   coding and agentic workflows"), not an independent benchmark - none covering the
