@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased - 0.21.0 - sol is gpt-6.1-sol
+## 0.21.0 - 2026-10-06 - sol runs on gpt-6.1-sol
 
 - **The `sol` tier runs on `gpt-6.1-sol` (#21).** OpenAI released it on 2026-09-29 at
   the same list price as `gpt-6-sol`: $2 in and $10 out per MTok, a $6 blend, with the
