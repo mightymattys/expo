@@ -119,7 +119,10 @@ if [ -z "$dirty" ] && [ "$ahead" -ne 0 ] &&
   git show --format= --name-only HEAD | grep -qx '.claude-plugin/plugin.json'; then
   ok "resuming: pushing existing release commit"
   resume_push=true
-elif [ -z "$dirty" ] && [ "$ahead" -eq 0 ] && [ "$claude_present" = true ]; then
+# Only a release commit can be resumed: a merged feature commit also leaves the
+# install behind HEAD, and refreshing it would report a release that never happened.
+elif [ -z "$dirty" ] && [ "$ahead" -eq 0 ] && [ "$claude_present" = true ] &&
+  git show --format= --name-only HEAD | grep -qx '.claude-plugin/plugin.json'; then
   expected_sha=$(git rev-parse HEAD) || { err "cannot read HEAD"; exit 1; }
   install_file="$HOME/.claude/plugins/installed_plugins.json"
   installed_sha=$(installed_user_sha "$install_file" 2>/dev/null || true)
