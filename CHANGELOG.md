@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.21.2 - 2026-10-10 - the alias pages, not the price page
 
 - **The Daybreak alias rows cite where the mapping now lives.** The 2026-10-10
   re-verification changed no price. OpenAI's pricing page no longer names
