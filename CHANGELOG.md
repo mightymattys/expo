@@ -3,6 +3,19 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **The Daybreak alias rows cite where the mapping now lives.** The 2026-10-10
+  re-verification changed no price. OpenAI's pricing page no longer names
+  `gpt-daybreak-blue-latest` or `gpt-daybreak-red-latest`, yet prices.md cited that
+  page as the source of both mappings. Each alias's own model page states its target:
+  blue still points to `gpt-5.6-sol` and red to `gpt-5.6-cyber`. Both pages now also
+  mark the alias as deprecated, so those pages are now the cited mapping source and the
+  rows record the deprecation. 0.21.0 stamped both mappings "as of 2026-10-06" without
+  opening the alias pages. The mappings turned out to hold, but that stamp did not
+  come from a check. Claude Haiku 5.5 is new on Anthropic's price list but gets no
+  row, because nothing in expo runs or prices it.
+
 ## 0.21.1 - 2026-10-06 - resume only a real release
 
 - **release.sh resumes only a real release.** After a PR merged, a clean checkout of
