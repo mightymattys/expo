@@ -1,4 +1,4 @@
-# Rough price table - API list; every row verified 2026-10-06
+# Rough price table - API list; every row verified 2026-10-10
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend
@@ -44,14 +44,14 @@ unstated.
 
 | Model | In $/MTok | Out $/MTok | 50/50 blend $/MTok | Source |
 |---|---|---|---|---|
-| gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; alias mapping: https://developers.openai.com/api/docs/pricing - promotional, held "at least through November 21, 2026" per the pricing page; re-verify after that date |
-| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-sol as of 2026-10-06 |
+| gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; price: https://developers.openai.com/api/docs/pricing - promotional, held "at least through November 21, 2026" per the pricing page; re-verify after that date |
+| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing (price); mapping: https://developers.openai.com/api/docs/models/gpt-daybreak-blue-latest - alias of gpt-5.6-sol as of 2026-10-10, deprecated by OpenAI |
 | gpt-6.1-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6.1-sol - short-context rates |
 | gpt-6-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6-sol - short-context rates |
 | gpt-6-luna | 0.10 | 0.50 | 0.30 | https://developers.openai.com/api/docs/pricing - short-context rates |
 | gpt-6-astra | 10.00 | 50.00 | 30.00 | https://developers.openai.com/api/docs/models/gpt-6-astra - short-context rates; in the Codex model list as of 2026-09-07 |
 | gpt-5.6-cyber | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing |
-| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing - alias of gpt-5.6-cyber as of 2026-10-06 |
+| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing (price); mapping: https://developers.openai.com/api/docs/models/gpt-daybreak-red-latest - alias of gpt-5.6-cyber as of 2026-10-10, deprecated by OpenAI |
 | gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models |
 | gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
@@ -70,6 +70,8 @@ aliases `gpt-5.6-sol`, and the checked-in benchmark measured terra and luna, so
 dropping them would make committed evidence unpriceable. Otherwise a
 retired generation is a stale row waiting to misprice something. An alias row's Source
 is a dated mapping, not a claim that the alias is a fixed model: it can be repointed.
+The pricing page stopped naming the Daybreak aliases; each alias's own model page
+states its target and its deprecation, so that page is the mapping's source.
 Subscription runs (the ChatGPT plan for the worker, the Claude plan for the
 orchestrator) have $0 marginal cost - receipts therefore always say "API-list terms",
 never "you paid". The only derived figure
