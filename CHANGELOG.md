@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.21.3 - 2026-10-11 - the repo is stamped at mint
 
 - **The ledger names the repo even after a worktree is gone (#26).** Five runs on
   2026-10-06 and 2026-10-07 were filed under worktree directory names (`wt-a1`,
