@@ -3,6 +3,21 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **The ledger names the repo even after a worktree is gone (#26).** Five runs on
+  2026-10-06 and 2026-10-07 were filed under worktree directory names (`wt-a1`,
+  `wt-224p`, ...) instead of `melveo-dashboard`. The session had removed those
+  worktrees before the sweep, and the sweep fell back to the directory name when it
+  could not resolve a missing path. fire, taste, refire and simmer now write
+  `$JOB/git-common-dir` next to `$JOB/started` while the tree still exists, and
+  `ledger-append.py` names the repo from that file first. A missing file behaves as
+  before. A malformed one is reported (`repo stamp ignored:`) and also falls back.
+  check.sh builds a real worktree, removes it and runs the sweep. The stamped job
+  must name the main repo, and an unstamped control must still get the worktree name.
+  Mutation-proved: ignoring the stamp and an unbuildable fixture both fail the check.
+  Rows already in the ledger keep their names.
+
 ## 0.21.2 - 2026-10-10 - the alias pages, not the price page
 
 - **The Daybreak alias rows cite where the mapping now lives.** The 2026-10-10
