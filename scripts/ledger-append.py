@@ -187,6 +187,25 @@ def tier_record(job):
     }, None
 
 
+def repo_stamp(job):
+    # Worktrees can be removed before the sweep, so preserve their shared repo path.
+    stamp = os.path.join(job, "git-common-dir")
+    if not os.path.lexists(stamp):
+        return None, None
+    try:
+        with open(stamp, encoding="utf-8") as source:
+            shared = source.readline().removesuffix("\n")
+    except Exception as error:
+        return None, f"cannot read git-common-dir: {error}"
+    if not shared:
+        return None, "git-common-dir is empty"
+    if not os.path.isabs(shared):
+        return None, "git-common-dir is not an absolute path"
+    if os.path.basename(shared) != ".git":
+        return None, "git-common-dir does not end in .git"
+    return os.path.basename(os.path.dirname(shared)), None
+
+
 def repo_name(workdir):
     # A worktree's own directory is named for the session that made it, so its basename
     # scattered one repo's rows across a new name per session. Name the repo after the
@@ -226,7 +245,12 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     if measured is None:
         return SKIPPED
     model, tokens, workdir = measured
-    repo = repo_value or repo_name(workdir)
+    repo = repo_value
+    if not repo:
+        repo, repo_error = repo_stamp(job)
+        if repo_error:
+            print(f"ledger-append: repo stamp ignored: {repo_error}", file=sys.stderr)
+        repo = repo or repo_name(workdir)
     if not repo:
         print(f"ledger-append: job log has no workdir: {log} - cannot resolve repo name",
               file=sys.stderr)

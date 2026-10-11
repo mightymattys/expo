@@ -42,7 +42,7 @@ Same as fire, and for the same reasons:
 2. Codex profile: `test -f ~/.codex/expo.config.toml` (missing means stop and
    offer `/expo:mise` - Codex silently ignores a missing profile).
 3. Mint a fresh job dir: `JOB=$(mktemp -d "$SCRATCHPAD/refire-<label>-XXXXXX")`; a
-   short descriptive label is welcome. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"`
+   short descriptive label is welcome. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` and its repo from the same repo-root cwd: `git rev-parse --path-format=absolute --git-common-dir > "$JOB/git-common-dir"`
    (`$SCRATCHPAD` is your session scratchpad directory; substitute its absolute path).
 4. Snapshot the tree: save `git diff` and `git status --short` into `$JOB` as the
    baseline. The tree is usually dirty here (it holds the diff that was just tasted);

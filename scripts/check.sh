@@ -464,6 +464,7 @@ fi
 # Ledger claude_tokens windows are per-job: every job-dir mint stamps $JOB/started.
 for f in skills/fire/SKILL.md skills/taste/SKILL.md skills/refire/SKILL.md skills/simmer/SKILL.md; do
   grep -qF '$JOB/started' "$f" || err "$f mints a job dir but never stamps \$JOB/started - its claude_tokens window has no anchor"
+  must_contain "$f" 'git-common-dir' "its repo stamp must survive worktree removal before the ledger sweep"
 done
 
 # Job names may be readable, but their stage prefix is the sweep's routing key.
@@ -1300,6 +1301,43 @@ if [ "$rc" -eq 0 ] && jq -e '.repo == "mainrepo"' "$LEDGER_FIX/worktree-repo.jso
   ok "ledger-append.py names a worktree run after its repo, not the worktree directory"
 else
   err "ledger-append.py worktree repo name is wrong (rc $rc): $out"
+fi
+# The sweep can run after the worktree is removed. Stamp while it exists, then
+# compare the stamped job with an otherwise identical unstamped control.
+removed_wt_ready=0
+if [ "$wt_ready" -eq 1 ] &&
+  fixture_nonempty scripts/fixtures/ledger-complete.log &&
+  fixture_nonempty scripts/fixtures/ledger-complete.result &&
+  mkdir -p "$LEDGER_FIX/removed-wt-stamped/fire-job" "$LEDGER_FIX/removed-wt-control/fire-job" &&
+  sed "s#^workdir: .*#workdir: $WT_BASE/session-wt-x7Qa#" scripts/fixtures/ledger-complete.log \
+    > "$LEDGER_FIX/removed-wt-stamped/fire-job/job.log" &&
+  cp scripts/fixtures/ledger-complete.result "$LEDGER_FIX/removed-wt-stamped/fire-job/result.md" &&
+  cp "$LEDGER_FIX/removed-wt-stamped/fire-job/"{job.log,result.md} "$LEDGER_FIX/removed-wt-control/fire-job/" &&
+  (cd "$WT_BASE/session-wt-x7Qa" &&
+    git rev-parse --path-format=absolute --git-common-dir \
+      > "$LEDGER_FIX/removed-wt-stamped/fire-job/git-common-dir") &&
+  git -C "$WT_BASE/mainrepo" worktree remove "$WT_BASE/session-wt-x7Qa" 2>/dev/null &&
+  [ ! -e "$WT_BASE/session-wt-x7Qa" ]; then
+  removed_wt_ready=1
+fi
+if [ "$removed_wt_ready" -ne 1 ]; then
+  err "ledger-append.py removed-worktree repo fixture could not be built - the repo stamp went unchecked"
+else
+  stamped_out=$(python3 scripts/ledger-append.py --run "$LEDGER_FIX/removed-wt-stamped" \
+    --ledger "$LEDGER_FIX/removed-wt-stamped.jsonl" 2>/dev/null)
+  stamped_rc=$?
+  control_out=$(python3 scripts/ledger-append.py --run "$LEDGER_FIX/removed-wt-control" \
+    --ledger "$LEDGER_FIX/removed-wt-control.jsonl" 2>/dev/null)
+  control_rc=$?
+  if [ "$stamped_rc" -eq 0 ] && [ "$control_rc" -eq 0 ] &&
+    jq -se 'length == 1 and .[0].repo == "mainrepo"' \
+      "$LEDGER_FIX/removed-wt-stamped.jsonl" >/dev/null 2>&1 &&
+    jq -se 'length == 1 and .[0].repo == "session-wt-x7Qa"' \
+      "$LEDGER_FIX/removed-wt-control.jsonl" >/dev/null 2>&1; then
+    ok "ledger-append.py repo stamp survives worktree removal; without it the sweep keeps the worktree basename"
+  else
+    err "ledger-append.py removed-worktree repo stamp or control is wrong (stamped rc $stamped_rc, control rc $control_rc): $stamped_out / $control_out"
+  fi
 fi
 rm -rf "$WT_BASE"
 
