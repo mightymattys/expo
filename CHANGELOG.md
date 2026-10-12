@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.23.0 - 2026-10-12 - whether a fix holds is measured
 
 - **Whether a refire's fix holds is now measured (#29).** serve's confirmation taste
   was optional and the first thing dropped, and no ledger row said whether a taste was
