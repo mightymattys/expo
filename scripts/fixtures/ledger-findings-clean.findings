@@ -1,0 +1,6 @@
+taste: verdict=ship confirmed=0 refuted=1 diff_lines=37
+# SHIP - fixture scope - 1 refuted - tree: abc123+def456
+CONFIRMED: none
+## Refuted (audit trail - not refire input)
+1. [major] [race] src/queue.py:9 - Concurrent writes lose work.
+REFUTED: a lock guards this path.

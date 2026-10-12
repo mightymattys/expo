@@ -4,6 +4,27 @@
 # used to abort the whole tab on it. Bad lines are skipped and counted, never silent.
 set -u
 
+if [ "${1:-}" = --findings ]; then
+  set -o pipefail
+  findings=${2:-"$HOME/.expo/findings.jsonl"}
+  if [ ! -f "$findings" ]; then
+    printf '%s\n' '{"findings": 0, "repos": []}'
+    exit 0
+  fi
+  total=$(grep -c '[^[:space:]]' "$findings" | tr -d ' ')
+  jq -R 'fromjson? // empty' "$findings" | jq -s --argjson total "${total:-0}" '
+    {findings: length, repos: (
+      group_by(.repo) | map({repo: .[0].repo, classes: (
+        group_by(.class) | map({class: .[0].class, count: length, severity: {
+          blocker: (map(select(.severity == "blocker")) | length),
+          major: (map(select(.severity == "major")) | length),
+          minor: (map(select(.severity == "minor")) | length)
+        }}) | sort_by([-.count, .class])
+      )})
+    )} + (if $total > length then {unreadable_lines: ($total - length)} else {} end)'
+  exit $?
+fi
+
 ledger=${1:-"$HOME/.expo/ledger.jsonl"}
 if [ ! -f "$ledger" ]; then
   printf '%s\n' '{"jobs": 0}'

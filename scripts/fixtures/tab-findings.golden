@@ -1,0 +1,37 @@
+{
+  "findings": 4,
+  "repos": [
+    {
+      "repo": "fixture",
+      "classes": [
+        {
+          "class": "null-handling",
+          "count": 2,
+          "severity": {
+            "blocker": 0,
+            "major": 1,
+            "minor": 1
+          }
+        },
+        {
+          "class": "auth",
+          "count": 1,
+          "severity": {
+            "blocker": 1,
+            "major": 0,
+            "minor": 0
+          }
+        },
+        {
+          "class": "x",
+          "count": 1,
+          "severity": {
+            "blocker": 0,
+            "major": 0,
+            "minor": 1
+          }
+        }
+      ]
+    }
+  ]
+}

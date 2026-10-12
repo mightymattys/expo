@@ -187,6 +187,8 @@ else
   err "serve stage-1 tier invariant failed: $serve_stage1_errors"
 fi
 must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findings.md's tree: anchor"
+must_contain skills/taste/SKILL.md '[<class>]' "confirmed finding headers carry a reusable defect class"
+must_contain skills/serve/SKILL.md 'findings not recorded' "serve must surface lost finding records in its final report"
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
 must_contain skills/simmer/SKILL.md 'tier:'     "every Codex lap's invocation reads the branch-scoped loop file's tier: line"
@@ -1078,6 +1080,262 @@ fixture_nonempty() {
   err "fixture missing or empty: $1"
   return 1
 }
+
+# Every findings fixture has its own ledger directory; HOME is also isolated so a
+# misplaced write is detected without ever reaching the user's real ~/.expo.
+FINDINGS_FIX="$LEDGER_FIX/findings"
+mkdir -p "$FINDINGS_FIX/home/.expo"
+findings_run() { # scenario fixture-name
+  local path
+  for path in scripts/fixtures/ledger-complete.{log,result} "scripts/fixtures/$2.findings"; do
+    fixture_nonempty "$path" || return 1
+  done
+  mkdir -p "$FINDINGS_FIX/$1/run/taste-fixture" || return 1
+  seed_job "$FINDINGS_FIX/$1/run/taste-fixture" ledger-complete || return 1
+  cp "scripts/fixtures/$2.findings" "$FINDINGS_FIX/$1/run/taste-fixture/findings.md" || return 1
+  printf '%s\n' '2026-01-02T00:00:00Z' > "$FINDINGS_FIX/$1/run/taste-fixture/started" || return 1
+  HOME="$FINDINGS_FIX/home" EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
+    --run "$FINDINGS_FIX/$1/run" --session aaaa-bbbb --repo fixture \
+    --ledger "$FINDINGS_FIX/$1/l.jsonl" >"$FINDINGS_FIX/$1/stdout" 2>"$FINDINGS_FIX/$1/stderr"
+}
+findings_run valid ledger-findings-valid
+findings_valid_rc=$?
+findings_expected_ready=1
+fixture_nonempty scripts/fixtures/ledger-findings-valid.golden || findings_expected_ready=0
+if [ "$findings_valid_rc" -eq 0 ] && [ "$findings_expected_ready" -eq 1 ] &&
+  [ -s "$FINDINGS_FIX/valid/l.jsonl" ] && [ -s "$FINDINGS_FIX/valid/findings.jsonl" ] &&
+  [ ! -s "$FINDINGS_FIX/valid/stderr" ] &&
+  jq -se 'length == 1 and .[0].skill == "taste" and .[0].confirmed == 4 and .[0].repo == "fixture"' \
+    "$FINDINGS_FIX/valid/l.jsonl" >/dev/null &&
+  jq -se --slurpfile taste "$FINDINGS_FIX/valid/l.jsonl" \
+    'length == 4 and all(.[]; .ts == $taste[0].ts and .repo == $taste[0].repo)' \
+    "$FINDINGS_FIX/valid/findings.jsonl" >/dev/null &&
+  sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/' "$FINDINGS_FIX/valid/findings.jsonl" | \
+    diff -q scripts/fixtures/ledger-findings-valid.golden - >/dev/null; then
+  ok "ledger-append.py persists exactly four confirmed findings with exact fields and fenced section scope"
+else
+  err "ledger-append.py valid findings must produce four exact records and one taste row (rc $findings_valid_rc)"
+fi
+if [ "$findings_valid_rc" -eq 0 ] && [ -s "$FINDINGS_FIX/valid/findings.jsonl" ] &&
+  [ ! -e "$FINDINGS_FIX/home/.expo/findings.jsonl" ]; then
+  ok "ledger-append.py writes findings next to --ledger, never to HOME"
+else
+  err "ledger-append.py findings must be next to --ledger, with no HOME write"
+fi
+
+findings_run mismatch ledger-findings-mismatch
+rc=$?
+if [ "$rc" -eq 0 ] && [ -s "$FINDINGS_FIX/mismatch/l.jsonl" ] &&
+  [ ! -s "$FINDINGS_FIX/mismatch/findings.jsonl" ] &&
+  jq -se 'length == 1 and .[0].skill == "taste" and .[0].confirmed == 3' \
+    "$FINDINGS_FIX/mismatch/l.jsonl" >/dev/null &&
+  grep -Fxq 'ledger-append: findings not recorded: parsed 2 of 3' "$FINDINGS_FIX/mismatch/stderr"; then
+  ok "ledger-append.py rejects a finding count mismatch while retaining the taste row"
+else
+  err "ledger-append.py mismatch must record zero findings, retain one taste row, and warn (rc $rc)"
+fi
+findings_run mismatch-fenced ledger-findings-mismatch-fenced
+rc=$?
+if [ "$rc" -eq 0 ] && [ -s "$FINDINGS_FIX/mismatch-fenced/l.jsonl" ] &&
+  [ ! -s "$FINDINGS_FIX/mismatch-fenced/findings.jsonl" ] &&
+  jq -se 'length == 1 and .[0].skill == "taste" and .[0].confirmed == 3' \
+    "$FINDINGS_FIX/mismatch-fenced/l.jsonl" >/dev/null &&
+  grep -Fxq 'ledger-append: findings not recorded: parsed 2 of 3' "$FINDINGS_FIX/mismatch-fenced/stderr"; then
+  ok "ledger-append.py ignores a fenced valid header when rejecting a finding count mismatch"
+else
+  err "ledger-append.py fenced mismatch must parse 2 of 3, record zero findings, and retain one taste row (rc $rc)"
+fi
+findings_run unparsed ledger-findings-unparsed
+rc=$?
+if [ "$rc" -eq 0 ] && [ -s "$FINDINGS_FIX/unparsed/l.jsonl" ] &&
+  [ ! -s "$FINDINGS_FIX/unparsed/findings.jsonl" ] &&
+  jq -se 'length == 1 and .[0].skill == "taste" and .[0].confirmed == 3' \
+    "$FINDINGS_FIX/unparsed/l.jsonl" >/dev/null &&
+  grep -Fxq 'ledger-append: findings not recorded: parsed 0 of 3' "$FINDINGS_FIX/unparsed/stderr"; then
+  ok "ledger-append.py warns when a positive outcome has zero parseable finding headers"
+else
+  err "ledger-append.py unparsed findings must retain one taste row and warn (rc $rc)"
+fi
+# Valid headers before excessive padding must not let a partial read pass the count
+# gate. Both byte and line limits are checked with materialised fixture derivatives.
+for limit in bytes lines; do
+  bounds_ready=1
+  findings_run "bounded-$limit" ledger-findings-valid || bounds_ready=0
+  if [ "$bounds_ready" -eq 1 ] && [ -s "$FINDINGS_FIX/bounded-$limit/findings.jsonl" ] &&
+    python3 - "$FINDINGS_FIX/bounded-$limit" "$limit" <<'PY'
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+findings = root / "run/taste-fixture/findings.md"
+with findings.open("a") as target:
+    target.write("x" * (1024 * 1024) if sys.argv[2] == "bytes" else "padding\n" * 10001)
+for path in [root / "l.jsonl", root / "findings.jsonl", root / "run/taste-fixture/.ledgered"]:
+    path.unlink()
+PY
+  then
+    HOME="$FINDINGS_FIX/home" EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
+      --run "$FINDINGS_FIX/bounded-$limit/run" --session aaaa-bbbb --repo fixture \
+      --ledger "$FINDINGS_FIX/bounded-$limit/l.jsonl" \
+      >"$FINDINGS_FIX/bounded-$limit/stdout" 2>"$FINDINGS_FIX/bounded-$limit/stderr"
+    rc=$?
+  else
+    rc=1
+  fi
+  if [ "$rc" -eq 0 ] && [ -s "$FINDINGS_FIX/bounded-$limit/l.jsonl" ] &&
+    [ ! -s "$FINDINGS_FIX/bounded-$limit/findings.jsonl" ] &&
+    jq -se 'length == 1 and .[0].confirmed == 4' "$FINDINGS_FIX/bounded-$limit/l.jsonl" >/dev/null &&
+    grep -Fxq 'ledger-append: findings not recorded: parsed 0 of 4' "$FINDINGS_FIX/bounded-$limit/stderr"; then
+    ok "ledger-append.py rejects findings beyond its $limit read bound"
+  else
+    err "ledger-append.py $limit bound must reject findings and retain one taste row (rc $rc)"
+  fi
+done
+findings_run clean ledger-findings-clean
+rc=$?
+if [ "$rc" -eq 0 ] && [ -s "$FINDINGS_FIX/clean/l.jsonl" ] &&
+  [ ! -s "$FINDINGS_FIX/clean/findings.jsonl" ] && [ ! -s "$FINDINGS_FIX/clean/stderr" ] &&
+  jq -se 'length == 1 and .[0].skill == "taste" and .[0].confirmed == 0' \
+    "$FINDINGS_FIX/clean/l.jsonl" >/dev/null; then
+  ok "ledger-append.py clean taste writes no findings and no warning"
+else
+  err "ledger-append.py clean taste must retain one row without findings or warning (rc $rc)"
+fi
+
+findings_dedupe_ready=0
+if [ "$findings_valid_rc" -eq 0 ] && [ -s "$FINDINGS_FIX/valid/l.jsonl" ] &&
+  [ -s "$FINDINGS_FIX/valid/findings.jsonl" ] &&
+  cp "$FINDINGS_FIX/valid/l.jsonl" "$FINDINGS_FIX/before-ledger" &&
+  cp "$FINDINGS_FIX/valid/findings.jsonl" "$FINDINGS_FIX/before-findings"; then
+  findings_dedupe_ready=1
+  out=$(HOME="$FINDINGS_FIX/home" EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
+    --run "$FINDINGS_FIX/valid/run" --session aaaa-bbbb --repo fixture \
+    --ledger "$FINDINGS_FIX/valid/l.jsonl" 2>"$FINDINGS_FIX/repeated.stderr")
+  rc=$?
+else
+  out='fixture unavailable'
+  rc=1
+fi
+if [ "$findings_dedupe_ready" -eq 1 ] && [ "$rc" -eq 0 ] && [ -z "$out" ] &&
+  diff -q "$FINDINGS_FIX/before-ledger" "$FINDINGS_FIX/valid/l.jsonl" >/dev/null &&
+  diff -q "$FINDINGS_FIX/before-findings" "$FINDINGS_FIX/valid/findings.jsonl" >/dev/null &&
+  grep -Fq 'skipped already ledgered job dir:' "$FINDINGS_FIX/repeated.stderr"; then
+  ok "ledger-append.py repeated sweep appends neither taste row nor findings"
+else
+  err "ledger-append.py repeated sweep must leave both nonempty ledgers unchanged (rc $rc)"
+fi
+
+findings_tab_ready=1
+fixture_nonempty scripts/fixtures/tab-findings.golden || findings_tab_ready=0
+if [ "$findings_valid_rc" -eq 0 ] && [ "$findings_tab_ready" -eq 1 ] &&
+  [ -s "$FINDINGS_FIX/valid/findings.jsonl" ]; then
+  tab=$(HOME="$FINDINGS_FIX/home" bash scripts/tab.sh --findings "$FINDINGS_FIX/valid/findings.jsonl")
+  rc=$?
+else
+  tab='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] && printf '%s\n' "$tab" | diff -q scripts/fixtures/tab-findings.golden - >/dev/null; then
+  ok "tab.sh --findings reports per-repo classes by descending count with severity splits"
+else
+  err "tab.sh --findings must match its nonempty golden (rc $rc): $tab"
+fi
+findings_mixed_ready=1
+for path in scripts/fixtures/tab-findings-mixed.{jsonl,golden}; do
+  fixture_nonempty "$path" || findings_mixed_ready=0
+done
+if [ "$findings_mixed_ready" -eq 1 ]; then
+  tab=$(HOME="$FINDINGS_FIX/home" bash scripts/tab.sh --findings scripts/fixtures/tab-findings-mixed.jsonl)
+  rc=$?
+else
+  tab='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] && printf '%s\n' "$tab" | diff -q scripts/fixtures/tab-findings-mixed.golden - >/dev/null; then
+  ok "tab.sh --findings separates repos, sorts tied classes, and counts unreadable lines"
+else
+  err "tab.sh --findings mixed rows must match their nonempty golden (rc $rc): $tab"
+fi
+findings_default_ready=0
+if mkdir -p "$FINDINGS_FIX/tab-home/.expo" &&
+  [ "$findings_valid_rc" -eq 0 ] && [ -s "$FINDINGS_FIX/valid/findings.jsonl" ] &&
+  cp "$FINDINGS_FIX/valid/findings.jsonl" "$FINDINGS_FIX/tab-home/.expo/findings.jsonl"; then
+  findings_default_ready=1
+  tab=$(HOME="$FINDINGS_FIX/tab-home" bash scripts/tab.sh --findings)
+  rc=$?
+else
+  tab='fixture unavailable'
+  rc=1
+fi
+if [ "$findings_default_ready" -eq 1 ] && [ "$findings_tab_ready" -eq 1 ] && [ "$rc" -eq 0 ] &&
+  printf '%s\n' "$tab" | diff -q scripts/fixtures/tab-findings.golden - >/dev/null; then
+  ok "tab.sh --findings defaults to the isolated HOME findings ledger"
+else
+  err "tab.sh --findings default path must read the nonempty HOME fixture (rc $rc): $tab"
+fi
+for mode in missing empty; do
+  zero_ready=1
+  mkdir -p "$FINDINGS_FIX/zero-$mode/.expo" || zero_ready=0
+  if [ "$mode" = empty ]; then
+    : > "$FINDINGS_FIX/zero-$mode/.expo/findings.jsonl" || zero_ready=0
+  fi
+  tab=$(HOME="$FINDINGS_FIX/zero-$mode" bash scripts/tab.sh --findings)
+  rc=$?
+  if [ "$zero_ready" -eq 1 ] && [ "$rc" -eq 0 ] &&
+    printf '%s\n' "$tab" | jq -se 'length == 1 and .[0] == {findings: 0, repos: []}' >/dev/null; then
+    ok "tab.sh --findings returns zero for a $mode ledger"
+  else
+    err "tab.sh --findings $mode ledger must return one zero result (rc $rc): $tab"
+  fi
+done
+
+# Fail only ingestion; the second jq must still run normally. The marker proves
+# the injected failure ran, and the default branch must retain its prior status.
+ingest_ready=1
+real_jq=$(command -v jq) || ingest_ready=0
+mkdir -p "$FINDINGS_FIX/failing-jq" || ingest_ready=0
+cat > "$FINDINGS_FIX/failing-jq/jq" <<'SH' || ingest_ready=0
+#!/usr/bin/env bash
+if [ "${1:-}" = -R ]; then
+  printf '%s\n' 'fixture: jq ingestion failed' >&2
+  exit 42
+fi
+exec "$EXPO_TEST_JQ" "$@"
+SH
+chmod +x "$FINDINGS_FIX/failing-jq/jq" || ingest_ready=0
+if [ "$ingest_ready" -eq 1 ] && [ -x "$real_jq" ] &&
+  [ -f "$FINDINGS_FIX/zero-empty/.expo/findings.jsonl" ]; then
+  empty_default=$(HOME="$FINDINGS_FIX/home" bash scripts/tab.sh "$FINDINGS_FIX/zero-empty/.expo/findings.jsonl")
+  empty_default_rc=$?
+  tab=$(HOME="$FINDINGS_FIX/home" EXPO_TEST_JQ="$real_jq" PATH="$FINDINGS_FIX/failing-jq:$PATH" \
+    bash scripts/tab.sh --findings "$FINDINGS_FIX/zero-empty/.expo/findings.jsonl" \
+    2>"$FINDINGS_FIX/ingest.stderr")
+  rc=$?
+  default_tab=$(HOME="$FINDINGS_FIX/home" EXPO_TEST_JQ="$real_jq" PATH="$FINDINGS_FIX/failing-jq:$PATH" \
+    bash scripts/tab.sh "$FINDINGS_FIX/zero-empty/.expo/findings.jsonl" \
+    2>"$FINDINGS_FIX/default-ingest.stderr")
+  default_rc=$?
+else
+  empty_default=''
+  empty_default_rc=1
+  tab='fixture unavailable'
+  rc=1
+  default_tab=''
+  default_rc=1
+fi
+if [ "$ingest_ready" -eq 1 ] && [ "$rc" -eq 42 ] &&
+  grep -Fxq 'fixture: jq ingestion failed' "$FINDINGS_FIX/ingest.stderr" &&
+  printf '%s\n' "$tab" | jq -se 'length == 1 and .[0] == {findings: 0, repos: []}' >/dev/null; then
+  ok "tab.sh --findings propagates a failed first jq even for an empty ledger"
+else
+  err "tab.sh --findings must propagate the injected ingestion failure (rc $rc): $tab"
+fi
+if [ "$ingest_ready" -eq 1 ] && [ "$empty_default_rc" -eq 0 ] && [ "$default_rc" -eq 0 ] &&
+  [ -n "$empty_default" ] && [ "$default_tab" = "$empty_default" ] &&
+  grep -Fxq 'fixture: jq ingestion failed' "$FINDINGS_FIX/default-ingest.stderr"; then
+  ok "tab.sh default mode keeps its output and exit status when the first jq fails"
+else
+  err "tab.sh default ingestion failure behavior changed (rc $default_rc): $default_tab"
+fi
 
 TASTE_VALID="$LEDGER_FIX/taste-valid-run/taste-fixture"
 taste_valid_ready=1

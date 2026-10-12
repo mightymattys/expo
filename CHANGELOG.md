@@ -3,6 +3,24 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **What taste finds is kept (#28).** 45 tastes since 2026-09-22 confirmed 145
+  findings, but each `findings.md` lived in a scratchpad the OS clears, and only one
+  survived. Every confirmed finding now opens with one fixed header line,
+  `<n>. [<severity>] [<class>] <path>:<line> - <defect>`, where class is a short
+  kebab-case tag the chef picks. When `ledger-append.py` records a taste, it also
+  appends one line per confirmed finding to `findings.jsonl` next to the ledger
+  (`~/.expo/findings.jsonl`). It fails closed: if the parsed headers do not match
+  `confirmed=`, it writes nothing and prints `findings not recorded`, and serve's
+  report must name that line. Reads are bounded, and headers quoted inside code
+  fences don't count. `tab.sh --findings` shows the classes per repo by count, with
+  a severity split. Tests write only next to a temporary `--ledger`; one check
+  proves the real home path is never touched. The serve that built this was tasted
+  on itself: 3 confirmed findings (fenced headers passing the count gate, a greedy
+  path capture, a masked pipeline exit status), all fixed with mutation-proved
+  checks. Those three are the first lines in the new file.
+
 ## 0.21.3 - 2026-10-11 - the repo is stamped at mint
 
 - **The ledger names the repo even after a worktree is gone (#26).** Five runs on
