@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.22.0 - 2026-10-12 - what taste finds is kept
 
 - **What taste finds is kept (#28).** 45 tastes since 2026-09-22 confirmed 145
   findings, but each `findings.md` lived in a scratchpad the OS clears, and only one
