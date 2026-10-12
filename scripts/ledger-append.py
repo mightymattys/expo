@@ -15,7 +15,7 @@ TOKENS_RE = re.compile(r"^\s*(\d+|\d{1,3}(?:,\d{3})+)\s*$")
 INTEGER_RE = re.compile(r"^\d+$")
 TASTE_OUTCOME_RE = re.compile(
     r"^taste: verdict=(ship|fix-first) confirmed=([0-9]{1,7}) "
-    r"refuted=([0-9]{1,7}) diff_lines=([0-9]{1,7})$"
+    r"refuted=([0-9]{1,7}) diff_lines=([0-9]{1,7})(?: pass=(first|confirm))?$"
 )
 FINDING_RE = re.compile(
     r"^[0-9]+\. \[(blocker|major|minor)\] \[([a-z0-9]+(?:-[a-z0-9]+)*)\] "
@@ -164,12 +164,13 @@ def taste_outcome(job):
     match = TASTE_OUTCOME_RE.fullmatch(first_line.removesuffix("\n"))
     if not match:
         return None, "first line does not match the taste outcome format"
-    verdict, confirmed, refuted, diff_lines = match.groups()
+    verdict, confirmed, refuted, diff_lines, taste_pass = match.groups()
     return {
         "verdict": verdict,
         "confirmed": int(confirmed),
         "refuted": int(refuted),
         "diff_lines": int(diff_lines),
+        "pass": taste_pass or "first",
     }, None
 
 

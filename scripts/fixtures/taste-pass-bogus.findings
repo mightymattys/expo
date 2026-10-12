@@ -1,0 +1,2 @@
+taste: verdict=ship confirmed=0 refuted=1 diff_lines=12 pass=bogus
+# Invalid pass must follow the malformed-outcome path

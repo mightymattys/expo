@@ -188,6 +188,9 @@ else
 fi
 must_contain skills/taste/SKILL.md  'tree:'     "refire's preflight reads findings.md's tree: anchor"
 must_contain skills/taste/SKILL.md '[<class>]' "confirmed finding headers carry a reusable defect class"
+must_contain skills/taste/SKILL.md 'pass=confirm' "confirmation tastes must mark their outcome pass"
+must_contain skills/serve/SKILL.md 'pass=confirm' "serve must mark confirmation tastes"
+must_contain skills/serve/SKILL.md 'fewer than 10' "serve must measure the initial confirmation window"
 must_contain skills/serve/SKILL.md 'findings not recorded' "serve must surface lost finding records in its final report"
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
@@ -1403,6 +1406,37 @@ for fixture in taste-trailing-junk taste-overlong taste-eight-digits; do
   fi
 done
 
+# Pass markers are outcome fields: absent is first, and only the two bounded
+# suffix values are valid. findings_run fails if any input or job cannot be built.
+for scenario in pass-default pass-first pass-confirm; do
+  findings_run "$scenario" "taste-$scenario"
+  rc=$?
+  expected_pass=first
+  [ "$scenario" != pass-confirm ] || expected_pass=confirm
+  if [ "$rc" -eq 0 ] &&
+    jq -se --arg pass "$expected_pass" 'length == 1 and
+      (.[0] | .skill == "taste" and .pass == $pass and
+       .verdict == "ship" and .confirmed == 0 and .refuted == 1 and .diff_lines == 12)' \
+      "$FINDINGS_FIX/$scenario/l.jsonl" >/dev/null &&
+    ! grep -q 'taste outcome not recorded' "$FINDINGS_FIX/$scenario/stderr"; then
+    ok "ledger-append.py records $scenario as pass=$expected_pass"
+  else
+    err "ledger-append.py must record $scenario as pass=$expected_pass (rc $rc; fixture build or parse failed)"
+  fi
+done
+findings_run pass-bogus taste-pass-bogus
+rc=$?
+if [ "$rc" -eq 0 ] &&
+  jq -se 'length == 1 and (.[0] | .skill == "taste" and
+    ([has("verdict"), has("confirmed"), has("refuted"), has("diff_lines"), has("pass")] | any | not))' \
+    "$FINDINGS_FIX/pass-bogus/l.jsonl" >/dev/null &&
+  grep -Fxq 'ledger-append: taste outcome not recorded: first line does not match the taste outcome format' \
+    "$FINDINGS_FIX/pass-bogus/stderr"; then
+  ok "ledger-append.py rejects pass=bogus through the malformed-outcome path"
+else
+  err "ledger-append.py must omit pass=bogus outcome fields with the malformed-outcome stderr (rc $rc; fixture build or parse failed)"
+fi
+
 fixture_nonempty scripts/fixtures/taste-fire.findings
 fire_fixture_ready=$?
 mkdir "$LEDGER_FIX/fire-with-findings"
@@ -1418,7 +1452,7 @@ else
   rc=1
 fi
 if [ "$rc" -eq 0 ] &&
-  jq -e '[has("verdict"), has("confirmed"), has("refuted"), has("diff_lines")] | any | not' \
+  jq -e '[has("verdict"), has("confirmed"), has("refuted"), has("diff_lines"), has("pass")] | any | not' \
     "$LEDGER_FIX/fire-with-findings.jsonl" >/dev/null &&
   ! grep -q 'taste outcome' "$LEDGER_FIX/fire-with-findings.stderr"; then
   ok "ledger-append.py ignores findings.md outside taste jobs"
@@ -1634,6 +1668,31 @@ if [ "$rc" -eq 0 ] &&
   ok "tab.sh leaves pre-outcome ledgers byte-for-byte unchanged"
 else
   err "tab.sh added taste data to a pre-outcome ledger (rc $rc): $tab"
+fi
+
+confirmation_ready=1
+fixture_nonempty scripts/fixtures/tab-confirmation.jsonl || confirmation_ready=0
+if [ "$confirmation_ready" -eq 1 ] &&
+  cp scripts/fixtures/tab-confirmation.jsonl "$LEDGER_FIX/tab-confirmation.jsonl"; then
+  tab=$(bash scripts/tab.sh "$LEDGER_FIX/tab-confirmation.jsonl")
+  rc=$?
+else
+  tab='fixture unavailable'
+  rc=1
+fi
+if [ "$rc" -eq 0 ] &&
+  printf '%s\n' "$tab" | jq -se 'length == 1 and (.[0] |
+    .jobs == 6 and .confirmation == {n: 4, fix_first: 1} and
+    .taste == {measured: 6, without_outcome: 0, hit_rate: 0.5,
+      smallest_hit_diff_lines: 45, by_diff_size: [
+        {bucket: "<=50", n: 1, hit_rate: 1},
+        {bucket: "51-200", n: 0, hit_rate: 0},
+        {bucket: "201-500", n: 1, hit_rate: 0},
+        {bucket: ">500", n: 0, hit_rate: 0}
+      ]})' >/dev/null; then
+  ok "tab.sh counts confirmations separately from first-pass review value"
+else
+  err "tab.sh confirmation count or first-pass hit metrics are wrong (rc $rc): $tab"
 fi
 
 for fixture in ledger-no-summary ledger-no-banner; do
