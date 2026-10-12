@@ -53,6 +53,8 @@ jq -R 'fromjson? // empty' "$ledger" | jq -s --argjson total "${total:-0}" '
       and (.refuted | type) == "number" and .refuted >= 0
       and (.diff_lines | type) == "number" and .diff_lines >= 0
     ))) as $measured_tastes
+  | ($measured_tastes | map(select(.pass != "confirm"))) as $first_tastes
+  | ($measured_tastes | map(select(.pass == "confirm"))) as $confirm_tastes
   | {n: ($paired | length),
      worker: (($paired | map(.tokens) | add) // 0),
      orchestration: (($paired | map(.claude_tokens) | add) // 0)} as $p
@@ -64,13 +66,19 @@ jq -R 'fromjson? // empty' "$ledger" | jq -s --argjson total "${total:-0}" '
        {taste: {
          measured: ($measured_tastes | length),
          without_outcome: (($taste_rows | length) - ($measured_tastes | length)),
-         hit_rate: ($measured_tastes | hit_rate),
-         smallest_hit_diff_lines: (($measured_tastes | map(select(.confirmed >= 1) | .diff_lines) | min) // null),
+         hit_rate: ($first_tastes | hit_rate),
+         smallest_hit_diff_lines: (($first_tastes | map(select(.confirmed >= 1) | .diff_lines) | min) // null),
          by_diff_size: [
-           bucket("<=50"; $measured_tastes | map(select(.diff_lines <= 50))),
-           bucket("51-200"; $measured_tastes | map(select(.diff_lines >= 51 and .diff_lines <= 200))),
-           bucket("201-500"; $measured_tastes | map(select(.diff_lines >= 201 and .diff_lines <= 500))),
-           bucket(">500"; $measured_tastes | map(select(.diff_lines > 500)))
+           bucket("<=50"; $first_tastes | map(select(.diff_lines <= 50))),
+           bucket("51-200"; $first_tastes | map(select(.diff_lines >= 51 and .diff_lines <= 200))),
+           bucket("201-500"; $first_tastes | map(select(.diff_lines >= 201 and .diff_lines <= 500))),
+           bucket(">500"; $first_tastes | map(select(.diff_lines > 500)))
          ]
+       }}
+     else {} end)
+  + (if ($confirm_tastes | length) > 0 then
+       {confirmation: {
+         n: ($confirm_tastes | length),
+         fix_first: ($confirm_tastes | map(select(.verdict == "fix-first" and .confirmed >= 1)) | length)
        }}
      else {} end)'

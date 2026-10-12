@@ -220,6 +220,13 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   recorded review. The rule for it is fixed now, before any data, so the cutoff cannot
   be chosen after seeing the answer: mechanical work may take a lighter review only if
   at most 1 of its first 10 recorded reviews returns fix-first. [#13](https://github.com/mightymattys/expo/issues/13)
+- Does a refire's fix hold, or introduce new defects? Confirmation tastes mark
+  `pass=confirm` and review the refire's delta against its own pre-fire baseline.
+  Measure the first 10 while budget slots allow: at most 1 fix-first with a
+  confirmed finding keeps confirmation optional; 3 or more makes it mandatory
+  with a reserved slot. Exactly 2 extends the window to 20: at most 2 optional,
+  6 or more mandatory; an intermediate result keeps measurement open pending a
+  decision. [#29](https://github.com/mightymattys/expo/issues/29), [serve](../skills/serve/SKILL.md#autonomy-contract), [taste](../skills/taste/SKILL.md)
 
 ## Why fast mode is surfaced, not inherited silently
 

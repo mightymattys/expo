@@ -113,10 +113,17 @@ check; outside-list paths are named, warned, and excluded from the stage delta.
   backgrounding rule included - never nest `&`, `nohup`, or `disown` in the command),
   never poll, per-job dirs, outcome checks before trusting results, baseline-aware diffs.
 - Budget: at most 5 Codex runs total (fire, one delta if needed, taste, refire,
-  optional confirmation taste). The count lives in `$RUN/state.md`, not in your
-  context. Failed runs and retries count - the budget is quota spend, not useful
-  output - so when a retry eats a slot, the confirmation taste is the first thing
-  dropped; say so in the final report. If the work is not done inside the budget,
+  confirmation taste). The count lives in `$RUN/state.md`, not in your context;
+  failed runs and retries count. While `scripts/tab.sh` reports fewer than 10
+  confirmation tastes (`confirmation.n` absent or < 10), taste after every refire
+  that leaves a slot, scoped to the refire's delta against its own pre-fire baseline
+  and marked `pass=confirm`. Of the first 10, count fix-first with confirmed >= 1:
+  at most 1 keeps confirmation optional; 3 or more makes it mandatory, reserving
+  its slot. Exactly 2 means measure to 20 while slots allow: at most 2 of the first
+  20 makes it optional, 6 or more mandatory; between those, keep measuring with
+  slots available pending a decision. A retry eating the slot still drops
+  confirmation; say so in the final report. Report its CONFIRMED findings as OPEN,
+  never silently fix them. If the work is not done inside the budget,
   stop and report honestly where it stands; if what remains is goal-shaped (a check
   command that must pass), offer to continue as `/expo:simmer` rather than
   overrunning.

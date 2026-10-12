@@ -3,6 +3,23 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **Whether a refire's fix holds is now measured (#29).** serve's confirmation taste
+  was optional and the first thing dropped, and no ledger row said whether a taste was
+  one. So nobody knew whether refires introduce new defects. A taste's outcome line now
+  takes an optional ` pass=<first|confirm>` (absent means first), and ledger-append
+  records `pass` on taste rows. `tab.sh` reports a `confirmation` count and
+  `fix_first` count. Confirmation passes stay out of the hit rate and out of
+  `smallest_hit_diff_lines`, which drive serve's skip rule and measure first-pass
+  review only. While fewer than 10 confirmation tastes exist, serve runs one after
+  every refire that leaves a budget slot. The rule is fixed before the data, in
+  serve/SKILL.md and design.md: at most 1 of the first 10 fix-first with a confirmed
+  finding keeps it optional, and 3 or more make it mandatory. Exactly 2 extends the
+  window to 20. A confirmation taste's findings are reported as open, never silently
+  fixed. Mutation-proved: recording every pass as first, and letting confirm rows
+  into the skip threshold, both fail check.sh.
+
 ## 0.22.0 - 2026-10-12 - what taste finds is kept
 
 - **What taste finds is kept (#28).** 45 tastes since 2026-09-22 confirmed 145

@@ -1,0 +1,6 @@
+{"skill":"taste","tokens":100,"verdict":"fix-first","confirmed":1,"refuted":0,"diff_lines":45}
+{"skill":"taste","tokens":100,"verdict":"ship","confirmed":0,"refuted":0,"diff_lines":250,"pass":"first"}
+{"skill":"taste","tokens":100,"verdict":"fix-first","confirmed":1,"refuted":0,"diff_lines":1,"pass":"confirm"}
+{"skill":"taste","tokens":100,"verdict":"fix-first","confirmed":0,"refuted":0,"diff_lines":100,"pass":"confirm"}
+{"skill":"taste","tokens":100,"verdict":"ship","confirmed":1,"refuted":0,"diff_lines":300,"pass":"confirm"}
+{"skill":"taste","tokens":100,"verdict":"ship","confirmed":0,"refuted":0,"diff_lines":600,"pass":"confirm"}
