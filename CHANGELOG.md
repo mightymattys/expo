@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.23.1 - 2026-10-12 - prices held, the readme caught up
 
 - **Prices re-verified on 2026-10-12; none moved.** OpenAI's pricing page no longer
   lists `gpt-6-sol`, `gpt-5.6-terra` or `gpt-5.6-luna`. Their model pages still state
