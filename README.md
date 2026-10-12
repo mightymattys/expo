@@ -105,6 +105,13 @@ spend by design, with nobody watching.
 - **Run receipts** (`.expo/receipts/`): every serve and simmer drops a per-run
   receipt - measured tokens on both sides, an API-list dollar split, the diff,
   the verdict, a paste-ready summary. `/expo:receipts` prints the last ten.
+- **Findings** (`~/.expo/findings.jsonl`): every finding a taste confirms is kept -
+  severity, a defect-class tag, file:line, one sentence. `scripts/tab.sh --findings`
+  shows which classes keep coming back per repo, so a recurring one can become a
+  rule in that repo's `AGENTS.md` instead of another refire.
+- **Does the fix hold?** Serve runs a confirmation taste after each refire until ten
+  exist; a rule fixed before the data then decides whether it stays optional or
+  becomes mandatory ([#29](https://github.com/mightymattys/expo/issues/29)).
 - **Freshness is enforced**: CI fails when the price table's as-of date rots or a
   dated price note expires. A model missing from the table warns loudly instead
   of pricing by guess.
@@ -290,7 +297,7 @@ scripts/check.sh      the executable invariant list - CI runs it on every push; 
 scripts/diffscan.py   counted change facts from a diff, for routing a large review
 scripts/ledger-append.py  measured Codex job ledger lines, singly or by idempotent run/scratchpad sweep
 scripts/orch-tokens.py  orchestration tokens for one window, from the session transcript
-scripts/tab.sh        the running tab across every repo, from ~/.expo/ledger.jsonl - with taste hit rate and the measured skip floor once tastes carry outcomes
+scripts/tab.sh        the running tab across every repo, from ~/.expo/ledger.jsonl - with taste hit rate and the measured skip floor; `--findings` tallies defect classes
 scripts/bench.sh      renders the benchmark arms into bench/RESULTS.md
 scripts/release.sh    the release gate: check, bump, stamp the changelog, publish
 scripts/stamp-changelog.py  turns the Unreleased heading into a dated one
@@ -303,7 +310,7 @@ the registration). Using the plugin may also have created (remove by hand if
 you're done with them):
 
 - `~/.codex/expo.config.toml` (the delegation profile)
-- `~/.expo/ledger.jsonl` (the running tab)
+- `~/.expo/ledger.jsonl` (the running tab) and `~/.expo/findings.jsonl` (confirmed findings)
 - a "Division of labor (expo, ...)" routing block appended to `~/.claude/CLAUDE.md`
 - an `AGENTS.md` scaffold and/or `@AGENTS.md` import line in repos you set up
   (these are yours now - they're useful regardless of the plugin)

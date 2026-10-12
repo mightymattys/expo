@@ -1,4 +1,4 @@
-# Rough price table - API list; every row verified 2026-10-10
+# Rough price table - API list; every row verified 2026-10-12
 
 For receipt estimates only. Job logs report the worker's uncached input + output
 combined, with no in/out split, so receipts price tokens at the 50/50 blend
@@ -15,7 +15,12 @@ the gpt-6-sol and gpt-6.1-sol pages state the same 272K threshold verbatim
 (https://developers.openai.com/api/docs/models/gpt-6-sol;
 https://developers.openai.com/api/docs/models/gpt-6.1-sol).
 The pricing page lists these long-context rates (input/output per MTok;
-https://developers.openai.com/api/docs/pricing):
+https://developers.openai.com/api/docs/pricing). Since 2026-10-12 it no longer lists
+gpt-6-sol, gpt-5.6-terra or gpt-5.6-luna; their own model pages still state the same
+short-context prices and the 2x input / 1.5x output rule above 272K, which gives the
+rows below (https://developers.openai.com/api/docs/models/gpt-6-sol;
+https://developers.openai.com/api/docs/models/gpt-5.6-terra;
+https://developers.openai.com/api/docs/models/gpt-5.6-luna):
 
 | Model | In $/MTok | Out $/MTok |
 |---|---|---|
@@ -45,15 +50,15 @@ unstated.
 | Model | In $/MTok | Out $/MTok | 50/50 blend $/MTok | Source |
 |---|---|---|---|---|
 | gpt-5.6-sol | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/models; price: https://developers.openai.com/api/docs/pricing - promotional, held "at least through November 21, 2026" per the pricing page; re-verify after that date |
-| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing (price); mapping: https://developers.openai.com/api/docs/models/gpt-daybreak-blue-latest - alias of gpt-5.6-sol as of 2026-10-10, deprecated by OpenAI |
+| gpt-daybreak-blue-latest | 4.00 | 20.00 | 12.00 | https://developers.openai.com/api/docs/pricing (price); mapping: https://developers.openai.com/api/docs/models/gpt-daybreak-blue-latest - alias of gpt-5.6-sol as of 2026-10-12, deprecated by OpenAI |
 | gpt-6.1-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6.1-sol - short-context rates |
 | gpt-6-sol | 2.00 | 10.00 | 6.00 | https://developers.openai.com/api/docs/models/gpt-6-sol - short-context rates |
 | gpt-6-luna | 0.10 | 0.50 | 0.30 | https://developers.openai.com/api/docs/pricing - short-context rates |
 | gpt-6-astra | 10.00 | 50.00 | 30.00 | https://developers.openai.com/api/docs/models/gpt-6-astra - short-context rates; in the Codex model list as of 2026-09-07 |
 | gpt-5.6-cyber | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing |
-| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing (price); mapping: https://developers.openai.com/api/docs/models/gpt-daybreak-red-latest - alias of gpt-5.6-cyber as of 2026-10-10, deprecated by OpenAI |
-| gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models |
-| gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models |
+| gpt-daybreak-red-latest | 12.50 | 75.00 | 43.75 | https://developers.openai.com/api/docs/pricing (price); mapping: https://developers.openai.com/api/docs/models/gpt-daybreak-red-latest - alias of gpt-5.6-cyber as of 2026-10-12, deprecated by OpenAI |
+| gpt-5.6-terra | 2.00 | 12.00 | 7.00 | https://developers.openai.com/api/docs/models/gpt-5.6-terra |
+| gpt-5.6-luna | 0.20 | 1.20 | 0.70 | https://developers.openai.com/api/docs/models/gpt-5.6-luna |
 | claude-fable-5 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing |
 | claude-fable-5-1 | 10.00 | 50.00 | 30.00 | https://platform.claude.com/docs/en/about-claude/pricing - same blend as Fable 5; its cheaper cache-read multiplier does not affect a 50/50 in/out blend |
 | claude-opus-5-5 | 4.00 | 20.00 | 12.00 | https://platform.claude.com/docs/en/about-claude/pricing |

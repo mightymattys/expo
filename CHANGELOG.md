@@ -3,6 +3,17 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+- **Prices re-verified on 2026-10-12; none moved.** OpenAI's pricing page no longer
+  lists `gpt-6-sol`, `gpt-5.6-terra` or `gpt-5.6-luna`. Their model pages still state
+  the same prices and the same 2x input / 1.5x output rule above 272K, so those rows
+  now cite the model pages. The Daybreak aliases were opened again: still
+  `gpt-5.6-sol` and `gpt-5.6-cyber`, still deprecated. Claude prices are unchanged.
+- **The README covers what 0.22 and 0.23 added:** the findings ledger and
+  `tab.sh --findings`, the confirmation-taste measurement, and `findings.jsonl`
+  in the uninstall list.
+
 ## 0.23.0 - 2026-10-12 - whether a fix holds is measured
 
 - **Whether a refire's fix holds is now measured (#29).** serve's confirmation taste
