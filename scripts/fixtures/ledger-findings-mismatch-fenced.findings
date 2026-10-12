@@ -1,0 +1,18 @@
+taste: verdict=fix-first confirmed=3 refuted=1 diff_lines=37
+# FIX FIRST - fixture scope - 1 refuted - tree: abc123+def456
+1. [major] [null-handling] src/store.py:12-30 - A missing value crashes the lookup.
+EVIDENCE: the quoted header does not repair the malformed second finding.
+```markdown
+2. [minor] [null-handling] src/view.py:205,255 — Empty values render an invalid label.
+```
+FIX: Handle the missing value before indexing.
+2. [minor] [Null Handling] src/view.py:205,255 — Empty values render an invalid label.
+Continuation lines remain free-form.
+## Security findings
+reviewed, not audited
+3. [blocker] [auth] src/auth.py:42 - The endpoint skips the role check.
+EVIDENCE: a caller without the required role can read private records.
+FIX: Enforce the role before reading records.
+## Refuted (audit trail - not refire input)
+4. [major] [race] src/queue.py:9 - Concurrent writes lose work.
+REFUTED: a lock guards this path.

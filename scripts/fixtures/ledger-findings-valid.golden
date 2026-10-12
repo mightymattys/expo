@@ -1,0 +1,4 @@
+{"ts":"<ts>","repo":"fixture","severity":"major","class":"null-handling","file":"src/store.py","line":"12-30","defect":"A missing value crashes the lookup.","security":false}
+{"ts":"<ts>","repo":"fixture","severity":"minor","class":"null-handling","file":"src/view.py","line":"205,255","defect":"Empty values render an invalid label.","security":false}
+{"ts":"<ts>","repo":"fixture","severity":"blocker","class":"auth","file":"src/auth.py","line":"42","defect":"An unchecked authorization boundary exposes private records to callers without the required role, including records from other tenants and archived records that should remain inaccessible after accoun","security":true}
+{"ts":"<ts>","repo":"fixture","severity":"minor","class":"x","file":"src/app.py","line":"10","defect":"The fallback emits status:500 - Internal Server Error.","security":true}

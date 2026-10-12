@@ -1,0 +1,6 @@
+{"ts":"2026-01-01T00:00:00Z","file":"src/app.py","line":"12","defect":"Fixture defect.","security":false,"repo":"beta","class":"auth","severity":"major"}
+{"ts":"2026-01-01T00:00:00Z","file":"src/app.py","line":"12","defect":"Fixture defect.","security":false,"repo":"alpha","class":"race","severity":"minor"}
+{"ts":"2026-01-01T00:00:00Z","file":"src/app.py","line":"12","defect":"Fixture defect.","security":false,"repo":"beta","class":"auth","severity":"blocker"}
+{"ts":"2026-01-01T00:00:00Z","file":"src/app.py","line":"12","defect":"Fixture defect.","security":false,"repo":"alpha","class":"auth","severity":"major"}
+not valid JSON
+

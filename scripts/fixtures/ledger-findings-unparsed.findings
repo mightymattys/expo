@@ -1,0 +1,3 @@
+taste: verdict=fix-first confirmed=3 refuted=0 diff_lines=37
+# FIX FIRST
+Legacy finding blocks have no parseable headers.

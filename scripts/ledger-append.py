@@ -17,6 +17,12 @@ TASTE_OUTCOME_RE = re.compile(
     r"^taste: verdict=(ship|fix-first) confirmed=([0-9]{1,7}) "
     r"refuted=([0-9]{1,7}) diff_lines=([0-9]{1,7})$"
 )
+FINDING_RE = re.compile(
+    r"^[0-9]+\. \[(blocker|major|minor)\] \[([a-z0-9]+(?:-[a-z0-9]+)*)\] "
+    r"([^\r\n]+?):([0-9]+(?:-[0-9]+|(?:,[0-9]+)+)?) [—-] (\S[^\r\n]*)$"
+)
+FINDINGS_MAX_BYTES = 1024 * 1024
+FINDINGS_MAX_LINES = 10000
 # Syntax only, never routing policy: `tier: sol shape=mechanical override=no` is recorded
 # as declared, because that mismatch is the misroute this field exists to count (#11).
 # Rejecting it would make a misroute indistinguishable from a missing tier record.
@@ -167,6 +173,46 @@ def taste_outcome(job):
     }, None
 
 
+def confirmed_findings(job):
+    # A refire can rewrite this scratchpad. Reject incomplete reads rather than
+    # recording a prefix that happens to match the declared count.
+    try:
+        with open(os.path.join(job, "findings.md"), "rb") as source:
+            data = source.read(FINDINGS_MAX_BYTES + 1)
+        if len(data) > FINDINGS_MAX_BYTES:
+            return []
+        lines = data.decode("utf-8").splitlines()
+        if len(lines) > FINDINGS_MAX_LINES:
+            return []
+    except (OSError, UnicodeError):
+        return []
+    findings = []
+    security = False
+    fence = None
+    for header in lines[1:]:
+        marker = re.fullmatch(r" {0,3}(`{3,}|~{3,})(.*)", header)
+        if fence is not None:
+            if (marker and marker[1][0] == fence[0] and
+                    len(marker[1]) >= len(fence) and not marker[2].strip()):
+                fence = None
+            continue
+        if marker and (marker[1][0] == "~" or "`" not in marker[2]):
+            fence = marker[1]
+            continue
+        if re.fullmatch(r"## Refuted(?:\s.*)?", header):
+            break
+        if header.startswith("## "):
+            security = header.rstrip() == "## Security findings"
+        match = FINDING_RE.fullmatch(header)
+        if match:
+            severity, defect_class, path, line, defect = match.groups()
+            findings.append({
+                "severity": severity, "class": defect_class, "file": path,
+                "line": line, "defect": defect[:200], "security": security,
+            })
+    return findings
+
+
 def tier_record(job):
     tier_file = os.path.join(job, "tier")
     if not os.path.isfile(tier_file):
@@ -295,6 +341,21 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
         print(f"ledger-append: taste outcome not recorded: {outcome_error}", file=sys.stderr)
     if tier_error:
         print(f"ledger-append: tier not recorded: {tier_error}", file=sys.stderr)
+    if outcome is not None and outcome["confirmed"] > 0:
+        findings = confirmed_findings(job)
+        if len(findings) != outcome["confirmed"]:
+            print(f"ledger-append: findings not recorded: parsed {len(findings)} "
+                  f"of {outcome['confirmed']}", file=sys.stderr)
+        else:
+            findings_ledger = os.path.join(parent, "findings.jsonl")
+            try:
+                with open(findings_ledger, "a", encoding="utf-8") as target:
+                    for finding in findings:
+                        record = {"ts": line["ts"], "repo": line["repo"], **finding}
+                        target.write(json.dumps(record, separators=(",", ":")) + "\n")
+            except Exception:
+                print(f"ledger-append: findings not recorded: cannot write ledger: "
+                      f"{findings_ledger}", file=sys.stderr)
 
     marker = os.path.join(job, ".ledgered")
     # The ledger append is already durable here. If this marker write fails, a retry

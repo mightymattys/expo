@@ -128,8 +128,9 @@ Before writing the receipt, sweep the run into the running tab:
 "${CLAUDE_CODE_SESSION_ID:-}"`.
 This write heals only while the job dirs survive, so a session that ends before later
 plating is never counted.
-If the sweep prints `ledger-append: tier not recorded`, name that line in the final
-report; do not let a piped tail hide it.
+If the sweep prints `ledger-append: tier not recorded` or
+`ledger-append: findings not recorded`, name that line in the final report; do not
+let a piped tail hide it.
 
 Then write the run's receipt to `.expo/receipts/` per
 [../receipts/references/receipt-template.md](../receipts/references/receipt-template.md).
