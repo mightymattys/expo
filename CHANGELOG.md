@@ -3,6 +3,31 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased
+
+An audit of every job dir since 0.23.0, done twice on 2026-10-21, found that the data
+#28 and #29 collect was leaking in three places.
+
+- **Serve stages no longer run from memory (#33).** Two aggro sessions loaded serve
+  0.23.1 but never loaded taste again after 2026-10-12. They reviewed on `gpt-6-sol`
+  in the pre-0.22 format, so 13 confirmed findings were recorded as 0 and their
+  confirmation tastes counted as first passes. A melveo-dashboard session wrote all 14
+  of its findings.md files ad hoc, with no outcome line, and stamped no job's repo.
+  serve now loads each stage's sibling skill before running it, every time.
+  ledger-append warns when a taste ran on a model other than the reviewer pin, read
+  from taste/SKILL.md itself, and when a job lacks its repo stamp. serve's report must
+  name every `ledger-append:` warning.
+- **Jobs from a serve that ended early are healed (#34).** In one melveo-app session,
+  7 of 10 serves since 2026-10-17 ended without the final sweep, which left 16 job
+  dirs out of the ledger. fire's preflight and serve's start now sweep the whole
+  session scratchpad first. The sweep is idempotent, so it costs nothing on a clean
+  session. The orphaned dirs found by the audit were swept by hand.
+- **Mixed line lists parse (#35).** `path:247-248,336,356` was rejected, and the count
+  gate then dropped that taste's findings.
+- **Prices re-verified on 2026-10-21; none moved.** OpenAI's pricing page no longer
+  lists long-context rates at all, so that table now cites each model page's 2x / 1.5x
+  rule above 272K. The Daybreak aliases were checked on their pages.
+
 ## 0.23.1 - 2026-10-12 - prices held, the readme caught up
 
 - **Prices re-verified on 2026-10-12; none moved.** OpenAI's pricing page no longer

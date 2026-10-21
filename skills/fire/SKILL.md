@@ -32,6 +32,9 @@ the one-line announcement then replaces the proposal: announce and fire.
 
 ## Preflight (all deterministic, run before writing the ticket)
 
+First run the same session-scratchpad sweep that plating runs (step 6 below), to
+heal jobs whose serve ended before its final sweep.
+
 1. **Git repo with at least one commit** - `git rev-parse HEAD` succeeds. Codex refuses non-repos by default, and diff review needs a baseline. If not: tell the user to `git init` / make an initial commit first.
 2. **Profile exists** - `test -f ~/.codex/expo.config.toml`. This check is load-bearing: Codex **silently ignores a missing profile** (exit 0, runs under the user's own defaults - possibly no sandbox at all). If missing: stop and offer `/expo:mise`.
 3. **Job directory** - mint one per fire: `JOB=$(mktemp -d "$SCRATCHPAD/fire-<label>-XXXXXX")` (`$SCRATCHPAD` = your session scratchpad directory; substitute its absolute path); a short descriptive label is welcome. The `fire-` prefix is not optional: the sweep reads the stage from it, and a job dir without it never reaches the running tab. Then stamp its start: `date -u +%Y-%m-%dT%H:%M:%SZ > "$JOB/started"` and its repo from the same repo-root cwd: `git rev-parse --path-format=absolute --git-common-dir > "$JOB/git-common-dir"` - the ledger's `claude_tokens` window opens here. Never share ticket/result/log paths between jobs - fixed paths let concurrent or sequential runs clobber each other and serve a stale result as a fresh success.
@@ -130,8 +133,8 @@ A long run need not be a silent one. If the user opted into progress ticks (or s
      to the running tab with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`. The ledger is
      the running tab; its worker and orchestration counts are measured from this job's
      log and `$JOB/started`, and a run whose tokens cannot be read leaves no line. This
-     write heals only while the job dir survives, so a session that ends before later
-     plating is never counted.
+     write heals only while the job dirs survive; the next preflight sweep can recover
+     jobs missed by a serve that ended early.
    - Send ONE delta: a fresh fire (new `$JOB`, short ticket that states what the previous run got wrong, quotes the failing output, and scopes the fix). Do NOT use `codex exec resume` - resumed sessions rebuild config from the user's defaults, silently dropping the sandbox, and `--last` may grab a different session entirely. Fresh run + state on disk is the reliable path.
 
 Cap follow-ups at two rounds. If it's still not right after two deltas, take over and finish it yourself - further debate has diminishing returns.

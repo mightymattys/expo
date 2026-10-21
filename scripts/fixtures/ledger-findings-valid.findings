@@ -16,7 +16,7 @@ reviewed, not audited
 3. [blocker] [auth] src/auth.py:42 - An unchecked authorization boundary exposes private records to callers without the required role, including records from other tenants and archived records that should remain inaccessible after account suspension.
 EVIDENCE: the endpoint skips the role check.
 FIX: Enforce the role before reading records.
-4. [minor] [x] src/app.py:10 - The fallback emits status:500 - Internal Server Error.
+4. [minor] [x] src/app.py:247-248,336,356 - The fallback emits status:500 - Internal Server Error.
 ## Refuted (audit trail - not refire input)
 5. [major] [race] src/queue.py:9 - Concurrent writes lose work.
 REFUTED: a lock guards this path.
