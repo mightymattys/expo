@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased
+## 0.23.2 - 2026-10-21 - the stages are loaded, not remembered
 
 An audit of every job dir since 0.23.0, done twice on 2026-10-21, found that the data
 #28 and #29 collect was leaking in three places.
