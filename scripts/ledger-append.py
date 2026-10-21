@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime, timezone
+from functools import lru_cache
 
 
 MODEL_RE = re.compile(r"^\s*model:\s*(\S.*?)\s*$")
@@ -19,7 +20,7 @@ TASTE_OUTCOME_RE = re.compile(
 )
 FINDING_RE = re.compile(
     r"^[0-9]+\. \[(blocker|major|minor)\] \[([a-z0-9]+(?:-[a-z0-9]+)*)\] "
-    r"([^\r\n]+?):([0-9]+(?:-[0-9]+|(?:,[0-9]+)+)?) [—-] (\S[^\r\n]*)$"
+    r"([^\r\n]+?):([0-9]+(?:-[0-9]+)?(?:,[0-9]+(?:-[0-9]+)?)*) [—-] (\S[^\r\n]*)$"
 )
 FINDINGS_MAX_BYTES = 1024 * 1024
 FINDINGS_MAX_LINES = 10000
@@ -39,6 +40,22 @@ FATAL = "fatal"
 class SilentParser(argparse.ArgumentParser):
     def error(self, message):
         raise ValueError(message)
+
+
+@lru_cache(maxsize=1)
+def reviewer_pin():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "..", "skills", "taste", "SKILL.md")
+    try:
+        with open(path, encoding="utf-8") as source:
+            pins = re.findall(r"^[ \t]*-c model=([a-z0-9]+(?:[.-][a-z0-9]+)*)(?=[ \t]|$)",
+                              source.read(), re.MULTILINE)
+        if len(pins) != 1:
+            raise ValueError(f"expected one anchored -c model=<slug> pin in {path}, found {len(pins)}")
+    except (OSError, UnicodeError, ValueError) as error:
+        print(f"ledger-append: reviewer pin unreadable: {error}", file=sys.stderr)
+        return None
+    return pins[0]
 
 
 def measured_job(job):
@@ -338,6 +355,13 @@ def append_job(job, skill, lap, branch, session, repo_value, ledger, until=None,
     except Exception:
         print(f"ledger-append: cannot write ledger: {ledger}", file=sys.stderr)
         return FATAL
+    if not os.path.lexists(os.path.join(job, "git-common-dir")):
+        print("ledger-append: repo stamp missing", file=sys.stderr)
+    if skill == "taste":
+        pin = reviewer_pin()
+        if pin is not None and model != pin:
+            print(f"ledger-append: taste model {model} differs from the pinned reviewer {pin} "
+                  "- stale stage instructions?", file=sys.stderr)
     if outcome_error:
         print(f"ledger-append: taste outcome not recorded: {outcome_error}", file=sys.stderr)
     if tier_error:

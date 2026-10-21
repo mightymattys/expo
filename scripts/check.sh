@@ -192,6 +192,10 @@ must_contain skills/taste/SKILL.md 'pass=confirm' "confirmation tastes must mark
 must_contain skills/serve/SKILL.md 'pass=confirm' "serve must mark confirmation tastes"
 must_contain skills/serve/SKILL.md 'fewer than 10' "serve must measure the initial confirmation window"
 must_contain skills/serve/SKILL.md 'findings not recorded' "serve must surface lost finding records in its final report"
+must_contain skills/fire/SKILL.md 'same session-scratchpad sweep' "fire preflight heals jobs missed by an earlier serve"
+must_contain skills/serve/SKILL.md 'Before stage 1, sweep the session scratchpad' "serve preflight heals jobs missed by an earlier serve"
+must_contain skills/serve/SKILL.md 'Before every stage, load its sibling skill' "serve must reload current stage instructions every time"
+must_contain skills/serve/SKILL.md 'Name every `ledger-append:` warning line' "serve must report every ledger warning"
 must_contain skills/serve/SKILL.md  'tier:'     "refire reads state.md's tier: line for the worker tier"
 must_contain skills/refire/SKILL.md 'tier:'     "refire must read the tier serve recorded"
 must_contain skills/simmer/SKILL.md 'tier:'     "every Codex lap's invocation reads the branch-scoped loop file's tier: line"
@@ -1084,6 +1088,20 @@ fixture_nonempty() {
   return 1
 }
 
+# Run real CLI jobs, including an isolated plugin copy with an unreadable pin.
+for scenario in pin stamp unreadable; do
+  if warning_check=$(python3 scripts/fixtures/ledger-warnings.py "$scenario" 2>&1) &&
+    [ "$(printf '%s\n' "$warning_check" | tail -1)" = "ok ledger $scenario warning contract" ]; then
+    ok "ledger-append.py $scenario warning contract"
+  else
+    err "ledger-append.py $scenario warning contract: $warning_check"
+  fi
+done
+reviewer_pin=$(sed -n 's/^[[:blank:]]*-c model=\([a-z0-9.-]*\) .*/\1/p' skills/taste/SKILL.md)
+if [[ ! "$reviewer_pin" =~ ^[a-z0-9]+([.-][a-z0-9]+)*$ ]]; then
+  err "taste reviewer pin fixture could not be read unambiguously"
+fi
+
 # Every findings fixture has its own ledger directory; HOME is also isolated so a
 # misplaced write is detected without ever reaching the user's real ~/.expo.
 FINDINGS_FIX="$LEDGER_FIX/findings"
@@ -1095,6 +1113,10 @@ findings_run() { # scenario fixture-name
   done
   mkdir -p "$FINDINGS_FIX/$1/run/taste-fixture" || return 1
   seed_job "$FINDINGS_FIX/$1/run/taste-fixture" ledger-complete || return 1
+  [[ "$reviewer_pin" =~ ^[a-z0-9]+([.-][a-z0-9]+)*$ ]] || return 1
+  sed "s/^model: .*/model: $reviewer_pin/" "scripts/fixtures/ledger-complete.log" \
+    > "$FINDINGS_FIX/$1/run/taste-fixture/job.log" || return 1
+  printf '%s\n' '/fixture/.git' > "$FINDINGS_FIX/$1/run/taste-fixture/git-common-dir" || return 1
   cp "scripts/fixtures/$2.findings" "$FINDINGS_FIX/$1/run/taste-fixture/findings.md" || return 1
   printf '%s\n' '2026-01-02T00:00:00Z' > "$FINDINGS_FIX/$1/run/taste-fixture/started" || return 1
   HOME="$FINDINGS_FIX/home" EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
@@ -1115,7 +1137,7 @@ if [ "$findings_valid_rc" -eq 0 ] && [ "$findings_expected_ready" -eq 1 ] &&
     "$FINDINGS_FIX/valid/findings.jsonl" >/dev/null &&
   sed -E 's/"ts":"[^"]+"/"ts":"<ts>"/' "$FINDINGS_FIX/valid/findings.jsonl" | \
     diff -q scripts/fixtures/ledger-findings-valid.golden - >/dev/null; then
-  ok "ledger-append.py persists exactly four confirmed findings with exact fields and fenced section scope"
+  ok "ledger-append.py persists exactly four confirmed findings with mixed line lists and fenced section scope"
 else
   err "ledger-append.py valid findings must produce four exact records and one taste row (rc $findings_valid_rc)"
 fi
@@ -1469,6 +1491,7 @@ for fixture in tier-valid tier-override tier-policy-mismatch; do
   mkdir "$LEDGER_FIX/$fixture"
   if [ "$tier_ready" -eq 1 ]; then
     seed_job "$LEDGER_FIX/$fixture" "$fixture"
+    printf '%s\n' '/fixture/.git' > "$LEDGER_FIX/$fixture/git-common-dir"
     cp "scripts/fixtures/$fixture.tier" "$LEDGER_FIX/$fixture/tier"
     printf '%s\n' '2026-01-02T00:00:00Z' > "$LEDGER_FIX/$fixture/started"
     out=$(EXPO_CLAUDE_HOME="$FIXHOME" python3 scripts/ledger-append.py \
@@ -1498,6 +1521,7 @@ done
 mkdir "$LEDGER_FIX/tier-missing"
 if [ "$tier_missing_ready" -eq 1 ]; then
   seed_job "$LEDGER_FIX/tier-missing" tier-missing
+  printf '%s\n' '/fixture/.git' > "$LEDGER_FIX/tier-missing/git-common-dir"
   out=$(python3 scripts/ledger-append.py --job "$LEDGER_FIX/tier-missing" --skill fire \
     --repo fixture --ledger "$LEDGER_FIX/tier-missing.jsonl" \
     2>"$LEDGER_FIX/tier-missing.stderr")

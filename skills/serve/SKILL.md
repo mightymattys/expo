@@ -12,7 +12,9 @@ per-stage conversation.
 
 ## Run state - the ticket on the rail
 
-Before stage 1, mint one run dir and its real clock stamp: `RUN=$(mktemp -d
+Before stage 1, sweep the session scratchpad to heal jobs whose serve ended before
+its final sweep: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$SCRATCHPAD" --session "${CLAUDE_CODE_SESSION_ID:-}"`.
+Then mint one run dir and its real clock stamp: `RUN=$(mktemp -d
 "$SCRATCHPAD/serve-XXXXXX"); date -u +%Y-%m-%dT%H:%M:%SZ > "$RUN/started"`.
 Each stage mints its job dir per its sibling skill, but inside `$RUN` (substitute
 `$RUN` for `$SCRATCHPAD` in the sibling's mktemp) - even with a stale state file,
@@ -57,6 +59,9 @@ context - `codex exec` carries no session memory - but same lineage), so
 Claude's validation pass is the only cross-model check in that run.
 
 ## The pipeline
+
+Before every stage, load its sibling skill with the Skill tool or a full read of
+its SKILL.md; never run a stage from memory or an earlier serve in the same session.
 
 1. **Fire** - per `/expo:fire`: preflight, ticket, backgrounded run, plating with
    your own verification. Before launching, fire must leave `$JOB/tier` per its
@@ -133,11 +138,10 @@ check; outside-list paths are named, warned, and excluded from the stage delta.
 Before writing the receipt, sweep the run into the running tab:
 `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/ledger-append.py" --run "$RUN" --session
 "${CLAUDE_CODE_SESSION_ID:-}"`.
-This write heals only while the job dirs survive, so a session that ends before later
-plating is never counted.
-If the sweep prints `ledger-append: tier not recorded` or
-`ledger-append: findings not recorded`, name that line in the final report; do not
-let a piped tail hide it.
+This write heals only while the job dirs survive; the next preflight sweep can recover
+jobs missed by a serve that ended early.
+Name every `ledger-append:` warning line (`tier not recorded`, `findings not recorded`,
+`repo stamp missing`, etc.) in the final report; do not let a piped tail hide it.
 
 Then write the run's receipt to `.expo/receipts/` per
 [../receipts/references/receipt-template.md](../receipts/references/receipt-template.md).
