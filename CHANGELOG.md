@@ -3,7 +3,7 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
-## Unreleased - 0.24.0 - sol and astra move to 6.2
+## 0.24.0 - 2026-11-17 - sol and astra move to 6.2
 
 - **The `sol` tier runs on `gpt-6.2-sol`.** fire, taste's reviewer pin, mise's
   suggested default, the profile comment and current examples follow it at the same
