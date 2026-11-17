@@ -32,8 +32,11 @@ with no say over what ships.**
 
 The split is economic: the model that costs more per token spends those tokens on
 judgment, and the worker's cheaper tokens go to bulk. Opus 5.5 blends at $12 per MTok
-against `gpt-6.1-sol`'s $6; astra, the override-only tier, is the one rung above the chef
-and never gets picked by task shape. Everything runs on subscriptions you
+against `gpt-6.2-sol`'s $6; astra's $24 blend is 2x the chef's $12 and stays override-only.
+The Artificial Analysis Coding Agent Index v2.1 puts Codex + GPT-6.2 Astra (max) at 53
+against Claude Code + Opus 5.5 (max) at 58, adding a measured reason to the price gap
+([AA, read 2026-11-17](https://artificialanalysis.ai/agents/coding-agents)).
+Everything runs on subscriptions you
 already have - no API keys.
 
 > Codex saying "tests pass" is a sentence; `pnpm test` output is a fact.
@@ -86,9 +89,9 @@ explicit override:
 
 | `--tier` | Model | Effort | Task shape |
 |---|---|---|---|
-| `sol` | `gpt-6.1-sol` | high (`max` for the hardest) | standard features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes - **the default when unsure** |
-| `luna` | `gpt-6-luna` | medium | mechanical bulk: renames, boilerplate, docs, formatting sweeps |
-| `astra` | `gpt-6-astra` | high | **override-only**; never selected by task shape; long, messy, multi-step work with error recovery |
+| `sol` | `gpt-6.2-sol` | high (`max` only for the very hardest) | the daily driver - standard spec-able features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes; the default when unsure |
+| `luna` | `gpt-6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
+| `astra` | `gpt-6.2-astra` | high | override-only, never chosen by task shape: long, messy, multi-step work with error recovery when explicitly requested |
 
 Override with `--tier sol\|luna\|astra`. The tier rides the invocation as `-c`
 flags, so it varies per fire; your `~/.codex/config.toml` model applies only when

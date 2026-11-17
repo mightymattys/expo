@@ -299,17 +299,26 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   own. `gpt-6-luna` lists at $0.10/$0.50 against `gpt-5.6-luna`'s $0.20/$1.20.
   [Pricing](https://developers.openai.com/api/docs/pricing)
   [gpt-6-sol](https://developers.openai.com/api/docs/models/gpt-6-sol). On 2026-10-06,
-  the current `sol` route moved to `gpt-6.1-sol`, released September 29 at the same
+  the `sol` route moved to `gpt-6.1-sol`, released September 29 at the same
   $2/$10 short-context list price.
   [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
   [Pricing](https://developers.openai.com/api/docs/pricing)
-  [Changelog](https://developers.openai.com/api/docs/changelog). The honest limit
-  of this evidence: the prices are vendor-published and verified, but the capability
-  ordering behind the shape column is OpenAI's own positioning ("built to power complex
-  coding and agentic workflows"), not an independent benchmark - none covering the
-  GPT-6 worker tiers was found on 2026-09-22, where the retired GPT-5.6 table could
-  cite the Coding Agent Index. Treat the shape column as provisional until `bench/`
-  measures it. One point is measured since: on 2026-09-29 `gpt-6-luna` completed
+  [Changelog](https://developers.openai.com/api/docs/changelog). On 2026-11-17 the
+  route moved to `gpt-6.2-sol` at the same $2/$10 list price
+  ([GPT-6.2 Sol](https://developers.openai.com/api/docs/models/gpt-6.2-sol),
+  [pricing](https://developers.openai.com/api/docs/pricing)): Artificial Analysis's
+  Intelligence Index gives it 55 at high (57 at max), against `gpt-6.1-sol`'s 50 at
+  high (55 at max) and `gpt-6-sol`'s max-only 44
+  ([6.2](https://artificialanalysis.ai/models/gpt-6-2-sol),
+  [6.1](https://artificialanalysis.ai/models/gpt-6-1-sol),
+  [6](https://artificialanalysis.ai/models/gpt-6-sol)). The Coding Agent Index v2.1,
+  read 2026-11-17, puts Codex + GPT-6.2 Sol (xhigh) at 50 against Claude Code + Opus 5.5
+  (max) at 58, so the chef still sits above the worker it reviews on that measure
+  ([AA](https://artificialanalysis.ai/agents/coding-agents)). These independent results
+  cover agent/model combinations at the named efforts, not expo's task-shape routing;
+  treat the shape column as provisional until `bench/` measures it
+  ([AA methodology](https://artificialanalysis.ai/agents/coding-agents),
+  [benchmark method](benchmark.md)). One point is measured since: on 2026-09-29 `gpt-6-luna` completed
   benchmark task 03, the mechanical rename, and passed both of its check commands on an
   independent re-run - same twelve tests, zero remaining matches, test edits a pure
   rename - on 27,557 worker tokens against `gpt-5.6-luna`'s 24,217
@@ -326,10 +335,12 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   expensive than a reviewer's tokens. ultra mode is never enabled on a background run:
   it is a token multiplier, and the [#54143](https://github.com/anthropics/claude-code/issues/54143)
   quota-incident shape is exactly a multiplier running with nobody watching.
-- The shipped profile pins `model_context_window = 272000`. That is the vendor's own
-  default window for every GPT-5.6 and GPT-6 tier (`context_window: 272000` in the Codex
-  model cache) and exactly the threshold above which a request bills at 2x input and 1.5x
-  output ([gpt-6-astra model page](https://developers.openai.com/api/docs/models/gpt-6-astra)).
+- The shipped profile pins `model_context_window = 272000`
+  ([profile](../codex/expo.config.toml)). Codex 0.169 lists a 500000 window for
+  `gpt-6.2-sol` (`context_window: 500000` in the Codex model cache, read 2026-11-17); the
+  unchanged pin keeps requests inside the short-context band, whose threshold is
+  272K input tokens, above which input costs double and output costs 1.5x
+  ([gpt-6.2-sol model page](https://developers.openai.com/api/docs/models/gpt-6.2-sol)).
   A user's `~/.codex/config.toml` can raise the window, and because `--profile` layers over
   the base config the raise flows into delegated runs: measured here, 18 of the first 104
   fire runs crossed 272,000 under a `model_context_window = 1000000` in the user config,
@@ -348,19 +359,24 @@ doc, or a measured comparison - collected via a multi-source research sweep on
   terra, because each one carried its own pin. The pin is what absorbed a vendor default
   change nobody was told about. mise's smoke test is the deliberate exception: it pins
   effort only, so its banner reports what an unpinned run would actually use.
-- Astra is available only through explicit `--tier astra`; task shape never selects it.
-  Its $30 50/50 blend is 2.5x the Opus 5.5 orchestrator's $12, so auto-selecting Astra
+- Astra is available only through explicit `--tier astra`; task shape never selects it
+  ([fire's tier table](../skills/fire/SKILL.md#choosing-the-model-tier)). Its current
+  route, `gpt-6.2-astra`, blends at $24, 2x the Opus 5.5 orchestrator's $12
+  ([Astra pricing](https://developers.openai.com/api/docs/models/gpt-6.2-astra),
+  [Opus pricing](https://platform.claude.com/docs/en/about-claude/pricing)), so auto-selecting Astra
   would pay a per-token premium to delegate work the chef could do itself - a sharper
-  form of the cost inversion the delegation floor avoids. Under the previous Fable
-  orchestrator the two blends merely matched, and the argument rested on the independent
-  Artificial Analysis Coding Agent Index calling Fable 5, Fable 5.1 and Astra an
-  effectively three-way tie (68.1, 67.2, and 67.0); no index figure for Opus 5.5 was
-  published as of 2026-09-22, so the price gap now carries the argument alone. [Astra pricing](https://developers.openai.com/api/docs/models/gpt-6-astra)
-  [Independent index and benchmark labels](https://www.vellum.ai/blog/gpt-6-astra-benchmarks-explained)
-- The exception is task shape the heuristic cannot safely infer: long, messy, multi-step
-  work requiring error recovery. There Astra's OpenAI-published Terminal-Bench 4.0 score
-  exceeds sol's (57.7 vs 37.3), so an informed human override can favor it. [Benchmark
-  labels and results](https://www.vellum.ai/blog/gpt-6-astra-benchmarks-explained)
+  form of the cost inversion the delegation floor avoids. The price gap now has an
+  independent measured reason alongside it: the Coding Agent Index v2.1, read
+  2026-11-17, puts Codex + GPT-6.2 Astra (max) at 53 against Claude Code + Opus 5.5
+  (max) at 58 ([AA](https://artificialanalysis.ai/agents/coding-agents)). Long, messy,
+  multi-step work with error recovery remains an explicit human override, not a
+  measured claim that the new Astra wins that task shape
+  ([fire's tier table](../skills/fire/SKILL.md#choosing-the-model-tier)). History: under
+  the earlier Fable orchestrator the argument rested on the index calling Fable 5, Fable
+  5.1 and `gpt-6-astra` a three-way tie (68.1, 67.2, 67.0), and the override on
+  `gpt-6-astra`'s OpenAI-published Terminal-Bench 4.0 score over sol's (57.7 vs 37.3);
+  both measured the previous Astra, not `gpt-6.2-astra`
+  ([benchmark labels](https://www.vellum.ai/blog/gpt-6-astra-benchmarks-explained)).
 
 ## Why orchestration cost is measured, not estimated
 

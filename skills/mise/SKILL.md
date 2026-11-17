@@ -62,9 +62,9 @@ short-context price band regardless of the window their own config sets - a refr
 from the plugin copy is how an older install picks that pin up.
 Model and effort are normally pinned per fire by the tier flags (fire's tier table);
 the user's `~/.codex/config.toml` governs only their interactive Codex sessions and
-any run that forgot its flags. Read the `model` line there and say what it is: since
-Codex 0.154 the vendor's own default is `gpt-6-astra`, so a config that inherited it
-makes every unpinned run the most expensive one. Suggest `model = "gpt-6.1-sol"` and
+any run that forgot its flags. Read the `model` line there and say what it is: in
+Codex 0.154 the vendor's own default became `gpt-6-astra`, then the most expensive tier,
+and the smoke-test banner's `model:` line shows what an unpinned run resolves to now. Suggest `model = "gpt-6.2-sol"` and
 `model_reasoning_effort = "high"` as a sane default to set explicitly. If their config
 enables an `ultra` reasoning level, warn that it multiplies token spend by design and
 should stay off for delegated background runs.

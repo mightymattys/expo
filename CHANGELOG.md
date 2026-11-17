@@ -3,6 +3,35 @@
 expo is a fork of [sous-chef](https://github.com/tomascupr/sous-chef) by Tomas Cupr
 (MIT). Versions before 0.6.0 are sous-chef history; the fork begins at 0.6.0.
 
+## Unreleased - 0.24.0 - sol and astra move to 6.2
+
+- **The `sol` tier runs on `gpt-6.2-sol`.** fire, taste's reviewer pin, mise's
+  suggested default, the profile comment and current examples follow it at the same
+  $2/$10 list price and $6 blend; `luna` stays `gpt-6-luna`
+  ([pricing](https://developers.openai.com/api/docs/pricing)). The unchanged 272000
+  context-window pin keeps requests in the short-context band
+  ([model rule](https://developers.openai.com/api/docs/models/gpt-6.2-sol)).
+- **Astra moves to `gpt-6.2-astra` and stays override-only.** Its $8/$40 list price
+  blends at $24, twice the Opus 5.5 chef's unchanged $12
+  ([OpenAI](https://developers.openai.com/api/docs/pricing),
+  [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing)). The Coding
+  Agent Index v2.1 adds a measured reason: Codex + GPT-6.2 Astra (max) scores 53
+  against Claude Code + Opus 5.5 (max) at 58
+  ([AA, read 2026-11-17](https://artificialanalysis.ai/agents/coding-agents)). The tier
+  table no longer attributes the old Astra's Terminal-Bench score to the new model.
+- **Every price row was re-verified on 2026-11-17.** Both tables add `gpt-6.2-sol`,
+  `gpt-6.2-astra` and `gpt-6.1-terra` (blends $6, $24 and $3); terra is receipt
+  coverage only. GPT-5.6 Sol's promotion now ends November 30, 2026
+  ([pricing](https://developers.openai.com/api/docs/pricing)). All existing rates,
+  the deprecated Daybreak alias targets and historical ledger rows stay unchanged
+  ([price table and sources](skills/receipts/references/prices.md)); the benchmark
+  report is regenerated with the new verification date.
+- **Fable 5.2 does not lower the reference blend.** Its $8/$40 price was considered;
+  Fable 5 and 5.1 are still served at $10/$50
+  ([Anthropic](https://platform.claude.com/docs/en/about-claude/pricing)). The $30
+  reference remains the most expensive orchestrator the kitchen can run: lowering it
+  would inflate the equal-volume delta, the error direction that flatters expo.
+
 ## 0.23.2 - 2026-10-21 - the stages are loaded, not remembered
 
 An audit of every job dir since 0.23.0, done twice on 2026-10-21, found that the data

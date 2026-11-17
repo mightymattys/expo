@@ -7,14 +7,15 @@
 # Deliberately minimal: only execution safety lives here, and NO model - --profile
 # layers over your base config rather than replacing it, so an unpinned run inherits
 # whatever ~/.codex/config.toml says, and that inherits the vendor default when unset.
-# Codex 0.154 made gpt-6-astra its bundled default, so "unset" now means the most
+# Codex 0.154 made gpt-6-astra its bundled default, so "unset" then meant the most
 # expensive model. Fire pins the tier per task via -c flags; set an explicit default
-# here too (recommended: model = "gpt-6.1-sol", model_reasoning_effort = "high").
+# here too (recommended: model = "gpt-6.2-sol", model_reasoning_effort = "high").
 # Per-repo pins belong in a trusted project's .codex/config.toml.
 
 # Keep every delegated request inside the short-context price band. 272,000 is the
-# vendor's own default window and exactly the threshold above which a request bills at
-# 2x input and 1.5x output (skills/receipts/references/prices.md). A larger window in
+# short-context threshold, above which a request bills at 2x input and 1.5x output
+# (skills/receipts/references/prices.md). Codex 0.169 lists a 500,000 window for
+# gpt-6.2-sol. A larger window in
 # ~/.codex/config.toml would otherwise flow into delegated runs - and did: 18 of the
 # first 104 fire runs crossed it, so their receipts are lower bounds, not prices. The
 # cost of this pin is earlier compaction on very large tasks. Raise it knowingly.

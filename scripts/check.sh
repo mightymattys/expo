@@ -497,7 +497,7 @@ for s in fire taste refire; do
 done
 
 # taste's reviewer pin is real, not a hope about the user's config.
-must_contain skills/taste/SKILL.md '-c model=gpt-6.1-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
+must_contain skills/taste/SKILL.md '-c model=gpt-6.2-sol' "the 'taste stays on sol' claim needs an actual pin on the invocation"
 must_contain skills/taste/SKILL.md '--security' "taste must expose the focused security lens"
 must_contain skills/taste/references/review-prompt.md '## Security prompt' "taste's security lens needs its own reviewer prompt"
 must_contain skills/taste/SKILL.md 'reviewed, not audited' "security findings and the user report must state the review limit"

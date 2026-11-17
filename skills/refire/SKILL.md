@@ -29,8 +29,8 @@ Refire runs on Codex. Two ways its tier is set:
   recorded there. Taste stays on Codex/sol.
 - **Standalone `/expo:refire --tier <tier>`:** strip the flag from the task text
   and pin `sol`, `luna`, or `astra` as requested. Absent an override, pin `sol`
-  rather than falling through to the user's config default, which the vendor now
-  points at `gpt-6-astra`.
+  rather than falling through to the user's config default; Codex 0.154 moved the
+  vendor default to `gpt-6-astra`.
 
 The findings handoff, the tree anchor, and plating read the working tree via git.
 

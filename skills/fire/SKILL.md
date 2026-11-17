@@ -60,9 +60,10 @@ Repo-level standards (build commands, conventions, do-not-touch areas) belong in
 
 The GPT-6 tiers are chosen by task shape. You already classify every
 task by shape to decide *whether* to fire - the same classification picks the tier,
-for free. Astra is an explicit, override-only tier: its $30 blend is 2.5x the Opus 5.5
-orchestrator's $12, so delegating there pays a premium per token over work the chef
-could do itself, and task shape must never select it.
+for free. Astra is an explicit, override-only tier: its blend is twice the Opus 5.5
+orchestrator's (see [prices](../receipts/references/prices.md)), and the Coding Agent
+Index puts GPT-6.2 Astra at 53 against Opus 5.5 at 58
+([AA](https://artificialanalysis.ai/agents/coding-agents)), so task shape must never select it.
 The table presupposes the fire-vs-cook gate already passed: it decides who gets the
 ticket, never whether to delegate.
 First ask: is this mechanical work above the delegation floor - renames, boilerplate,
@@ -72,9 +73,9 @@ only after this shape choice; astra remains override-only.
 
 | `--tier` | Model | Effort | Task shape |
 |---|---|---|---|
-| `sol` | `gpt-6.1-sol` | high (`max` only for the very hardest) | the daily driver - standard spec-able features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes; the default when unsure |
+| `sol` | `gpt-6.2-sol` | high (`max` only for the very hardest) | the daily driver - standard spec-able features, bugfixes and test writing through architectural or multi-file work, parser-class work, security-sensitive changes; the default when unsure |
 | `luna` | `gpt-6-luna` | medium | mechanical bulk above the delegation floor - renames, boilerplate, docs, formatting sweeps; one file or a few lines cooks directly |
-| `astra` | `gpt-6-astra` | high | override-only, never chosen by task shape: long, messy, multi-step work with error recovery, where Terminal-Bench 4.0 puts it far above sol |
+| `astra` | `gpt-6.2-astra` | high | override-only, never chosen by task shape: long, messy, multi-step work with error recovery when explicitly requested |
 
 Override: `--tier sol|luna|astra` in the arguments (strip it from the task text); an
 explicit tier wins over the shape heuristic. Never enable an `ultra` reasoning level
@@ -104,11 +105,11 @@ env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN codex exec --profile expo \
 ```
 
 Notes on the invocation:
-- `--profile expo` loads `~/.codex/expo.config.toml` (workspace-write sandbox, approvals never - it never pauses for input that will never arrive). The `-c model=... -c model_reasoning_effort=...` flags pin the tier chosen above (CLI beats the profile and `~/.codex/config.toml`). Never drop them: `--profile expo` layers over the base config without setting a model, so an unpinned run falls through to the vendor's current default - `gpt-6-astra` since Codex 0.154.
+- `--profile expo` loads `~/.codex/expo.config.toml` (workspace-write sandbox, approvals never - it never pauses for input that will never arrive). The `-c model=... -c model_reasoning_effort=...` flags pin the tier chosen above (CLI beats the profile and `~/.codex/config.toml`). Never drop them: `--profile expo` layers over the base config without setting a model, so an unpinned run falls through to the vendor's current default, which Codex 0.154 changed to `gpt-6-astra`.
 - `env -u CODEX_API_KEY -u CODEX_ACCESS_TOKEN` pins the run to the user's `codex login` (ChatGPT subscription) auth - those two are the only env vars that override it in `codex exec`, and if either is set the run silently bills per-token instead. (`OPENAI_API_KEY` is NOT read for auth by current Codex, and unsetting it would break custom providers that use it as their `env_key`.)
 - Prompt goes via stdin (`- <`) to avoid shell-quoting damage to the ticket.
 
-**Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-6.1-sol`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
+**Then tell the user, in one or two lines:** what was delegated and to which model and tier (the one you pinned on the invocation, e.g. `gpt-6.2-sol`; don't assert a model you didn't set), that it typically takes 5–20+ minutes at high reasoning effort, a paste-ready `tail -f "$JOB/job.log"` (absolute path) to watch it cook - warning that stray MCP transport noise early in the log is usually harmless, not the run failing - the ticket at `$JOB/ticket.md` for what was ordered, and that they can cancel anytime. Offer progress ticks (below) as a clause they can opt into by replying, not a blocking question.
 
 ## While it cooks
 
